@@ -9,18 +9,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
-	"github.com/jackc/pgx/v5/pgxpool"
-	oapimw "github.com/oapi-codegen/nethttp-middleware"
-	goredis "github.com/redis/go-redis/v9"
-
 	v1 "github.com/example/ai-restaurant-assistant-backend/cmd/app/app/v1"
-
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
 	authhttp "github.com/example/ai-restaurant-assistant-backend/internal/auth/delivery/v1/http"
 	authusecase "github.com/example/ai-restaurant-assistant-backend/internal/auth/usecase"
-
+	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
+	menuhttp "github.com/example/ai-restaurant-assistant-backend/internal/menu/delivery/v1/http"
+	menupostgres "github.com/example/ai-restaurant-assistant-backend/internal/menu/repository/postgres"
+	menuusecase "github.com/example/ai-restaurant-assistant-backend/internal/menu/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/apperrors"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/bcrypt"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/csrf"
@@ -28,15 +24,23 @@ import (
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/logger"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/middleware"
 	pkgredis "github.com/example/ai-restaurant-assistant-backend/internal/pkg/redis"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/s3"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/uuid"
-
 	sessionredis "github.com/example/ai-restaurant-assistant-backend/internal/session/repository/redis"
 	sessionusecase "github.com/example/ai-restaurant-assistant-backend/internal/session/usecase"
-
 	"github.com/example/ai-restaurant-assistant-backend/internal/user"
 	userhttp "github.com/example/ai-restaurant-assistant-backend/internal/user/delivery/v1/http"
 	userpostgres "github.com/example/ai-restaurant-assistant-backend/internal/user/repository/postgres"
 	userusecase "github.com/example/ai-restaurant-assistant-backend/internal/user/usecase"
+
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	oapimw "github.com/oapi-codegen/nethttp-middleware"
+
+	goredis "github.com/redis/go-redis/v9"
 )
 
 // Middleware HTTP middleware в форме decorator
@@ -125,19 +129,28 @@ func buildAPI(
 	csrfGen := csrf.New()
 	bcryptHasher := bcrypt.New(cfg.Auth.Usecase.BcryptCost)
 
+	s3Storage, err := s3.New(cfg.S3)
+	if err != nil {
+		return Handler{}, nil, fmt.Errorf("s3: %w", err)
+	}
+
 	sessionRepository := sessionredis.New(redisManager, cfg.Session.Repository.TTL)
 	userRepository := userpostgres.New(pgPool)
+	menuRepository := menupostgres.New(pgPool)
 
 	sessionUsecase := sessionusecase.New(sessionRepository, uuidGen, csrfGen)
 	userUsecase := userusecase.New(userRepository)
 	authUsecase := authusecase.New(userRepository, sessionUsecase, bcryptHasher, uuidGen)
+	menuUsecase := menuusecase.New(menuRepository, s3Storage)
 
 	authHandler := authhttp.New(authUsecase, userUsecase)
 	userHandler := userhttp.New(userUsecase)
+	menuHandler := menuhttp.New(cfg.Menu.Delivery, menuUsecase, userUsecase)
 
 	handler := Handler{
 		AuthHandler: authHandler,
 		UserHandler: userHandler,
+		MenuHandler: menuHandler,
 	}
 
 	swagger, err := v1.GetSwagger()
@@ -177,7 +190,7 @@ func buildRouter(handler Handler, middlewares []Middleware) http.Handler {
 		ErrorHandlerFunc: requestErrorHandler,
 	})
 
-	var h http.Handler = api
+	h := api
 	for i := len(middlewares) - 1; i >= 0; i-- {
 		h = middlewares[i](h)
 	}
@@ -214,6 +227,27 @@ func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", "Invalid credentials")
 	case errors.Is(err, auth.ErrAlreadyRegistered):
 		writeError(w, http.StatusConflict, "already_registered", "User is already registered")
+
+	case errors.Is(err, menu.ErrCategoryNotFound):
+		writeError(w, http.StatusNotFound, "category_not_found", "Category not found")
+	case errors.Is(err, menu.ErrCategoryNameTaken):
+		writeError(w, http.StatusConflict, "category_name_taken", "Category with this name already exists")
+	case errors.Is(err, menu.ErrCategoryHasDishes):
+		writeError(w, http.StatusConflict, "category_has_dishes", "Category contains dishes — cannot delete")
+	case errors.Is(err, menu.ErrTagNotFound):
+		writeError(w, http.StatusNotFound, "tag_not_found", "Tag not found")
+	case errors.Is(err, menu.ErrTagNameTaken):
+		writeError(w, http.StatusConflict, "tag_name_taken", "Tag with this name or slug already exists")
+	case errors.Is(err, menu.ErrDishNotFound):
+		writeError(w, http.StatusNotFound, "dish_not_found", "Dish not found")
+	case errors.Is(err, menu.ErrDishNameTaken):
+		writeError(w, http.StatusConflict, "dish_name_taken", "Dish with this name already exists")
+	case errors.Is(err, menu.ErrInvalidCuisine):
+		writeError(w, http.StatusBadRequest, "invalid_cuisine", "Invalid cuisine value")
+	case errors.Is(err, menu.ErrImageTooLarge):
+		writeError(w, http.StatusRequestEntityTooLarge, "image_too_large", "Image exceeds maximum allowed size")
+	case errors.Is(err, menu.ErrImageUnsupportedType):
+		writeError(w, http.StatusUnsupportedMediaType, "image_unsupported_type", "Unsupported image content type")
 
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "An unexpected error occurred")

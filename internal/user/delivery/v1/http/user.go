@@ -37,7 +37,7 @@ func (h UserHandler) UpdateProfile(
 	if request.Body == nil {
 		return nil, apperrors.ErrBadRequest
 	}
-	patch := apimodels.PatchProfileRequestToUsecase(apimodels.PatchProfileRequest(*request.Body))
+	patch := apimodels.PatchProfileRequestToUsecase(*request.Body)
 	u, err := h.usecase.UpdateProfile(ctx, *s.UserID, patch)
 	if err != nil {
 		return nil, err

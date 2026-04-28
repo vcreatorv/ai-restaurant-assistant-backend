@@ -21,6 +21,10 @@ var (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	configPath := flag.String("config", app.DefaultConfigPath, "path to yaml config")
 	flag.Parse()
 
@@ -33,13 +37,13 @@ func main() {
 	cfg, err := app.LoadConfig(*configPath)
 	if err != nil {
 		slog.Error("config", "err", err)
-		os.Exit(1)
+		return 1
 	}
 
 	a, err := app.New(cfg)
 	if err != nil {
 		slog.Error("init", "err", err)
-		os.Exit(1)
+		return 1
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -48,7 +52,8 @@ func main() {
 	slog.Info("listening", "addr", cfg.HTTP.Addr)
 	if err := a.Run(ctx); err != nil {
 		slog.Error("run", "err", err)
-		os.Exit(1)
+		return 1
 	}
 	slog.Info("stopped")
+	return 0
 }

@@ -3,9 +3,8 @@ package usecase
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
+	"github.com/google/uuid"
 )
 
 // Role роль пользователя

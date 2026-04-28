@@ -6,11 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
-	goredis "github.com/redis/go-redis/v9"
-
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
 	"github.com/example/ai-restaurant-assistant-backend/internal/session"
+	"github.com/google/uuid"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 const sessionKeyPrefix = "session:"

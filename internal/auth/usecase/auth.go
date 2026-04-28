@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
-
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/bcrypt"
 	"github.com/example/ai-restaurant-assistant-backend/internal/user"
+	"github.com/google/uuid"
 )
 
 // Register регистрирует customer'а
@@ -56,11 +55,11 @@ func (uc *authUsecase) Login(
 	}
 	u := usecasemodels.UserFromRepository(raw)
 
-	if err := uc.hasher.Compare(u.PasswordHash, password); err != nil {
-		if errors.Is(err, bcrypt.ErrMismatch) {
+	if cmpErr := uc.hasher.Compare(u.PasswordHash, password); cmpErr != nil {
+		if errors.Is(cmpErr, bcrypt.ErrMismatch) {
 			return nil, nil, auth.ErrInvalidCredentials
 		}
-		return nil, nil, fmt.Errorf("compare password: %w", err)
+		return nil, nil, fmt.Errorf("compare password: %w", cmpErr)
 	}
 
 	s, err := uc.session.AttachUser(ctx, sessionID, u.ID)
@@ -90,11 +89,11 @@ func (uc *authUsecase) ChangePassword(
 		return user.ErrInsufficientRole
 	}
 
-	if err := uc.hasher.Compare(u.PasswordHash, currentPassword); err != nil {
-		if errors.Is(err, bcrypt.ErrMismatch) {
+	if cmpErr := uc.hasher.Compare(u.PasswordHash, currentPassword); cmpErr != nil {
+		if errors.Is(cmpErr, bcrypt.ErrMismatch) {
 			return auth.ErrInvalidCredentials
 		}
-		return fmt.Errorf("compare password: %w", err)
+		return fmt.Errorf("compare password: %w", cmpErr)
 	}
 
 	hash, err := uc.hasher.Hash(newPassword)

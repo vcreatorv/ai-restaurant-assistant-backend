@@ -18,34 +18,6 @@ func (Unimplemented) AdminListAnalyticsQueries(_ context.Context, _ v1.AdminList
 	return nil, apperrors.ErrNotImplemented
 }
 
-func (Unimplemented) AdminCreateCategory(_ context.Context, _ v1.AdminCreateCategoryRequestObject) (v1.AdminCreateCategoryResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) AdminDeleteCategory(_ context.Context, _ v1.AdminDeleteCategoryRequestObject) (v1.AdminDeleteCategoryResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) AdminUpdateCategory(_ context.Context, _ v1.AdminUpdateCategoryRequestObject) (v1.AdminUpdateCategoryResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) AdminCreateDish(_ context.Context, _ v1.AdminCreateDishRequestObject) (v1.AdminCreateDishResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) AdminDeleteDish(_ context.Context, _ v1.AdminDeleteDishRequestObject) (v1.AdminDeleteDishResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) AdminUpdateDish(_ context.Context, _ v1.AdminUpdateDishRequestObject) (v1.AdminUpdateDishResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) AdminSetDishAvailability(_ context.Context, _ v1.AdminSetDishAvailabilityRequestObject) (v1.AdminSetDishAvailabilityResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
 func (Unimplemented) AdminListOrders(_ context.Context, _ v1.AdminListOrdersRequestObject) (v1.AdminListOrdersResponseObject, error) {
 	return nil, apperrors.ErrNotImplemented
 }
@@ -98,26 +70,6 @@ func (Unimplemented) SendMessage(_ context.Context, _ v1.SendMessageRequestObjec
 	return nil, apperrors.ErrNotImplemented
 }
 
-func (Unimplemented) ListAllergens(_ context.Context, _ v1.ListAllergensRequestObject) (v1.ListAllergensResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) ListCategories(_ context.Context, _ v1.ListCategoriesRequestObject) (v1.ListCategoriesResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) ListDietary(_ context.Context, _ v1.ListDietaryRequestObject) (v1.ListDietaryResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) ListDishes(_ context.Context, _ v1.ListDishesRequestObject) (v1.ListDishesResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) GetDish(_ context.Context, _ v1.GetDishRequestObject) (v1.GetDishResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
 func (Unimplemented) ListOrders(_ context.Context, _ v1.ListOrdersRequestObject) (v1.ListOrdersResponseObject, error) {
 	return nil, apperrors.ErrNotImplemented
 }
@@ -129,4 +81,3 @@ func (Unimplemented) CreateOrder(_ context.Context, _ v1.CreateOrderRequestObjec
 func (Unimplemented) GetOrder(_ context.Context, _ v1.GetOrderRequestObject) (v1.GetOrderResponseObject, error) {
 	return nil, apperrors.ErrNotImplemented
 }
-

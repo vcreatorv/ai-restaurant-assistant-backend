@@ -3,9 +3,8 @@ package usecase
 import (
 	"fmt"
 
-	"github.com/google/uuid"
-
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
+	"github.com/google/uuid"
 )
 
 // Session сессия в доменной форме

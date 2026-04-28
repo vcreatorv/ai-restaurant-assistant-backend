@@ -1,9 +1,8 @@
 package api
 
 import (
-	openapi_types "github.com/oapi-codegen/runtime/types"
-
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // ProfileFromUsecase маппит usecase.User в api.Profile

@@ -16,6 +16,39 @@ const (
 	CookieAuthScopes = "cookieAuth.Scopes"
 )
 
+// Defines values for Cuisine.
+const (
+	American Cuisine = "american"
+	Asian    Cuisine = "asian"
+	European Cuisine = "european"
+	French   Cuisine = "french"
+	Italian  Cuisine = "italian"
+	Japanese Cuisine = "japanese"
+	Russian  Cuisine = "russian"
+)
+
+// Valid indicates whether the value is a known member of the Cuisine enum.
+func (e Cuisine) Valid() bool {
+	switch e {
+	case American:
+		return true
+	case Asian:
+		return true
+	case European:
+		return true
+	case French:
+		return true
+	case Italian:
+		return true
+	case Japanese:
+		return true
+	case Russian:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FieldViolationReason.
 const (
 	InvalidFormat    FieldViolationReason = "invalid_format"
@@ -159,21 +192,9 @@ func (e SessionInfoRole) Valid() bool {
 
 // AddCartItemRequest defines model for AddCartItemRequest.
 type AddCartItemRequest struct {
-	DishId   openapi_types.UUID `json:"dish_id"`
-	Note     *string            `json:"note,omitempty"`
-	Quantity int                `json:"quantity"`
-}
-
-// Allergen defines model for Allergen.
-type Allergen struct {
-	Code string  `json:"code"`
-	Icon *string `json:"icon,omitempty"`
-	Name string  `json:"name"`
-}
-
-// AllergenList defines model for AllergenList.
-type AllergenList struct {
-	Items []Allergen `json:"items"`
+	DishId   int     `json:"dish_id"`
+	Note     *string `json:"note,omitempty"`
+	Quantity int     `json:"quantity"`
 }
 
 // AnalyticsOverview defines model for AnalyticsOverview.
@@ -187,9 +208,9 @@ type AnalyticsOverview struct {
 		Count int    `json:"count"`
 	} `json:"top_allergens_excluded,omitempty"`
 	TopDishes *[]struct {
-		Count  int                `json:"count"`
-		DishId openapi_types.UUID `json:"dish_id"`
-		Name   string             `json:"name"`
+		Count  int    `json:"count"`
+		DishId int    `json:"dish_id"`
+		Name   string `json:"name"`
 	} `json:"top_dishes,omitempty"`
 	TotalOrders  *int `json:"total_orders,omitempty"`
 	TotalQueries *int `json:"total_queries,omitempty"`
@@ -205,30 +226,29 @@ type Cart struct {
 
 // CartItem defines model for CartItem.
 type CartItem struct {
-	AddedAt   *time.Time         `json:"added_at,omitempty"`
-	Available bool               `json:"available"`
-	DishId    openapi_types.UUID `json:"dish_id"`
-	LineTotal string             `json:"line_total"`
-	Name      string             `json:"name"`
-	Note      *string            `json:"note,omitempty"`
-	Price     string             `json:"price"`
-	Quantity  int                `json:"quantity"`
-	SortOrder int                `json:"sort_order"`
+	AddedAt   *time.Time `json:"added_at,omitempty"`
+	Available bool       `json:"available"`
+	DishId    int        `json:"dish_id"`
+	LineTotal string     `json:"line_total"`
+	Name      string     `json:"name"`
+	Note      *string    `json:"note,omitempty"`
+	Price     string     `json:"price"`
+	Quantity  int        `json:"quantity"`
+	SortOrder int        `json:"sort_order"`
 }
 
 // CartWarning defines model for CartWarning.
 type CartWarning struct {
-	Code   string             `json:"code"`
-	DishId openapi_types.UUID `json:"dish_id"`
+	Code   string `json:"code"`
+	DishId int    `json:"dish_id"`
 }
 
 // Category defines model for Category.
 type Category struct {
-	Code      string             `json:"code"`
-	Id        openapi_types.UUID `json:"id"`
-	IsActive  bool               `json:"is_active"`
-	Name      string             `json:"name"`
-	SortOrder int                `json:"sort_order"`
+	Id          int    `json:"id"`
+	IsAvailable bool   `json:"is_available"`
+	Name        string `json:"name"`
+	SortOrder   int    `json:"sort_order"`
 }
 
 // CategoryList defines model for CategoryList.
@@ -272,10 +292,9 @@ type ChatWithMessages struct {
 
 // CreateCategoryRequest defines model for CreateCategoryRequest.
 type CreateCategoryRequest struct {
-	Code      string `json:"code"`
-	IsActive  *bool  `json:"is_active,omitempty"`
-	Name      string `json:"name"`
-	SortOrder int    `json:"sort_order"`
+	IsAvailable *bool  `json:"is_available,omitempty"`
+	Name        string `json:"name"`
+	SortOrder   *int   `json:"sort_order,omitempty"`
 }
 
 // CreateChatRequest defines model for CreateChatRequest.
@@ -285,21 +304,23 @@ type CreateChatRequest struct {
 
 // CreateDishRequest defines model for CreateDishRequest.
 type CreateDishRequest struct {
-	Allergens      *[]string             `json:"allergens,omitempty"`
-	Available      *bool                 `json:"available,omitempty"`
-	Calories       *int                  `json:"calories,omitempty"`
-	CategoryId     openapi_types.UUID    `json:"category_id"`
-	CookingTimeMin *int                  `json:"cooking_time_min,omitempty"`
-	Description    string                `json:"description"`
-	Dietary        *[]string             `json:"dietary,omitempty"`
-	ImageUrl       *string               `json:"image_url,omitempty"`
-	Ingredients    *[]string             `json:"ingredients,omitempty"`
-	Name           string                `json:"name"`
-	PairsWellWith  *[]openapi_types.UUID `json:"pairs_well_with,omitempty"`
-	Price          string                `json:"price"`
-	Spiciness      *int                  `json:"spiciness,omitempty"`
-	Tags           *[]string             `json:"tags,omitempty"`
-	WeightLabel    *string               `json:"weight_label,omitempty"`
+	Allergens      *[]string `json:"allergens,omitempty"`
+	CaloriesKcal   *int      `json:"calories_kcal,omitempty"`
+	CarbsG         *float32  `json:"carbs_g,omitempty"`
+	CategoryId     int       `json:"category_id"`
+	Composition    *string   `json:"composition,omitempty"`
+	Cuisine        Cuisine   `json:"cuisine"`
+	Currency       *string   `json:"currency,omitempty"`
+	Description    *string   `json:"description,omitempty"`
+	Dietary        *[]string `json:"dietary,omitempty"`
+	FatG           *float32  `json:"fat_g,omitempty"`
+	ImageUrl       *string   `json:"image_url,omitempty"`
+	IsAvailable    *bool     `json:"is_available,omitempty"`
+	Name           string    `json:"name"`
+	PortionWeightG *int      `json:"portion_weight_g,omitempty"`
+	PriceMinor     int       `json:"price_minor"`
+	ProteinG       *float32  `json:"protein_g,omitempty"`
+	TagIds         *[]int    `json:"tag_ids,omitempty"`
 }
 
 // CreateOrderRequest defines model for CreateOrderRequest.
@@ -311,39 +332,36 @@ type CreateOrderRequest struct {
 	PaymentMethod   PaymentMethod   `json:"payment_method"`
 }
 
-// Dietary defines model for Dietary.
-type Dietary struct {
-	Code string  `json:"code"`
-	Icon *string `json:"icon,omitempty"`
-	Name string  `json:"name"`
+// CreateTagRequest defines model for CreateTagRequest.
+type CreateTagRequest struct {
+	Color *string `json:"color,omitempty"`
+	Name  string  `json:"name"`
+	Slug  string  `json:"slug"`
 }
 
-// DietaryList defines model for DietaryList.
-type DietaryList struct {
-	Items []Dietary `json:"items"`
-}
+// Cuisine defines model for Cuisine.
+type Cuisine string
 
 // Dish defines model for Dish.
 type Dish struct {
-	Allergens      []string              `json:"allergens"`
-	Available      bool                  `json:"available"`
-	Calories       *int                  `json:"calories,omitempty"`
-	CategoryId     openapi_types.UUID    `json:"category_id"`
-	CookingTimeMin *int                  `json:"cooking_time_min,omitempty"`
-	Description    string                `json:"description"`
-	Dietary        []string              `json:"dietary"`
-	Id             openapi_types.UUID    `json:"id"`
-	ImageUrl       *string               `json:"image_url,omitempty"`
-	Ingredients    []string              `json:"ingredients"`
-	Name           string                `json:"name"`
-	PairsWellWith  *[]openapi_types.UUID `json:"pairs_well_with,omitempty"`
-
-	// Price decimal, e.g. "890.00"
-	Price             string   `json:"price"`
-	Spiciness         *int     `json:"spiciness,omitempty"`
-	Tags              []string `json:"tags"`
-	UnavailableReason *string  `json:"unavailable_reason,omitempty"`
-	WeightLabel       *string  `json:"weight_label,omitempty"`
+	Allergens      []string `json:"allergens"`
+	CaloriesKcal   *int     `json:"calories_kcal,omitempty"`
+	CarbsG         *float32 `json:"carbs_g,omitempty"`
+	CategoryId     int      `json:"category_id"`
+	Composition    string   `json:"composition"`
+	Cuisine        Cuisine  `json:"cuisine"`
+	Currency       string   `json:"currency"`
+	Description    string   `json:"description"`
+	Dietary        []string `json:"dietary"`
+	FatG           *float32 `json:"fat_g,omitempty"`
+	Id             int      `json:"id"`
+	ImageUrl       string   `json:"image_url"`
+	IsAvailable    bool     `json:"is_available"`
+	Name           string   `json:"name"`
+	PortionWeightG *int     `json:"portion_weight_g,omitempty"`
+	PriceMinor     int      `json:"price_minor"`
+	ProteinG       *float32 `json:"protein_g,omitempty"`
+	Tags           []Tag    `json:"tags"`
 }
 
 // DishList defines model for DishList.
@@ -420,12 +438,12 @@ type LoginRequest struct {
 
 // Message defines model for Message.
 type Message struct {
-	ChatId             openapi_types.UUID    `json:"chat_id"`
-	Content            string                `json:"content"`
-	CreatedAt          time.Time             `json:"created_at"`
-	Id                 openapi_types.UUID    `json:"id"`
-	RecommendedDishIds *[]openapi_types.UUID `json:"recommended_dish_ids,omitempty"`
-	Role               MessageRole           `json:"role"`
+	ChatId             openapi_types.UUID `json:"chat_id"`
+	Content            string             `json:"content"`
+	CreatedAt          time.Time          `json:"created_at"`
+	Id                 openapi_types.UUID `json:"id"`
+	RecommendedDishIds *[]int             `json:"recommended_dish_ids,omitempty"`
+	Role               MessageRole        `json:"role"`
 }
 
 // MessageRole defines model for MessageRole.
@@ -453,12 +471,12 @@ type Order struct {
 
 // OrderItem defines model for OrderItem.
 type OrderItem struct {
-	DishId    *openapi_types.UUID `json:"dish_id"`
-	DishName  string              `json:"dish_name"`
-	DishPrice string              `json:"dish_price"`
-	LineTotal string              `json:"line_total"`
-	Quantity  int                 `json:"quantity"`
-	SortOrder int                 `json:"sort_order"`
+	DishId    *int   `json:"dish_id"`
+	DishName  string `json:"dish_name"`
+	DishPrice string `json:"dish_price"`
+	LineTotal string `json:"line_total"`
+	Quantity  int    `json:"quantity"`
+	SortOrder int    `json:"sort_order"`
 }
 
 // OrderList defines model for OrderList.
@@ -472,12 +490,6 @@ type OrderList struct {
 // OrderStatus defines model for OrderStatus.
 type OrderStatus string
 
-// PatchAvailabilityRequest defines model for PatchAvailabilityRequest.
-type PatchAvailabilityRequest struct {
-	Available bool    `json:"available"`
-	Reason    *string `json:"reason,omitempty"`
-}
-
 // PatchCartItemRequest defines model for PatchCartItemRequest.
 type PatchCartItemRequest struct {
 	Note      *string `json:"note,omitempty"`
@@ -487,27 +499,30 @@ type PatchCartItemRequest struct {
 
 // PatchCategoryRequest defines model for PatchCategoryRequest.
 type PatchCategoryRequest struct {
-	IsActive  *bool   `json:"is_active,omitempty"`
-	Name      *string `json:"name,omitempty"`
-	SortOrder *int    `json:"sort_order,omitempty"`
+	IsAvailable *bool   `json:"is_available,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	SortOrder   *int    `json:"sort_order,omitempty"`
 }
 
 // PatchDishRequest defines model for PatchDishRequest.
 type PatchDishRequest struct {
-	Allergens      *[]string             `json:"allergens,omitempty"`
-	Calories       *int                  `json:"calories,omitempty"`
-	CategoryId     *openapi_types.UUID   `json:"category_id,omitempty"`
-	CookingTimeMin *int                  `json:"cooking_time_min,omitempty"`
-	Description    *string               `json:"description,omitempty"`
-	Dietary        *[]string             `json:"dietary,omitempty"`
-	ImageUrl       *string               `json:"image_url,omitempty"`
-	Ingredients    *[]string             `json:"ingredients,omitempty"`
-	Name           *string               `json:"name,omitempty"`
-	PairsWellWith  *[]openapi_types.UUID `json:"pairs_well_with,omitempty"`
-	Price          *string               `json:"price,omitempty"`
-	Spiciness      *int                  `json:"spiciness,omitempty"`
-	Tags           *[]string             `json:"tags,omitempty"`
-	WeightLabel    *string               `json:"weight_label,omitempty"`
+	Allergens      *[]string `json:"allergens,omitempty"`
+	CaloriesKcal   *int      `json:"calories_kcal,omitempty"`
+	CarbsG         *float32  `json:"carbs_g,omitempty"`
+	CategoryId     *int      `json:"category_id,omitempty"`
+	Composition    *string   `json:"composition,omitempty"`
+	Cuisine        *Cuisine  `json:"cuisine,omitempty"`
+	Currency       *string   `json:"currency,omitempty"`
+	Description    *string   `json:"description,omitempty"`
+	Dietary        *[]string `json:"dietary,omitempty"`
+	FatG           *float32  `json:"fat_g,omitempty"`
+	ImageUrl       *string   `json:"image_url,omitempty"`
+	IsAvailable    *bool     `json:"is_available,omitempty"`
+	Name           *string   `json:"name,omitempty"`
+	PortionWeightG *int      `json:"portion_weight_g,omitempty"`
+	PriceMinor     *int      `json:"price_minor,omitempty"`
+	ProteinG       *float32  `json:"protein_g,omitempty"`
+	TagIds         *[]int    `json:"tag_ids,omitempty"`
 }
 
 // PatchOrderStatusRequest defines model for PatchOrderStatusRequest.
@@ -523,6 +538,13 @@ type PatchProfileRequest struct {
 	FirstName *string   `json:"first_name,omitempty"`
 	LastName  *string   `json:"last_name,omitempty"`
 	Phone     *string   `json:"phone,omitempty"`
+}
+
+// PatchTagRequest defines model for PatchTagRequest.
+type PatchTagRequest struct {
+	Color *string `json:"color,omitempty"`
+	Name  *string `json:"name,omitempty"`
+	Slug  *string `json:"slug,omitempty"`
 }
 
 // PaymentMethod defines model for PaymentMethod.
@@ -545,14 +567,14 @@ type Profile struct {
 
 // QueryEvent defines model for QueryEvent.
 type QueryEvent struct {
-	ChatId            *openapi_types.UUID   `json:"chat_id,omitempty"`
-	CreatedAt         time.Time             `json:"created_at"`
-	DetectedAllergens *[]string             `json:"detected_allergens,omitempty"`
-	DetectedDietary   *[]string             `json:"detected_dietary,omitempty"`
-	Id                openapi_types.UUID    `json:"id"`
-	RecommendedIds    *[]openapi_types.UUID `json:"recommended_ids,omitempty"`
-	Text              string                `json:"text"`
-	UserId            openapi_types.UUID    `json:"user_id"`
+	ChatId            *openapi_types.UUID `json:"chat_id,omitempty"`
+	CreatedAt         time.Time           `json:"created_at"`
+	DetectedAllergens *[]string           `json:"detected_allergens,omitempty"`
+	DetectedDietary   *[]string           `json:"detected_dietary,omitempty"`
+	Id                openapi_types.UUID  `json:"id"`
+	RecommendedIds    *[]int              `json:"recommended_ids,omitempty"`
+	Text              string              `json:"text"`
+	UserId            openapi_types.UUID  `json:"user_id"`
 }
 
 // QueryEventList defines model for QueryEventList.
@@ -587,6 +609,20 @@ type SessionInfo struct {
 // SessionInfoRole defines model for SessionInfo.Role.
 type SessionInfoRole string
 
+// Tag defines model for Tag.
+type Tag struct {
+	// Color hex, например #E53935
+	Color string `json:"color"`
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+	Slug  string `json:"slug"`
+}
+
+// TagList defines model for TagList.
+type TagList struct {
+	Items []Tag `json:"items"`
+}
+
 // CSRFToken defines model for CSRFToken.
 type CSRFToken = string
 
@@ -597,10 +633,13 @@ type Limit = int
 type Offset = int
 
 // PathDishID defines model for PathDishID.
-type PathDishID = openapi_types.UUID
+type PathDishID = int
 
 // PathID defines model for PathID.
 type PathID = openapi_types.UUID
+
+// PathIntID defines model for PathIntID.
+type PathIntID = int
 
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
@@ -661,8 +700,13 @@ type AdminUpdateDishParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
-// AdminSetDishAvailabilityParams defines parameters for AdminSetDishAvailability.
-type AdminSetDishAvailabilityParams struct {
+// AdminUploadDishImageMultipartBody defines parameters for AdminUploadDishImage.
+type AdminUploadDishImageMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
+// AdminUploadDishImageParams defines parameters for AdminUploadDishImage.
+type AdminUploadDishImageParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
@@ -678,6 +722,21 @@ type AdminListOrdersParams struct {
 
 // AdminUpdateOrderStatusParams defines parameters for AdminUpdateOrderStatus.
 type AdminUpdateOrderStatusParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminCreateTagParams defines parameters for AdminCreateTag.
+type AdminCreateTagParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminDeleteTagParams defines parameters for AdminDeleteTag.
+type AdminDeleteTagParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminUpdateTagParams defines parameters for AdminUpdateTag.
+type AdminUpdateTagParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
@@ -752,16 +811,18 @@ type SendMessageParams struct {
 
 // ListDishesParams defines parameters for ListDishes.
 type ListDishesParams struct {
-	// Category код категории
-	Category        *string   `form:"category,omitempty" json:"category,omitempty"`
-	ExcludeAllergen *[]string `form:"exclude_allergen,omitempty" json:"exclude_allergen,omitempty"`
-	Dietary         *string   `form:"dietary,omitempty" json:"dietary,omitempty"`
-	MaxSpiciness    *int      `form:"max_spiciness,omitempty" json:"max_spiciness,omitempty"`
+	CategoryId *int `form:"category_id,omitempty" json:"category_id,omitempty"`
+
+	// Available по умолчанию true; false вернёт всё включая стоп-лист
+	Available *bool `form:"available,omitempty" json:"available,omitempty"`
 
 	// Q поиск по названию
-	Q      *string `form:"q,omitempty" json:"q,omitempty"`
-	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset *Offset `form:"offset,omitempty" json:"offset,omitempty"`
+	Q                *string   `form:"q,omitempty" json:"q,omitempty"`
+	ExcludeAllergens *[]string `form:"exclude_allergens,omitempty" json:"exclude_allergens,omitempty"`
+	Dietary          *[]string `form:"dietary,omitempty" json:"dietary,omitempty"`
+	TagIds           *[]int    `form:"tag_ids,omitempty" json:"tag_ids,omitempty"`
+	Limit            *Limit    `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset           *Offset   `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
 // ListOrdersParams defines parameters for ListOrders.
@@ -793,11 +854,17 @@ type AdminCreateDishJSONRequestBody = CreateDishRequest
 // AdminUpdateDishJSONRequestBody defines body for AdminUpdateDish for application/json ContentType.
 type AdminUpdateDishJSONRequestBody = PatchDishRequest
 
-// AdminSetDishAvailabilityJSONRequestBody defines body for AdminSetDishAvailability for application/json ContentType.
-type AdminSetDishAvailabilityJSONRequestBody = PatchAvailabilityRequest
+// AdminUploadDishImageMultipartRequestBody defines body for AdminUploadDishImage for multipart/form-data ContentType.
+type AdminUploadDishImageMultipartRequestBody AdminUploadDishImageMultipartBody
 
 // AdminUpdateOrderStatusJSONRequestBody defines body for AdminUpdateOrderStatus for application/json ContentType.
 type AdminUpdateOrderStatusJSONRequestBody = PatchOrderStatusRequest
+
+// AdminCreateTagJSONRequestBody defines body for AdminCreateTag for application/json ContentType.
+type AdminCreateTagJSONRequestBody = CreateTagRequest
+
+// AdminUpdateTagJSONRequestBody defines body for AdminUpdateTag for application/json ContentType.
+type AdminUpdateTagJSONRequestBody = PatchTagRequest
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody = LoginRequest

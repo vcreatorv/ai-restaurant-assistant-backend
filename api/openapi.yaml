@@ -27,6 +27,8 @@ tags:
     description: Корзина текущего пользователя
   - name: orders
     description: Заказы текущего пользователя
+  - name: categories
+    description: Публичный справочник категорий
   - name: admin-menu
     description: Управление меню (только role=admin)
   - name: admin-orders
@@ -165,11 +167,12 @@ paths:
 
   # ===== MENU =====
 
-  /menu/categories:
+  /categories:
     get:
       operationId: listCategories
-      tags: [menu]
-      summary: Список категорий
+      tags: [categories]
+      summary: Список доступных категорий
+      security: []
       responses:
         '200':
           description: Категории
@@ -177,17 +180,19 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/CategoryList' }
 
-  /menu/dishes:
+  /menu:
     get:
       operationId: listDishes
       tags: [menu]
-      summary: Каталог блюд
+      summary: Каталог блюд с фильтрами
+      security: []
       parameters:
-        - { in: query, name: category,         schema: { type: string }, description: "код категории" }
-        - { in: query, name: exclude_allergen, schema: { type: array, items: { type: string } }, style: form, explode: true }
-        - { in: query, name: dietary,          schema: { type: string } }
-        - { in: query, name: max_spiciness,    schema: { type: integer, minimum: 0, maximum: 5 } }
-        - { in: query, name: q,                schema: { type: string }, description: "поиск по названию" }
+        - { in: query, name: category_id,        schema: { type: integer, minimum: 1 } }
+        - { in: query, name: available,          schema: { type: boolean }, description: "по умолчанию true; false вернёт всё включая стоп-лист" }
+        - { in: query, name: q,                  schema: { type: string }, description: "поиск по названию" }
+        - { in: query, name: exclude_allergens,  schema: { type: array, items: { type: string } }, style: form, explode: true }
+        - { in: query, name: dietary,            schema: { type: array, items: { type: string } }, style: form, explode: true }
+        - { in: query, name: tag_ids,            schema: { type: array, items: { type: integer } }, style: form, explode: true }
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
       responses:
@@ -197,13 +202,14 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/DishList' }
 
-  /menu/dishes/{id}:
+  /menu/{id}:
     get:
       operationId: getDish
       tags: [menu]
       summary: Детали блюда
+      security: []
       parameters:
-        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/PathIntID'
       responses:
         '200':
           description: Блюдо
@@ -211,30 +217,6 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Dish' }
         '404': { $ref: '#/components/responses/NotFound' }
-
-  /menu/allergens:
-    get:
-      operationId: listAllergens
-      tags: [menu]
-      summary: Справочник аллергенов
-      responses:
-        '200':
-          description: Аллергены
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/AllergenList' }
-
-  /menu/dietary:
-    get:
-      operationId: listDietary
-      tags: [menu]
-      summary: Справочник диетических предпочтений
-      responses:
-        '200':
-          description: Диеты
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/DietaryList' }
 
   # ===== CHATS =====
 
@@ -474,7 +456,7 @@ paths:
 
   # ===== ADMIN: MENU =====
 
-  /admin/menu/categories:
+  /admin/categories:
     post:
       operationId: adminCreateCategory
       tags: [admin-menu]
@@ -497,13 +479,13 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
 
-  /admin/menu/categories/{id}:
+  /admin/categories/{id}:
     patch:
       operationId: adminUpdateCategory
       tags: [admin-menu]
       summary: Обновить категорию
       parameters:
-        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/PathIntID'
         - $ref: '#/components/parameters/CSRFToken'
       requestBody:
         required: true
@@ -525,7 +507,7 @@ paths:
       tags: [admin-menu]
       summary: Удалить категорию
       parameters:
-        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/PathIntID'
         - $ref: '#/components/parameters/CSRFToken'
       responses:
         '204': { description: Удалено }
@@ -538,7 +520,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
-  /admin/menu/dishes:
+  /admin/menu:
     post:
       operationId: adminCreateDish
       tags: [admin-menu]
@@ -552,21 +534,22 @@ paths:
             schema: { $ref: '#/components/schemas/CreateDishRequest' }
       responses:
         '201':
-          description: Создано; embedding поставлен в очередь
+          description: Создано
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Dish' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
 
-  /admin/menu/dishes/{id}:
+  /admin/menu/{id}:
     patch:
       operationId: adminUpdateDish
       tags: [admin-menu]
-      summary: Обновить блюдо (пересчёт embedding при изменении description/ingredients)
+      summary: Обновить блюдо
       parameters:
-        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/PathIntID'
         - $ref: '#/components/parameters/CSRFToken'
       requestBody:
         required: true
@@ -586,35 +569,123 @@ paths:
     delete:
       operationId: adminDeleteDish
       tags: [admin-menu]
-      summary: Удалить блюдо (soft delete)
+      summary: Снять блюдо со стоп-листа (soft delete — is_available=false)
       parameters:
-        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/PathIntID'
         - $ref: '#/components/parameters/CSRFToken'
       responses:
-        '204': { description: Помечено удалённым }
+        '204': { description: Помечено недоступным }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
-  /admin/menu/dishes/{id}/availability:
-    patch:
-      operationId: adminSetDishAvailability
+  /admin/menu/{id}/image:
+    post:
+      operationId: adminUploadDishImage
       tags: [admin-menu]
-      summary: Обновить стоп-лист (available + reason)
+      summary: Загрузить картинку блюда (multipart) в S3 и сохранить URL
       parameters:
-        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/PathIntID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Обновлённое блюдо с новым image_url
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dish' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '413':
+          description: Файл слишком большой
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '415':
+          description: Неподдерживаемый mime-type
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /admin/tags:
+    post:
+      operationId: adminCreateTag
+      tags: [admin-menu]
+      summary: Создать тег
+      parameters:
         - $ref: '#/components/parameters/CSRFToken'
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/PatchAvailabilityRequest' }
+            schema: { $ref: '#/components/schemas/CreateTagRequest' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tag' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      operationId: adminListTags
+      tags: [admin-menu]
+      summary: Список тегов (для админ-формы блюда)
+      responses:
+        '200':
+          description: Теги
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TagList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/tags/{id}:
+    patch:
+      operationId: adminUpdateTag
+      tags: [admin-menu]
+      summary: Обновить тег
+      parameters:
+        - $ref: '#/components/parameters/PathIntID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchTagRequest' }
       responses:
         '200':
           description: Обновлено
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Dish' }
+              schema: { $ref: '#/components/schemas/Tag' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: adminDeleteTag
+      tags: [admin-menu]
+      summary: Удалить тег (отвяжется от всех блюд)
+      parameters:
+        - $ref: '#/components/parameters/PathIntID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Удалено }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
@@ -739,11 +810,16 @@ components:
       name: id
       required: true
       schema: { type: string, format: uuid }
+    PathIntID:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
     PathDishID:
       in: path
       name: dish_id
       required: true
-      schema: { type: string, format: uuid }
+      schema: { type: integer, minimum: 1 }
     Limit:
       in: query
       name: limit
@@ -910,15 +986,18 @@ components:
 
     # ----- menu -----
 
+    Cuisine:
+      type: string
+      enum: [russian, italian, japanese, french, asian, european, american]
+
     Category:
       type: object
-      required: [id, code, name, sort_order, is_active]
+      required: [id, name, sort_order, is_available]
       properties:
-        id:         { type: string, format: uuid }
-        code:       { type: string }
-        name:       { type: string }
-        sort_order: { type: integer }
-        is_active:  { type: boolean }
+        id:           { type: integer, minimum: 1 }
+        name:         { type: string }
+        sort_order:   { type: integer }
+        is_available: { type: boolean }
 
     CategoryList:
       type: object
@@ -926,55 +1005,45 @@ components:
       properties:
         items: { type: array, items: { $ref: '#/components/schemas/Category' } }
 
-    Allergen:
+    Tag:
       type: object
-      required: [code, name]
+      required: [id, name, slug, color]
       properties:
-        code: { type: string }
-        name: { type: string }
-        icon: { type: string, nullable: true }
+        id:    { type: integer, minimum: 1 }
+        name:  { type: string }
+        slug:  { type: string }
+        color: { type: string, description: "hex, например #E53935" }
 
-    AllergenList:
+    TagList:
       type: object
       required: [items]
       properties:
-        items: { type: array, items: { $ref: '#/components/schemas/Allergen' } }
-
-    Dietary:
-      type: object
-      required: [code, name]
-      properties:
-        code: { type: string }
-        name: { type: string }
-        icon: { type: string, nullable: true }
-
-    DietaryList:
-      type: object
-      required: [items]
-      properties:
-        items: { type: array, items: { $ref: '#/components/schemas/Dietary' } }
+        items: { type: array, items: { $ref: '#/components/schemas/Tag' } }
 
     Dish:
       type: object
-      required: [id, category_id, name, description, price, allergens, dietary, tags, ingredients, available]
+      required:
+        [id, category_id, name, description, composition, image_url,
+         price_minor, currency, cuisine, allergens, dietary, tags, is_available]
       properties:
-        id:               { type: string, format: uuid }
-        category_id:      { type: string, format: uuid }
+        id:               { type: integer, minimum: 1 }
+        category_id:      { type: integer, minimum: 1 }
         name:             { type: string }
         description:      { type: string }
-        price:            { type: string, description: "decimal, e.g. \"890.00\"" }
-        weight_label:     { type: string, nullable: true }
-        calories:         { type: integer, nullable: true }
-        spiciness:        { type: integer, minimum: 0, maximum: 5 }
+        composition:      { type: string }
+        image_url:        { type: string }
+        price_minor:      { type: integer, minimum: 1, maximum: 100000000 }
+        currency:         { type: string, example: "RUB" }
+        calories_kcal:    { type: integer, nullable: true, minimum: 0 }
+        protein_g:        { type: number, format: float, nullable: true, minimum: 0 }
+        fat_g:            { type: number, format: float, nullable: true, minimum: 0 }
+        carbs_g:          { type: number, format: float, nullable: true, minimum: 0 }
+        portion_weight_g: { type: integer, nullable: true, minimum: 1 }
+        cuisine:          { $ref: '#/components/schemas/Cuisine' }
         allergens:        { type: array, items: { type: string } }
         dietary:          { type: array, items: { type: string } }
-        tags:             { type: array, items: { type: string } }
-        ingredients:      { type: array, items: { type: string } }
-        pairs_well_with:  { type: array, items: { type: string, format: uuid } }
-        image_url:        { type: string, nullable: true }
-        available:        { type: boolean }
-        unavailable_reason: { type: string, nullable: true }
-        cooking_time_min: { type: integer, nullable: true }
+        tags:             { type: array, items: { $ref: '#/components/schemas/Tag' } }
+        is_available:     { type: boolean }
 
     DishList:
       type: object
@@ -991,7 +1060,7 @@ components:
       type: object
       required: [dish_id, name, price, quantity, line_total, sort_order, available]
       properties:
-        dish_id:    { type: string, format: uuid }
+        dish_id:    { type: integer, minimum: 1 }
         name:       { type: string }
         price:      { type: string }
         quantity:   { type: integer, minimum: 1 }
@@ -1006,7 +1075,7 @@ components:
       required: [code, dish_id]
       properties:
         code:    { type: string, example: "dish_unavailable" }
-        dish_id: { type: string, format: uuid }
+        dish_id: { type: integer, minimum: 1 }
 
     Cart:
       type: object
@@ -1020,7 +1089,7 @@ components:
       type: object
       required: [dish_id, quantity]
       properties:
-        dish_id:  { type: string, format: uuid }
+        dish_id:  { type: integer, minimum: 1 }
         quantity: { type: integer, minimum: 1 }
         note:     { type: string, nullable: true }
 
@@ -1037,7 +1106,7 @@ components:
       type: object
       required: [dish_id, dish_name, dish_price, quantity, line_total, sort_order]
       properties:
-        dish_id:    { type: string, format: uuid, nullable: true }
+        dish_id:    { type: integer, minimum: 1, nullable: true }
         dish_name:  { type: string }
         dish_price: { type: string }
         quantity:   { type: integer, minimum: 1 }
@@ -1116,7 +1185,7 @@ components:
         chat_id:              { type: string, format: uuid }
         role:                 { $ref: '#/components/schemas/MessageRole' }
         content:              { type: string }
-        recommended_dish_ids: { type: array, items: { type: string, format: uuid } }
+        recommended_dish_ids: { type: array, items: { type: integer, minimum: 1 } }
         created_at:           { type: string, format: date-time }
 
     ChatWithMessages:
@@ -1145,64 +1214,76 @@ components:
 
     CreateCategoryRequest:
       type: object
-      required: [code, name, sort_order]
+      required: [name]
       properties:
-        code:       { type: string }
-        name:       { type: string }
-        sort_order: { type: integer }
-        is_active:  { type: boolean, default: true }
+        name:         { type: string, minLength: 1, maxLength: 100 }
+        sort_order:   { type: integer, default: 0 }
+        is_available: { type: boolean, default: true }
 
     PatchCategoryRequest:
       type: object
       properties:
-        name:       { type: string }
-        sort_order: { type: integer }
-        is_active:  { type: boolean }
+        name:         { type: string, minLength: 1, maxLength: 100 }
+        sort_order:   { type: integer }
+        is_available: { type: boolean }
+
+    CreateTagRequest:
+      type: object
+      required: [name, slug]
+      properties:
+        name:  { type: string, minLength: 1, maxLength: 50 }
+        slug:  { type: string, minLength: 1, maxLength: 50, pattern: "^[a-z0-9_-]+$" }
+        color: { type: string, pattern: "^#[0-9a-fA-F]{6}$" }
+
+    PatchTagRequest:
+      type: object
+      properties:
+        name:  { type: string, minLength: 1, maxLength: 50 }
+        slug:  { type: string, minLength: 1, maxLength: 50, pattern: "^[a-z0-9_-]+$" }
+        color: { type: string, pattern: "^#[0-9a-fA-F]{6}$" }
 
     CreateDishRequest:
       type: object
-      required: [category_id, name, description, price]
+      required: [name, category_id, cuisine, price_minor]
       properties:
-        category_id:       { type: string, format: uuid }
-        name:              { type: string }
-        description:       { type: string }
-        price:             { type: string }
-        weight_label:      { type: string, nullable: true }
-        calories:          { type: integer, nullable: true }
-        spiciness:         { type: integer, minimum: 0, maximum: 5 }
-        allergens:         { type: array, items: { type: string } }
-        dietary:           { type: array, items: { type: string } }
-        tags:              { type: array, items: { type: string } }
-        ingredients:       { type: array, items: { type: string } }
-        pairs_well_with:   { type: array, items: { type: string, format: uuid } }
-        image_url:         { type: string, nullable: true }
-        available:         { type: boolean, default: true }
-        cooking_time_min:  { type: integer, nullable: true }
+        name:             { type: string, minLength: 1, maxLength: 200 }
+        description:      { type: string, maxLength: 2000 }
+        composition:      { type: string, maxLength: 1000 }
+        image_url:        { type: string, maxLength: 500 }
+        price_minor:      { type: integer, minimum: 1, maximum: 100000000 }
+        currency:         { type: string, default: "RUB" }
+        calories_kcal:    { type: integer, nullable: true, minimum: 0 }
+        protein_g:        { type: number, format: float, nullable: true, minimum: 0 }
+        fat_g:            { type: number, format: float, nullable: true, minimum: 0 }
+        carbs_g:          { type: number, format: float, nullable: true, minimum: 0 }
+        portion_weight_g: { type: integer, nullable: true, minimum: 1 }
+        cuisine:          { $ref: '#/components/schemas/Cuisine' }
+        category_id:      { type: integer, minimum: 1 }
+        allergens:        { type: array, items: { type: string } }
+        dietary:          { type: array, items: { type: string } }
+        tag_ids:          { type: array, items: { type: integer, minimum: 1 } }
+        is_available:     { type: boolean, default: true }
 
     PatchDishRequest:
       type: object
       properties:
-        category_id:       { type: string, format: uuid }
-        name:              { type: string }
-        description:       { type: string }
-        price:             { type: string }
-        weight_label:      { type: string, nullable: true }
-        calories:          { type: integer, nullable: true }
-        spiciness:         { type: integer, minimum: 0, maximum: 5 }
-        allergens:         { type: array, items: { type: string } }
-        dietary:           { type: array, items: { type: string } }
-        tags:              { type: array, items: { type: string } }
-        ingredients:       { type: array, items: { type: string } }
-        pairs_well_with:   { type: array, items: { type: string, format: uuid } }
-        image_url:         { type: string, nullable: true }
-        cooking_time_min:  { type: integer, nullable: true }
-
-    PatchAvailabilityRequest:
-      type: object
-      required: [available]
-      properties:
-        available: { type: boolean }
-        reason:    { type: string, nullable: true }
+        name:             { type: string, minLength: 1, maxLength: 200 }
+        description:      { type: string, maxLength: 2000 }
+        composition:      { type: string, maxLength: 1000 }
+        image_url:        { type: string, maxLength: 500 }
+        price_minor:      { type: integer, minimum: 1, maximum: 100000000 }
+        currency:         { type: string }
+        calories_kcal:    { type: integer, nullable: true, minimum: 0 }
+        protein_g:        { type: number, format: float, nullable: true, minimum: 0 }
+        fat_g:            { type: number, format: float, nullable: true, minimum: 0 }
+        carbs_g:          { type: number, format: float, nullable: true, minimum: 0 }
+        portion_weight_g: { type: integer, nullable: true, minimum: 1 }
+        cuisine:          { $ref: '#/components/schemas/Cuisine' }
+        category_id:      { type: integer, minimum: 1 }
+        allergens:        { type: array, items: { type: string } }
+        dietary:          { type: array, items: { type: string } }
+        tag_ids:          { type: array, items: { type: integer, minimum: 1 } }
+        is_available:     { type: boolean }
 
     # ----- admin orders -----
 
@@ -1231,7 +1312,7 @@ components:
             type: object
             required: [dish_id, name, count]
             properties:
-              dish_id: { type: string, format: uuid }
+              dish_id: { type: integer, minimum: 1 }
               name:    { type: string }
               count:   { type: integer }
         top_allergens_excluded:
@@ -1254,7 +1335,7 @@ components:
         text:              { type: string }
         detected_allergens: { type: array, items: { type: string } }
         detected_dietary:  { type: array, items: { type: string } }
-        recommended_ids:   { type: array, items: { type: string, format: uuid } }
+        recommended_ids:   { type: array, items: { type: integer, minimum: 1 } }
 
     QueryEventList:
       type: object

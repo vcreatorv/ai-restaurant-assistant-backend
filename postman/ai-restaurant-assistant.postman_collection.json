@@ -1,36 +1,21 @@
 {
   "info": {
-    "name": "AI Restaurant Assistant — Auth runbook",
-    "description": "End-to-end прогон auth + profile по POSTMAN.md.\n\nКоллекция:\n- автоматически подставляет X-CSRF-Token из collection variable `csrf`;\n- автоматически обновляет `csrf` после ответов /auth/session, /auth/register, /auth/login;\n- использует cookie jar Postman (sessionid сохраняется между запросами).",
+    "name": "AI Restaurant Assistant — runbook",
+    "description": "End-to-end прогон auth + profile + menu (public + admin) + image upload.\n\nКоллекция:\n- автоматически подставляет X-CSRF-Token из collection variable `csrf`;\n- автоматически обновляет `csrf` после ответов /auth/session, /auth/register, /auth/login;\n- использует cookie jar Postman (session_id сохраняется между запросами);\n- в Tests запросов admin-create операции сохраняют id в коллекционные переменные (categoryId, tagId, dishId).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8081/api/v1",
-      "type": "string"
-    },
-    {
-      "key": "csrf",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "email",
-      "value": "test@example.com",
-      "type": "string"
-    },
-    {
-      "key": "password",
-      "value": "secret123",
-      "type": "string"
-    },
-    {
-      "key": "newPassword",
-      "value": "newsecret456",
-      "type": "string"
-    }
+    { "key": "baseUrl",       "value": "http://localhost:8081/api/v1", "type": "string" },
+    { "key": "csrf",          "value": "",                              "type": "string" },
+    { "key": "email",         "value": "test@example.com",              "type": "string" },
+    { "key": "password",      "value": "secret123",                     "type": "string" },
+    { "key": "newPassword",   "value": "newsecret456",                  "type": "string" },
+    { "key": "adminEmail",    "value": "admin@example.com",             "type": "string" },
+    { "key": "adminPassword", "value": "adminpass1",                    "type": "string" },
+    { "key": "categoryId",    "value": "",                              "type": "string" },
+    { "key": "tagId",         "value": "",                              "type": "string" },
+    { "key": "dishId",        "value": "",                              "type": "string" }
   ],
   "event": [
     {
@@ -64,402 +49,513 @@
   ],
   "item": [
     {
-      "name": "1. Bootstrap session (GET /auth/session)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/auth/session",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "session"]
-        }
-      },
-      "event": [
+      "name": "Auth",
+      "description": "Базовый прогон auth + profile (см. POSTMAN.md шаги 1–13).",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 OK', () => pm.response.to.have.status(200));",
-              "const body = pm.response.json();",
-              "pm.test('is_guest = true', () => pm.expect(body.is_guest).to.eql(true));",
-              "pm.test('csrf set', () => pm.expect(body.csrf).to.be.a('string').and.not.empty);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "2. Register (POST /auth/register)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/auth/register",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "register"]
+          "name": "1. Bootstrap session (GET /auth/session)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/session", "host": ["{{baseUrl}}"], "path": ["auth", "session"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.test('is_guest = true', () => pm.expect(body.is_guest).to.eql(true));",
+                "pm.test('csrf set', () => pm.expect(body.csrf).to.be.a('string').and.not.empty);"
+              ] }
+            }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 OK', () => pm.response.to.have.status(200));",
-              "const body = pm.response.json();",
-              "pm.test('is_guest = false', () => pm.expect(body.is_guest).to.eql(false));",
-              "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));",
-              "pm.test('user_id присвоен', () => pm.expect(body.user_id).to.be.a('string'));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "3. Verify session (GET /auth/session)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/auth/session",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "session"]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 OK', () => pm.response.to.have.status(200));",
-              "const body = pm.response.json();",
-              "pm.test('is_guest = false', () => pm.expect(body.is_guest).to.eql(false));",
-              "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "4. Get profile (GET /profile)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/profile",
-          "host": ["{{baseUrl}}"],
-          "path": ["profile"]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 OK', () => pm.response.to.have.status(200));",
-              "const body = pm.response.json();",
-              "pm.test('email совпадает', () => pm.expect(body.email).to.eql(pm.collectionVariables.get('email')));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "5. Patch profile (PATCH /profile)",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/profile",
-          "host": ["{{baseUrl}}"],
-          "path": ["profile"]
+          "name": "2. Register (POST /auth/register)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.test('is_guest = false', () => pm.expect(body.is_guest).to.eql(false));",
+                "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));"
+              ] }
+            }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"first_name\": \"Иван\",\n  \"last_name\": \"Петров\",\n  \"phone\": \"+79001234567\",\n  \"allergens\": [\"shellfish\"],\n  \"dietary\": [\"vegan\"]\n}"
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 OK', () => pm.response.to.have.status(200));",
-              "const body = pm.response.json();",
-              "pm.test('first_name обновлён', () => pm.expect(body.first_name).to.eql('Иван'));",
-              "pm.test('allergens содержит shellfish', () => pm.expect(body.allergens).to.include('shellfish'));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "6. Change password (PATCH /auth/password)",
-      "request": {
-        "method": "PATCH",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/auth/password",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "password"]
+          "name": "3. Verify session (GET /auth/session)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/session", "host": ["{{baseUrl}}"], "path": ["auth", "session"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                "const body = pm.response.json();",
+                "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));"
+              ] }
+            }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"current_password\": \"{{password}}\",\n  \"new_password\": \"{{newPassword}}\"\n}"
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
+          "name": "4. Get profile (GET /profile)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "5. Patch profile (PATCH /profile)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"first_name\": \"Иван\",\n  \"last_name\": \"Петров\",\n  \"phone\": \"+79001234567\",\n  \"allergens\": [\"shellfish\"],\n  \"dietary\": [\"vegan\"]\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('200 OK', () => pm.response.to.have.status(200));"
+              ] }
+            }
+          ]
+        },
+        {
+          "name": "6. Change password (PATCH /auth/password)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/password", "host": ["{{baseUrl}}"], "path": ["auth", "password"] },
+            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"{{password}}\",\n  \"new_password\": \"{{newPassword}}\"\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
               "pm.test('204 No Content', () => pm.response.to.have.status(204));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "7. Logout (POST /auth/logout)",
-      "request": {
-        "method": "POST",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/auth/logout",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "logout"]
-        }
-      },
-      "event": [
+            ] } }
+          ]
+        },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
+          "name": "7. Logout (POST /auth/logout)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
               "pm.test('204 No Content', () => pm.response.to.have.status(204));",
               "pm.collectionVariables.set('csrf', '');"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "8. Guest after logout (GET /auth/session)",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/auth/session",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "session"]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('200 OK', () => pm.response.to.have.status(200));",
-              "const body = pm.response.json();",
-              "pm.test('is_guest = true', () => pm.expect(body.is_guest).to.eql(true));",
-              "pm.test('user_id = null', () => pm.expect(body.user_id).to.be.null);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "9. Login with new password (POST /auth/login)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/auth/login",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "login"]
+            ] } }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{newPassword}}\"\n}"
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
+          "name": "8. Guest after logout (GET /auth/session)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/auth/session", "host": ["{{baseUrl}}"], "path": ["auth", "session"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
               "pm.test('200 OK', () => pm.response.to.have.status(200));",
-              "const body = pm.response.json();",
-              "pm.test('is_guest = false', () => pm.expect(body.is_guest).to.eql(false));",
-              "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "10. Login wrong password (POST /auth/login → 401)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/auth/login",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "login"]
+              "pm.test('is_guest = true', () => pm.expect(pm.response.json().is_guest).to.eql(true));"
+            ] } }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrong\"\n}"
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
+          "name": "9. Login with new password (POST /auth/login)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{newPassword}}\"\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('role = customer', () => pm.expect(pm.response.json().role).to.eql('customer'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "10. Login wrong password (POST /auth/login → 401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrong\"\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
               "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
-              "const body = pm.response.json();",
-              "pm.test('code = invalid_credentials', () => pm.expect(body.error.code).to.eql('invalid_credentials'));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "11. Duplicate email (POST /auth/register → 409)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/auth/register",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "register"]
+              "pm.test('code = invalid_credentials', () => pm.expect(pm.response.json().error.code).to.eql('invalid_credentials'));"
+            ] } }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"anotherpass\"\n}"
-        }
-      },
-      "event": [
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
+          "name": "11. Duplicate email (POST /auth/register → 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"anotherpass\"\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
               "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
-              "const body = pm.response.json();",
-              "pm.test('code = email_already_taken', () => pm.expect(body.error.code).to.eql('email_already_taken'));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "12. Profile w/o auth (Logout then GET /profile → 401)",
-      "description": "Логаутимся и сразу пробуем GET /profile.",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/profile",
-          "host": ["{{baseUrl}}"],
-          "path": ["profile"]
-        }
-      },
-      "event": [
+              "pm.test('code = email_already_taken', () => pm.expect(pm.response.json().error.code).to.eql('email_already_taken'));"
+            ] } }
+          ]
+        },
         {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
+          "name": "12. Profile w/o auth (Logout then GET /profile → 401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] }
+          },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
               "const baseUrl = pm.collectionVariables.get('baseUrl');",
               "const csrf = pm.collectionVariables.get('csrf');",
               "pm.sendRequest({",
               "    url: baseUrl + '/auth/logout',",
               "    method: 'POST',",
               "    header: { 'X-CSRF-Token': csrf || '' }",
-              "}, () => {",
-              "    pm.collectionVariables.set('csrf', '');",
-              "});"
-            ]
-          }
-        },
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
+              "}, () => { pm.collectionVariables.set('csrf', ''); });"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
               "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "13. CSRF missing (POST /auth/register без X-CSRF-Token → 403)",
-      "description": "Перед запросом скрипт сбрасывает csrf, чтобы pre-request не подставлял хедер.",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/auth/register",
-          "host": ["{{baseUrl}}"],
-          "path": ["auth", "register"]
+            ] } }
+          ]
         },
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"another@example.com\",\n  \"password\": \"secret123\"\n}"
-        }
-      },
-      "event": [
         {
-          "listen": "prerequest",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "// Bootstrap новой гостевой сессии (cookie), но csrf не сохраняем,",
-              "// чтобы collection-level pre-request не вставил заголовок.",
+          "name": "13. CSRF missing (POST /auth/register без X-CSRF-Token → 403)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"another@example.com\",\n  \"password\": \"secret123\"\n}" }
+          },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
               "const baseUrl = pm.collectionVariables.get('baseUrl');",
               "pm.sendRequest({ url: baseUrl + '/auth/session', method: 'GET' }, () => {",
               "    pm.collectionVariables.set('csrf', '');",
               "});"
-            ]
-          }
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+            ] } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Menu — public",
+      "description": "Доступно гостям (без логина). Пройди эти запросы как guest или customer.",
+      "item": [
+        {
+          "name": "List categories (GET /categories)",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('items array', () => pm.expect(pm.response.json().items).to.be.an('array'));"
+          ] } }]
         },
         {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
-            ]
-          }
+          "name": "List dishes (GET /menu)",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/menu?limit=20&offset=0", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+            { "key": "limit",  "value": "20" },
+            { "key": "offset", "value": "0" }
+          ] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('shape', () => { pm.expect(body).to.have.all.keys('items', 'total', 'limit', 'offset'); });"
+          ] } }]
+        },
+        {
+          "name": "List dishes — filtered (GET /menu?category_id&exclude_allergens&dietary&q&tag_ids)",
+          "request": { "method": "GET", "header": [], "url": {
+            "raw": "{{baseUrl}}/menu?category_id={{categoryId}}&exclude_allergens=gluten&exclude_allergens=dairy&dietary=vegan&q=&tag_ids={{tagId}}&limit=20&offset=0",
+            "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "category_id",       "value": "{{categoryId}}" },
+              { "key": "exclude_allergens", "value": "gluten" },
+              { "key": "exclude_allergens", "value": "dairy" },
+              { "key": "dietary",           "value": "vegan" },
+              { "key": "q",                 "value": "" },
+              { "key": "tag_ids",           "value": "{{tagId}}" },
+              { "key": "limit",             "value": "20" },
+              { "key": "offset",            "value": "0" }
+            ] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Get dish (GET /menu/{id})",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/menu/{{dishId}}", "host": ["{{baseUrl}}"], "path": ["menu", "{{dishId}}"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json();",
+            "pm.test('id matches', () => pm.expect(String(d.id)).to.eql(pm.collectionVariables.get('dishId')));"
+          ] } }]
+        },
+        {
+          "name": "Get dish — not found (GET /menu/999999 → 404)",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/menu/999999", "host": ["{{baseUrl}}"], "path": ["menu", "999999"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404', () => pm.response.to.have.status(404));",
+            "pm.test('code = dish_not_found', () => pm.expect(pm.response.json().error.code).to.eql('dish_not_found'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — login",
+      "description": "Логин под admin'ом. Перед запуском убедись, что в БД есть admin: см. POSTMAN.md, секция «Подготовить admin».",
+      "item": [
+        {
+          "name": "Bootstrap session (GET /auth/session)",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/auth/session", "host": ["{{baseUrl}}"], "path": ["auth", "session"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Login as admin (POST /auth/login)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('role = admin', () => pm.expect(pm.response.json().role).to.eql('admin'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — categories",
+      "description": "Требует роль admin. Создаёт categoryId.",
+      "item": [
+        {
+          "name": "Create category (POST /admin/categories)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/categories", "host": ["{{baseUrl}}"], "path": ["admin", "categories"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Супы\",\n  \"sort_order\": 10,\n  \"is_available\": true\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.response.to.have.status(201));",
+            "const body = pm.response.json();",
+            "pm.collectionVariables.set('categoryId', String(body.id));",
+            "pm.test('id captured', () => pm.expect(body.id).to.be.a('number'));"
+          ] } }]
+        },
+        {
+          "name": "Update category (PATCH /admin/categories/{id})",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["admin", "categories", "{{categoryId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"sort_order\": 5\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('sort_order = 5', () => pm.expect(pm.response.json().sort_order).to.eql(5));"
+          ] } }]
+        },
+        {
+          "name": "Create duplicate category → 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/categories", "host": ["{{baseUrl}}"], "path": ["admin", "categories"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Супы\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('409', () => pm.response.to.have.status(409));",
+            "pm.test('code = category_name_taken', () => pm.expect(pm.response.json().error.code).to.eql('category_name_taken'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — tags",
+      "description": "Требует роль admin. Создаёт tagId.",
+      "item": [
+        {
+          "name": "List tags (GET /admin/tags)",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/admin/tags", "host": ["{{baseUrl}}"], "path": ["admin", "tags"] } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Create tag (POST /admin/tags)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/tags", "host": ["{{baseUrl}}"], "path": ["admin", "tags"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Острое\",\n  \"slug\": \"spicy\",\n  \"color\": \"#E53935\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.response.to.have.status(201));",
+            "const body = pm.response.json();",
+            "pm.collectionVariables.set('tagId', String(body.id));"
+          ] } }]
+        },
+        {
+          "name": "Update tag (PATCH /admin/tags/{id})",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/tags/{{tagId}}", "host": ["{{baseUrl}}"], "path": ["admin", "tags", "{{tagId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"color\": \"#FF0000\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — dishes",
+      "description": "Требует роль admin. Создаёт dishId.",
+      "item": [
+        {
+          "name": "Create dish (POST /admin/menu)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/menu", "host": ["{{baseUrl}}"], "path": ["admin", "menu"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Борщ с говядиной\",\n  \"description\": \"Классический борщ на наваристом бульоне со сметаной\",\n  \"composition\": \"Говядина, свёкла, капуста, картофель, морковь, лук, сметана\",\n  \"price_minor\": 45000,\n  \"currency\": \"RUB\",\n  \"calories_kcal\": 320,\n  \"protein_g\": 18.5,\n  \"fat_g\": 15.0,\n  \"carbs_g\": 22.0,\n  \"portion_weight_g\": 350,\n  \"cuisine\": \"russian\",\n  \"category_id\": {{categoryId}},\n  \"allergens\": [\"dairy\"],\n  \"dietary\": [],\n  \"tag_ids\": [{{tagId}}],\n  \"is_available\": true\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.response.to.have.status(201));",
+            "const body = pm.response.json();",
+            "pm.collectionVariables.set('dishId', String(body.id));",
+            "pm.test('tags returned', () => pm.expect(body.tags).to.be.an('array').and.have.lengthOf.at.least(1));"
+          ] } }]
+        },
+        {
+          "name": "Update dish (PATCH /admin/menu/{id})",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/menu/{{dishId}}", "host": ["{{baseUrl}}"], "path": ["admin", "menu", "{{dishId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"price_minor\": 49000,\n  \"description\": \"Обновлённое описание\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('price updated', () => pm.expect(pm.response.json().price_minor).to.eql(49000));"
+          ] } }]
+        },
+        {
+          "name": "Upload image (POST /admin/menu/{id}/image)",
+          "description": "Требует выбрать файл (.jpg/.png/.webp ≤ 5 MiB) в `file`. После запроса в `image_url` будет S3 URL.",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/menu/{{dishId}}/image", "host": ["{{baseUrl}}"], "path": ["admin", "menu", "{{dishId}}", "image"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [], "description": "выбери файл изображения" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('image_url set', () => pm.expect(body.image_url).to.be.a('string').and.not.empty);"
+          ] } }]
+        },
+        {
+          "name": "Soft-delete dish (DELETE /admin/menu/{id})",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/menu/{{dishId}}", "host": ["{{baseUrl}}"], "path": ["admin", "menu", "{{dishId}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('204', () => pm.response.to.have.status(204));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — cleanup",
+      "description": "Удалить созданные тег и категорию (нужно сначала удалить блюдо в стоп-лист — оно не блокирует категорию, но категория не удалится, если в ней остались блюда).",
+      "item": [
+        {
+          "name": "Delete tag (DELETE /admin/tags/{id})",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/tags/{{tagId}}", "host": ["{{baseUrl}}"], "path": ["admin", "tags", "{{tagId}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('204', () => pm.response.to.have.status(204));"
+          ] } }]
+        },
+        {
+          "name": "Delete category — 409 если есть блюда",
+          "description": "После soft-delete блюдо физически остаётся в БД, поэтому категория всё ещё содержит блюдо. Должен быть 409.",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["admin", "categories", "{{categoryId}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('409', () => pm.response.to.have.status(409));",
+            "pm.test('code = category_has_dishes', () => pm.expect(pm.response.json().error.code).to.eql('category_has_dishes'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — negative",
+      "description": "Без admin-роли. Прежде логаут или продолжение под customer'ом.",
+      "item": [
+        {
+          "name": "Customer пытается создать категорию (POST /admin/categories → 403)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/categories", "host": ["{{baseUrl}}"], "path": ["admin", "categories"] },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Закуски\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('403', () => pm.response.to.have.status(403));"
+          ] } }]
         }
       ]
     }

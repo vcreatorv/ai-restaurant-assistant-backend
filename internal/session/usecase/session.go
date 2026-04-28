@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
-
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/session"
+	"github.com/google/uuid"
 )
 
 // Ensure возвращает существующую сессию или создаёт новую анонимную

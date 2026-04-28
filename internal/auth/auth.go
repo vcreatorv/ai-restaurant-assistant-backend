@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
-
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
+	"github.com/google/uuid"
 )
 
 var (
@@ -19,9 +18,18 @@ var (
 // Usecase сценарии аутентификации
 type Usecase interface {
 	// Register регистрирует customer'а
-	Register(ctx context.Context, sessionID uuid.UUID, currentUserID *uuid.UUID, email, password string) (*usecasemodels.User, *usecasemodels.Session, error)
+	Register(
+		ctx context.Context,
+		sessionID uuid.UUID,
+		currentUserID *uuid.UUID,
+		email, password string,
+	) (*usecasemodels.User, *usecasemodels.Session, error)
 	// Login авторизует пользователя
-	Login(ctx context.Context, sessionID uuid.UUID, email, password string) (*usecasemodels.User, *usecasemodels.Session, error)
+	Login(
+		ctx context.Context,
+		sessionID uuid.UUID,
+		email, password string,
+	) (*usecasemodels.User, *usecasemodels.Session, error)
 	// Logout удаляет сессию
 	Logout(ctx context.Context, sessionID uuid.UUID) error
 	// ChangePassword меняет пароль

@@ -14,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"path"
@@ -34,26 +35,26 @@ type ServerInterface interface {
 	// (GET /admin/analytics/queries)
 	AdminListAnalyticsQueries(w http.ResponseWriter, r *http.Request, params AdminListAnalyticsQueriesParams)
 	// Создать категорию
-	// (POST /admin/menu/categories)
+	// (POST /admin/categories)
 	AdminCreateCategory(w http.ResponseWriter, r *http.Request, params AdminCreateCategoryParams)
 	// Удалить категорию
-	// (DELETE /admin/menu/categories/{id})
-	AdminDeleteCategory(w http.ResponseWriter, r *http.Request, id PathID, params AdminDeleteCategoryParams)
+	// (DELETE /admin/categories/{id})
+	AdminDeleteCategory(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminDeleteCategoryParams)
 	// Обновить категорию
-	// (PATCH /admin/menu/categories/{id})
-	AdminUpdateCategory(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateCategoryParams)
+	// (PATCH /admin/categories/{id})
+	AdminUpdateCategory(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateCategoryParams)
 	// Создать блюдо
-	// (POST /admin/menu/dishes)
+	// (POST /admin/menu)
 	AdminCreateDish(w http.ResponseWriter, r *http.Request, params AdminCreateDishParams)
-	// Удалить блюдо (soft delete)
-	// (DELETE /admin/menu/dishes/{id})
-	AdminDeleteDish(w http.ResponseWriter, r *http.Request, id PathID, params AdminDeleteDishParams)
-	// Обновить блюдо (пересчёт embedding при изменении description/ingredients)
-	// (PATCH /admin/menu/dishes/{id})
-	AdminUpdateDish(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateDishParams)
-	// Обновить стоп-лист (available + reason)
-	// (PATCH /admin/menu/dishes/{id}/availability)
-	AdminSetDishAvailability(w http.ResponseWriter, r *http.Request, id PathID, params AdminSetDishAvailabilityParams)
+	// Снять блюдо со стоп-листа (soft delete — is_available=false)
+	// (DELETE /admin/menu/{id})
+	AdminDeleteDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminDeleteDishParams)
+	// Обновить блюдо
+	// (PATCH /admin/menu/{id})
+	AdminUpdateDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateDishParams)
+	// Загрузить картинку блюда (multipart) в S3 и сохранить URL
+	// (POST /admin/menu/{id}/image)
+	AdminUploadDishImage(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUploadDishImageParams)
 	// Список всех заказов с фильтрами
 	// (GET /admin/orders)
 	AdminListOrders(w http.ResponseWriter, r *http.Request, params AdminListOrdersParams)
@@ -63,6 +64,18 @@ type ServerInterface interface {
 	// Сменить статус заказа
 	// (PATCH /admin/orders/{id}/status)
 	AdminUpdateOrderStatus(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateOrderStatusParams)
+	// Список тегов (для админ-формы блюда)
+	// (GET /admin/tags)
+	AdminListTags(w http.ResponseWriter, r *http.Request)
+	// Создать тег
+	// (POST /admin/tags)
+	AdminCreateTag(w http.ResponseWriter, r *http.Request, params AdminCreateTagParams)
+	// Удалить тег (отвяжется от всех блюд)
+	// (DELETE /admin/tags/{id})
+	AdminDeleteTag(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminDeleteTagParams)
+	// Обновить тег
+	// (PATCH /admin/tags/{id})
+	AdminUpdateTag(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateTagParams)
 	// Вход в существующий аккаунт
 	// (POST /auth/login)
 	Login(w http.ResponseWriter, r *http.Request, params LoginParams)
@@ -93,6 +106,9 @@ type ServerInterface interface {
 	// Изменить позицию (quantity / note / sort_order)
 	// (PATCH /cart/items/{dish_id})
 	UpdateCartItem(w http.ResponseWriter, r *http.Request, dishId PathDishID, params UpdateCartItemParams)
+	// Список доступных категорий
+	// (GET /categories)
+	ListCategories(w http.ResponseWriter, r *http.Request)
 	// Список чатов текущего пользователя
 	// (GET /chats)
 	ListChats(w http.ResponseWriter, r *http.Request, params ListChatsParams)
@@ -108,21 +124,12 @@ type ServerInterface interface {
 	// Отправить сообщение; ответ ассистента стримится через SSE
 	// (POST /chats/{id}/messages)
 	SendMessage(w http.ResponseWriter, r *http.Request, id PathID, params SendMessageParams)
-	// Справочник аллергенов
-	// (GET /menu/allergens)
-	ListAllergens(w http.ResponseWriter, r *http.Request)
-	// Список категорий
-	// (GET /menu/categories)
-	ListCategories(w http.ResponseWriter, r *http.Request)
-	// Справочник диетических предпочтений
-	// (GET /menu/dietary)
-	ListDietary(w http.ResponseWriter, r *http.Request)
-	// Каталог блюд
-	// (GET /menu/dishes)
+	// Каталог блюд с фильтрами
+	// (GET /menu)
 	ListDishes(w http.ResponseWriter, r *http.Request, params ListDishesParams)
 	// Детали блюда
-	// (GET /menu/dishes/{id})
-	GetDish(w http.ResponseWriter, r *http.Request, id PathID)
+	// (GET /menu/{id})
+	GetDish(w http.ResponseWriter, r *http.Request, id PathIntID)
 	// Список заказов текущего пользователя
 	// (GET /orders)
 	ListOrders(w http.ResponseWriter, r *http.Request, params ListOrdersParams)
@@ -303,9 +310,9 @@ func (siw *ServerInterfaceWrapper) AdminDeleteCategory(w http.ResponseWriter, r 
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id PathID
+	var id PathIntID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -362,9 +369,9 @@ func (siw *ServerInterfaceWrapper) AdminUpdateCategory(w http.ResponseWriter, r 
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id PathID
+	var id PathIntID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -471,9 +478,9 @@ func (siw *ServerInterfaceWrapper) AdminDeleteDish(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id PathID
+	var id PathIntID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -530,9 +537,9 @@ func (siw *ServerInterfaceWrapper) AdminUpdateDish(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id PathID
+	var id PathIntID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -583,15 +590,15 @@ func (siw *ServerInterfaceWrapper) AdminUpdateDish(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
-// AdminSetDishAvailability operation middleware
-func (siw *ServerInterfaceWrapper) AdminSetDishAvailability(w http.ResponseWriter, r *http.Request) {
+// AdminUploadDishImage operation middleware
+func (siw *ServerInterfaceWrapper) AdminUploadDishImage(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id PathID
+	var id PathIntID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
@@ -604,7 +611,7 @@ func (siw *ServerInterfaceWrapper) AdminSetDishAvailability(w http.ResponseWrite
 	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params AdminSetDishAvailabilityParams
+	var params AdminUploadDishImageParams
 
 	headers := r.Header
 
@@ -632,7 +639,7 @@ func (siw *ServerInterfaceWrapper) AdminSetDishAvailability(w http.ResponseWrite
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AdminSetDishAvailability(w, r, id, params)
+		siw.Handler.AdminUploadDishImage(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -796,6 +803,194 @@ func (siw *ServerInterfaceWrapper) AdminUpdateOrderStatus(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminUpdateOrderStatus(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminListTags operation middleware
+func (siw *ServerInterfaceWrapper) AdminListTags(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListTags(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminCreateTag operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateTag(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminCreateTagParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminCreateTag(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminDeleteTag operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteTag(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id PathIntID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeleteTagParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDeleteTag(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminUpdateTag operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateTag(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id PathIntID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminUpdateTagParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminUpdateTag(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1135,7 +1330,7 @@ func (siw *ServerInterfaceWrapper) RemoveCartItem(w http.ResponseWriter, r *http
 	// ------------- Path parameter "dish_id" -------------
 	var dishId PathDishID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "dish_id", r.PathValue("dish_id"), &dishId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "dish_id", r.PathValue("dish_id"), &dishId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dish_id", Err: err})
 		return
@@ -1194,7 +1389,7 @@ func (siw *ServerInterfaceWrapper) UpdateCartItem(w http.ResponseWriter, r *http
 	// ------------- Path parameter "dish_id" -------------
 	var dishId PathDishID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "dish_id", r.PathValue("dish_id"), &dishId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "dish_id", r.PathValue("dish_id"), &dishId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dish_id", Err: err})
 		return
@@ -1236,6 +1431,20 @@ func (siw *ServerInterfaceWrapper) UpdateCartItem(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateCartItem(w, r, dishId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCategories operation middleware
+func (siw *ServerInterfaceWrapper) ListCategories(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCategories(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1504,109 +1713,27 @@ func (siw *ServerInterfaceWrapper) SendMessage(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// ListAllergens operation middleware
-func (siw *ServerInterfaceWrapper) ListAllergens(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListAllergens(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListCategories operation middleware
-func (siw *ServerInterfaceWrapper) ListCategories(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListCategories(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// ListDietary operation middleware
-func (siw *ServerInterfaceWrapper) ListDietary(w http.ResponseWriter, r *http.Request) {
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListDietary(w, r)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // ListDishes operation middleware
 func (siw *ServerInterfaceWrapper) ListDishes(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListDishesParams
 
-	// ------------- Optional query parameter "category" -------------
+	// ------------- Optional query parameter "category_id" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "category", r.URL.Query(), &params.Category, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "category_id", r.URL.Query(), &params.CategoryId, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "category_id", Err: err})
 		return
 	}
 
-	// ------------- Optional query parameter "exclude_allergen" -------------
+	// ------------- Optional query parameter "available" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "exclude_allergen", r.URL.Query(), &params.ExcludeAllergen, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "available", r.URL.Query(), &params.Available, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "exclude_allergen", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "dietary" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "dietary", r.URL.Query(), &params.Dietary, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dietary", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "max_spiciness" -------------
-
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "max_spiciness", r.URL.Query(), &params.MaxSpiciness, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "max_spiciness", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "available", Err: err})
 		return
 	}
 
@@ -1615,6 +1742,30 @@ func (siw *ServerInterfaceWrapper) ListDishes(w http.ResponseWriter, r *http.Req
 	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "exclude_allergens" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "exclude_allergens", r.URL.Query(), &params.ExcludeAllergens, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "exclude_allergens", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "dietary" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "dietary", r.URL.Query(), &params.Dietary, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "dietary", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "tag_ids" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tag_ids", r.URL.Query(), &params.TagIds, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tag_ids", Err: err})
 		return
 	}
 
@@ -1651,19 +1802,13 @@ func (siw *ServerInterfaceWrapper) GetDish(w http.ResponseWriter, r *http.Reques
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id PathID
+	var id PathIntID
 
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
 	if err != nil {
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
 		return
 	}
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetDish(w, r, id)
@@ -1998,16 +2143,20 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc("GET "+options.BaseURL+"/admin/analytics/overview", wrapper.AdminGetAnalyticsOverview)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/analytics/queries", wrapper.AdminListAnalyticsQueries)
-	m.HandleFunc("POST "+options.BaseURL+"/admin/menu/categories", wrapper.AdminCreateCategory)
-	m.HandleFunc("DELETE "+options.BaseURL+"/admin/menu/categories/{id}", wrapper.AdminDeleteCategory)
-	m.HandleFunc("PATCH "+options.BaseURL+"/admin/menu/categories/{id}", wrapper.AdminUpdateCategory)
-	m.HandleFunc("POST "+options.BaseURL+"/admin/menu/dishes", wrapper.AdminCreateDish)
-	m.HandleFunc("DELETE "+options.BaseURL+"/admin/menu/dishes/{id}", wrapper.AdminDeleteDish)
-	m.HandleFunc("PATCH "+options.BaseURL+"/admin/menu/dishes/{id}", wrapper.AdminUpdateDish)
-	m.HandleFunc("PATCH "+options.BaseURL+"/admin/menu/dishes/{id}/availability", wrapper.AdminSetDishAvailability)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/categories", wrapper.AdminCreateCategory)
+	m.HandleFunc("DELETE "+options.BaseURL+"/admin/categories/{id}", wrapper.AdminDeleteCategory)
+	m.HandleFunc("PATCH "+options.BaseURL+"/admin/categories/{id}", wrapper.AdminUpdateCategory)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/menu", wrapper.AdminCreateDish)
+	m.HandleFunc("DELETE "+options.BaseURL+"/admin/menu/{id}", wrapper.AdminDeleteDish)
+	m.HandleFunc("PATCH "+options.BaseURL+"/admin/menu/{id}", wrapper.AdminUpdateDish)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/menu/{id}/image", wrapper.AdminUploadDishImage)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/orders", wrapper.AdminListOrders)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/orders/{id}", wrapper.AdminGetOrder)
 	m.HandleFunc("PATCH "+options.BaseURL+"/admin/orders/{id}/status", wrapper.AdminUpdateOrderStatus)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/tags", wrapper.AdminListTags)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/tags", wrapper.AdminCreateTag)
+	m.HandleFunc("DELETE "+options.BaseURL+"/admin/tags/{id}", wrapper.AdminDeleteTag)
+	m.HandleFunc("PATCH "+options.BaseURL+"/admin/tags/{id}", wrapper.AdminUpdateTag)
 	m.HandleFunc("POST "+options.BaseURL+"/auth/login", wrapper.Login)
 	m.HandleFunc("POST "+options.BaseURL+"/auth/logout", wrapper.Logout)
 	m.HandleFunc("PATCH "+options.BaseURL+"/auth/password", wrapper.ChangePassword)
@@ -2018,16 +2167,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/cart/items", wrapper.AddCartItem)
 	m.HandleFunc("DELETE "+options.BaseURL+"/cart/items/{dish_id}", wrapper.RemoveCartItem)
 	m.HandleFunc("PATCH "+options.BaseURL+"/cart/items/{dish_id}", wrapper.UpdateCartItem)
+	m.HandleFunc("GET "+options.BaseURL+"/categories", wrapper.ListCategories)
 	m.HandleFunc("GET "+options.BaseURL+"/chats", wrapper.ListChats)
 	m.HandleFunc("POST "+options.BaseURL+"/chats", wrapper.CreateChat)
 	m.HandleFunc("DELETE "+options.BaseURL+"/chats/{id}", wrapper.DeleteChat)
 	m.HandleFunc("GET "+options.BaseURL+"/chats/{id}", wrapper.GetChat)
 	m.HandleFunc("POST "+options.BaseURL+"/chats/{id}/messages", wrapper.SendMessage)
-	m.HandleFunc("GET "+options.BaseURL+"/menu/allergens", wrapper.ListAllergens)
-	m.HandleFunc("GET "+options.BaseURL+"/menu/categories", wrapper.ListCategories)
-	m.HandleFunc("GET "+options.BaseURL+"/menu/dietary", wrapper.ListDietary)
-	m.HandleFunc("GET "+options.BaseURL+"/menu/dishes", wrapper.ListDishes)
-	m.HandleFunc("GET "+options.BaseURL+"/menu/dishes/{id}", wrapper.GetDish)
+	m.HandleFunc("GET "+options.BaseURL+"/menu", wrapper.ListDishes)
+	m.HandleFunc("GET "+options.BaseURL+"/menu/{id}", wrapper.GetDish)
 	m.HandleFunc("GET "+options.BaseURL+"/orders", wrapper.ListOrders)
 	m.HandleFunc("POST "+options.BaseURL+"/orders", wrapper.CreateOrder)
 	m.HandleFunc("GET "+options.BaseURL+"/orders/{id}", wrapper.GetOrder)
@@ -2172,7 +2319,7 @@ func (response AdminCreateCategory409JSONResponse) VisitAdminCreateCategoryRespo
 }
 
 type AdminDeleteCategoryRequestObject struct {
-	Id     PathID `json:"id"`
+	Id     PathIntID `json:"id"`
 	Params AdminDeleteCategoryParams
 }
 
@@ -2225,7 +2372,7 @@ func (response AdminDeleteCategory409JSONResponse) VisitAdminDeleteCategoryRespo
 }
 
 type AdminUpdateCategoryRequestObject struct {
-	Id     PathID `json:"id"`
+	Id     PathIntID `json:"id"`
 	Params AdminUpdateCategoryParams
 	Body   *AdminUpdateCategoryJSONRequestBody
 }
@@ -2324,8 +2471,17 @@ func (response AdminCreateDish403JSONResponse) VisitAdminCreateDishResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
+type AdminCreateDish409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminCreateDish409JSONResponse) VisitAdminCreateDishResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type AdminDeleteDishRequestObject struct {
-	Id     PathID `json:"id"`
+	Id     PathIntID `json:"id"`
 	Params AdminDeleteDishParams
 }
 
@@ -2369,7 +2525,7 @@ func (response AdminDeleteDish404JSONResponse) VisitAdminDeleteDishResponse(w ht
 }
 
 type AdminUpdateDishRequestObject struct {
-	Id     PathID `json:"id"`
+	Id     PathIntID `json:"id"`
 	Params AdminUpdateDishParams
 	Body   *AdminUpdateDishJSONRequestBody
 }
@@ -2423,48 +2579,75 @@ func (response AdminUpdateDish404JSONResponse) VisitAdminUpdateDishResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminSetDishAvailabilityRequestObject struct {
-	Id     PathID `json:"id"`
-	Params AdminSetDishAvailabilityParams
-	Body   *AdminSetDishAvailabilityJSONRequestBody
+type AdminUploadDishImageRequestObject struct {
+	Id     PathIntID `json:"id"`
+	Params AdminUploadDishImageParams
+	Body   *multipart.Reader
 }
 
-type AdminSetDishAvailabilityResponseObject interface {
-	VisitAdminSetDishAvailabilityResponse(w http.ResponseWriter) error
+type AdminUploadDishImageResponseObject interface {
+	VisitAdminUploadDishImageResponse(w http.ResponseWriter) error
 }
 
-type AdminSetDishAvailability200JSONResponse Dish
+type AdminUploadDishImage200JSONResponse Dish
 
-func (response AdminSetDishAvailability200JSONResponse) VisitAdminSetDishAvailabilityResponse(w http.ResponseWriter) error {
+func (response AdminUploadDishImage200JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminSetDishAvailability401JSONResponse struct{ UnauthorizedJSONResponse }
+type AdminUploadDishImage400JSONResponse struct{ BadRequestJSONResponse }
 
-func (response AdminSetDishAvailability401JSONResponse) VisitAdminSetDishAvailabilityResponse(w http.ResponseWriter) error {
+func (response AdminUploadDishImage400JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUploadDishImage401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminUploadDishImage401JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminSetDishAvailability403JSONResponse struct{ ForbiddenJSONResponse }
+type AdminUploadDishImage403JSONResponse struct{ ForbiddenJSONResponse }
 
-func (response AdminSetDishAvailability403JSONResponse) VisitAdminSetDishAvailabilityResponse(w http.ResponseWriter) error {
+func (response AdminUploadDishImage403JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminSetDishAvailability404JSONResponse struct{ NotFoundJSONResponse }
+type AdminUploadDishImage404JSONResponse struct{ NotFoundJSONResponse }
 
-func (response AdminSetDishAvailability404JSONResponse) VisitAdminSetDishAvailabilityResponse(w http.ResponseWriter) error {
+func (response AdminUploadDishImage404JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUploadDishImage413JSONResponse Error
+
+func (response AdminUploadDishImage413JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUploadDishImage415JSONResponse Error
+
+func (response AdminUploadDishImage415JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(415)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2597,6 +2780,193 @@ func (response AdminUpdateOrderStatus403JSONResponse) VisitAdminUpdateOrderStatu
 type AdminUpdateOrderStatus404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response AdminUpdateOrderStatus404JSONResponse) VisitAdminUpdateOrderStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListTagsRequestObject struct {
+}
+
+type AdminListTagsResponseObject interface {
+	VisitAdminListTagsResponse(w http.ResponseWriter) error
+}
+
+type AdminListTags200JSONResponse TagList
+
+func (response AdminListTags200JSONResponse) VisitAdminListTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListTags401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListTags401JSONResponse) VisitAdminListTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListTags403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListTags403JSONResponse) VisitAdminListTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateTagRequestObject struct {
+	Params AdminCreateTagParams
+	Body   *AdminCreateTagJSONRequestBody
+}
+
+type AdminCreateTagResponseObject interface {
+	VisitAdminCreateTagResponse(w http.ResponseWriter) error
+}
+
+type AdminCreateTag201JSONResponse Tag
+
+func (response AdminCreateTag201JSONResponse) VisitAdminCreateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateTag400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminCreateTag400JSONResponse) VisitAdminCreateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateTag401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminCreateTag401JSONResponse) VisitAdminCreateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateTag403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreateTag403JSONResponse) VisitAdminCreateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateTag409JSONResponse struct{ ConflictJSONResponse }
+
+func (response AdminCreateTag409JSONResponse) VisitAdminCreateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDeleteTagRequestObject struct {
+	Id     PathIntID `json:"id"`
+	Params AdminDeleteTagParams
+}
+
+type AdminDeleteTagResponseObject interface {
+	VisitAdminDeleteTagResponse(w http.ResponseWriter) error
+}
+
+type AdminDeleteTag204Response struct {
+}
+
+func (response AdminDeleteTag204Response) VisitAdminDeleteTagResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminDeleteTag401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminDeleteTag401JSONResponse) VisitAdminDeleteTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDeleteTag403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDeleteTag403JSONResponse) VisitAdminDeleteTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDeleteTag404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminDeleteTag404JSONResponse) VisitAdminDeleteTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateTagRequestObject struct {
+	Id     PathIntID `json:"id"`
+	Params AdminUpdateTagParams
+	Body   *AdminUpdateTagJSONRequestBody
+}
+
+type AdminUpdateTagResponseObject interface {
+	VisitAdminUpdateTagResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateTag200JSONResponse Tag
+
+func (response AdminUpdateTag200JSONResponse) VisitAdminUpdateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateTag400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminUpdateTag400JSONResponse) VisitAdminUpdateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateTag401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminUpdateTag401JSONResponse) VisitAdminUpdateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateTag403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminUpdateTag403JSONResponse) VisitAdminUpdateTagResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateTag404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminUpdateTag404JSONResponse) VisitAdminUpdateTagResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
 
@@ -2945,6 +3315,22 @@ func (response UpdateCartItem404JSONResponse) VisitUpdateCartItemResponse(w http
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListCategoriesRequestObject struct {
+}
+
+type ListCategoriesResponseObject interface {
+	VisitListCategoriesResponse(w http.ResponseWriter) error
+}
+
+type ListCategories200JSONResponse CategoryList
+
+func (response ListCategories200JSONResponse) VisitListCategoriesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListChatsRequestObject struct {
 	Params ListChatsParams
 }
@@ -3143,54 +3529,6 @@ func (response SendMessage404JSONResponse) VisitSendMessageResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
-type ListAllergensRequestObject struct {
-}
-
-type ListAllergensResponseObject interface {
-	VisitListAllergensResponse(w http.ResponseWriter) error
-}
-
-type ListAllergens200JSONResponse AllergenList
-
-func (response ListAllergens200JSONResponse) VisitListAllergensResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type ListCategoriesRequestObject struct {
-}
-
-type ListCategoriesResponseObject interface {
-	VisitListCategoriesResponse(w http.ResponseWriter) error
-}
-
-type ListCategories200JSONResponse CategoryList
-
-func (response ListCategories200JSONResponse) VisitListCategoriesResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type ListDietaryRequestObject struct {
-}
-
-type ListDietaryResponseObject interface {
-	VisitListDietaryResponse(w http.ResponseWriter) error
-}
-
-type ListDietary200JSONResponse DietaryList
-
-func (response ListDietary200JSONResponse) VisitListDietaryResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 type ListDishesRequestObject struct {
 	Params ListDishesParams
 }
@@ -3209,7 +3547,7 @@ func (response ListDishes200JSONResponse) VisitListDishesResponse(w http.Respons
 }
 
 type GetDishRequestObject struct {
-	Id PathID `json:"id"`
+	Id PathIntID `json:"id"`
 }
 
 type GetDishResponseObject interface {
@@ -3455,26 +3793,26 @@ type StrictServerInterface interface {
 	// (GET /admin/analytics/queries)
 	AdminListAnalyticsQueries(ctx context.Context, request AdminListAnalyticsQueriesRequestObject) (AdminListAnalyticsQueriesResponseObject, error)
 	// Создать категорию
-	// (POST /admin/menu/categories)
+	// (POST /admin/categories)
 	AdminCreateCategory(ctx context.Context, request AdminCreateCategoryRequestObject) (AdminCreateCategoryResponseObject, error)
 	// Удалить категорию
-	// (DELETE /admin/menu/categories/{id})
+	// (DELETE /admin/categories/{id})
 	AdminDeleteCategory(ctx context.Context, request AdminDeleteCategoryRequestObject) (AdminDeleteCategoryResponseObject, error)
 	// Обновить категорию
-	// (PATCH /admin/menu/categories/{id})
+	// (PATCH /admin/categories/{id})
 	AdminUpdateCategory(ctx context.Context, request AdminUpdateCategoryRequestObject) (AdminUpdateCategoryResponseObject, error)
 	// Создать блюдо
-	// (POST /admin/menu/dishes)
+	// (POST /admin/menu)
 	AdminCreateDish(ctx context.Context, request AdminCreateDishRequestObject) (AdminCreateDishResponseObject, error)
-	// Удалить блюдо (soft delete)
-	// (DELETE /admin/menu/dishes/{id})
+	// Снять блюдо со стоп-листа (soft delete — is_available=false)
+	// (DELETE /admin/menu/{id})
 	AdminDeleteDish(ctx context.Context, request AdminDeleteDishRequestObject) (AdminDeleteDishResponseObject, error)
-	// Обновить блюдо (пересчёт embedding при изменении description/ingredients)
-	// (PATCH /admin/menu/dishes/{id})
+	// Обновить блюдо
+	// (PATCH /admin/menu/{id})
 	AdminUpdateDish(ctx context.Context, request AdminUpdateDishRequestObject) (AdminUpdateDishResponseObject, error)
-	// Обновить стоп-лист (available + reason)
-	// (PATCH /admin/menu/dishes/{id}/availability)
-	AdminSetDishAvailability(ctx context.Context, request AdminSetDishAvailabilityRequestObject) (AdminSetDishAvailabilityResponseObject, error)
+	// Загрузить картинку блюда (multipart) в S3 и сохранить URL
+	// (POST /admin/menu/{id}/image)
+	AdminUploadDishImage(ctx context.Context, request AdminUploadDishImageRequestObject) (AdminUploadDishImageResponseObject, error)
 	// Список всех заказов с фильтрами
 	// (GET /admin/orders)
 	AdminListOrders(ctx context.Context, request AdminListOrdersRequestObject) (AdminListOrdersResponseObject, error)
@@ -3484,6 +3822,18 @@ type StrictServerInterface interface {
 	// Сменить статус заказа
 	// (PATCH /admin/orders/{id}/status)
 	AdminUpdateOrderStatus(ctx context.Context, request AdminUpdateOrderStatusRequestObject) (AdminUpdateOrderStatusResponseObject, error)
+	// Список тегов (для админ-формы блюда)
+	// (GET /admin/tags)
+	AdminListTags(ctx context.Context, request AdminListTagsRequestObject) (AdminListTagsResponseObject, error)
+	// Создать тег
+	// (POST /admin/tags)
+	AdminCreateTag(ctx context.Context, request AdminCreateTagRequestObject) (AdminCreateTagResponseObject, error)
+	// Удалить тег (отвяжется от всех блюд)
+	// (DELETE /admin/tags/{id})
+	AdminDeleteTag(ctx context.Context, request AdminDeleteTagRequestObject) (AdminDeleteTagResponseObject, error)
+	// Обновить тег
+	// (PATCH /admin/tags/{id})
+	AdminUpdateTag(ctx context.Context, request AdminUpdateTagRequestObject) (AdminUpdateTagResponseObject, error)
 	// Вход в существующий аккаунт
 	// (POST /auth/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
@@ -3514,6 +3864,9 @@ type StrictServerInterface interface {
 	// Изменить позицию (quantity / note / sort_order)
 	// (PATCH /cart/items/{dish_id})
 	UpdateCartItem(ctx context.Context, request UpdateCartItemRequestObject) (UpdateCartItemResponseObject, error)
+	// Список доступных категорий
+	// (GET /categories)
+	ListCategories(ctx context.Context, request ListCategoriesRequestObject) (ListCategoriesResponseObject, error)
 	// Список чатов текущего пользователя
 	// (GET /chats)
 	ListChats(ctx context.Context, request ListChatsRequestObject) (ListChatsResponseObject, error)
@@ -3529,20 +3882,11 @@ type StrictServerInterface interface {
 	// Отправить сообщение; ответ ассистента стримится через SSE
 	// (POST /chats/{id}/messages)
 	SendMessage(ctx context.Context, request SendMessageRequestObject) (SendMessageResponseObject, error)
-	// Справочник аллергенов
-	// (GET /menu/allergens)
-	ListAllergens(ctx context.Context, request ListAllergensRequestObject) (ListAllergensResponseObject, error)
-	// Список категорий
-	// (GET /menu/categories)
-	ListCategories(ctx context.Context, request ListCategoriesRequestObject) (ListCategoriesResponseObject, error)
-	// Справочник диетических предпочтений
-	// (GET /menu/dietary)
-	ListDietary(ctx context.Context, request ListDietaryRequestObject) (ListDietaryResponseObject, error)
-	// Каталог блюд
-	// (GET /menu/dishes)
+	// Каталог блюд с фильтрами
+	// (GET /menu)
 	ListDishes(ctx context.Context, request ListDishesRequestObject) (ListDishesResponseObject, error)
 	// Детали блюда
-	// (GET /menu/dishes/{id})
+	// (GET /menu/{id})
 	GetDish(ctx context.Context, request GetDishRequestObject) (GetDishResponseObject, error)
 	// Список заказов текущего пользователя
 	// (GET /orders)
@@ -3676,7 +4020,7 @@ func (sh *strictHandler) AdminCreateCategory(w http.ResponseWriter, r *http.Requ
 }
 
 // AdminDeleteCategory operation middleware
-func (sh *strictHandler) AdminDeleteCategory(w http.ResponseWriter, r *http.Request, id PathID, params AdminDeleteCategoryParams) {
+func (sh *strictHandler) AdminDeleteCategory(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminDeleteCategoryParams) {
 	var request AdminDeleteCategoryRequestObject
 
 	request.Id = id
@@ -3703,7 +4047,7 @@ func (sh *strictHandler) AdminDeleteCategory(w http.ResponseWriter, r *http.Requ
 }
 
 // AdminUpdateCategory operation middleware
-func (sh *strictHandler) AdminUpdateCategory(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateCategoryParams) {
+func (sh *strictHandler) AdminUpdateCategory(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateCategoryParams) {
 	var request AdminUpdateCategoryRequestObject
 
 	request.Id = id
@@ -3770,7 +4114,7 @@ func (sh *strictHandler) AdminCreateDish(w http.ResponseWriter, r *http.Request,
 }
 
 // AdminDeleteDish operation middleware
-func (sh *strictHandler) AdminDeleteDish(w http.ResponseWriter, r *http.Request, id PathID, params AdminDeleteDishParams) {
+func (sh *strictHandler) AdminDeleteDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminDeleteDishParams) {
 	var request AdminDeleteDishRequestObject
 
 	request.Id = id
@@ -3797,7 +4141,7 @@ func (sh *strictHandler) AdminDeleteDish(w http.ResponseWriter, r *http.Request,
 }
 
 // AdminUpdateDish operation middleware
-func (sh *strictHandler) AdminUpdateDish(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateDishParams) {
+func (sh *strictHandler) AdminUpdateDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateDishParams) {
 	var request AdminUpdateDishRequestObject
 
 	request.Id = id
@@ -3830,33 +4174,33 @@ func (sh *strictHandler) AdminUpdateDish(w http.ResponseWriter, r *http.Request,
 	}
 }
 
-// AdminSetDishAvailability operation middleware
-func (sh *strictHandler) AdminSetDishAvailability(w http.ResponseWriter, r *http.Request, id PathID, params AdminSetDishAvailabilityParams) {
-	var request AdminSetDishAvailabilityRequestObject
+// AdminUploadDishImage operation middleware
+func (sh *strictHandler) AdminUploadDishImage(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUploadDishImageParams) {
+	var request AdminUploadDishImageRequestObject
 
 	request.Id = id
 	request.Params = params
 
-	var body AdminSetDishAvailabilityJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
 		return
+	} else {
+		request.Body = reader
 	}
-	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.AdminSetDishAvailability(ctx, request.(AdminSetDishAvailabilityRequestObject))
+		return sh.ssi.AdminUploadDishImage(ctx, request.(AdminUploadDishImageRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "AdminSetDishAvailability")
+		handler = middleware(handler, "AdminUploadDishImage")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(AdminSetDishAvailabilityResponseObject); ok {
-		if err := validResponse.VisitAdminSetDishAvailabilityResponse(w); err != nil {
+	} else if validResponse, ok := response.(AdminUploadDishImageResponseObject); ok {
+		if err := validResponse.VisitAdminUploadDishImageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3943,6 +4287,124 @@ func (sh *strictHandler) AdminUpdateOrderStatus(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminUpdateOrderStatusResponseObject); ok {
 		if err := validResponse.VisitAdminUpdateOrderStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminListTags operation middleware
+func (sh *strictHandler) AdminListTags(w http.ResponseWriter, r *http.Request) {
+	var request AdminListTagsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListTags(ctx, request.(AdminListTagsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListTags")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminListTagsResponseObject); ok {
+		if err := validResponse.VisitAdminListTagsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminCreateTag operation middleware
+func (sh *strictHandler) AdminCreateTag(w http.ResponseWriter, r *http.Request, params AdminCreateTagParams) {
+	var request AdminCreateTagRequestObject
+
+	request.Params = params
+
+	var body AdminCreateTagJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateTag(ctx, request.(AdminCreateTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminCreateTagResponseObject); ok {
+		if err := validResponse.VisitAdminCreateTagResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminDeleteTag operation middleware
+func (sh *strictHandler) AdminDeleteTag(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminDeleteTagParams) {
+	var request AdminDeleteTagRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteTag(ctx, request.(AdminDeleteTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDeleteTagResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteTagResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminUpdateTag operation middleware
+func (sh *strictHandler) AdminUpdateTag(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateTagParams) {
+	var request AdminUpdateTagRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	var body AdminUpdateTagJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateTag(ctx, request.(AdminUpdateTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminUpdateTagResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateTagResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4243,6 +4705,30 @@ func (sh *strictHandler) UpdateCartItem(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// ListCategories operation middleware
+func (sh *strictHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
+	var request ListCategoriesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCategories(ctx, request.(ListCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCategories")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCategoriesResponseObject); ok {
+		if err := validResponse.VisitListCategoriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListChats operation middleware
 func (sh *strictHandler) ListChats(w http.ResponseWriter, r *http.Request, params ListChatsParams) {
 	var request ListChatsRequestObject
@@ -4393,78 +4879,6 @@ func (sh *strictHandler) SendMessage(w http.ResponseWriter, r *http.Request, id 
 	}
 }
 
-// ListAllergens operation middleware
-func (sh *strictHandler) ListAllergens(w http.ResponseWriter, r *http.Request) {
-	var request ListAllergensRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListAllergens(ctx, request.(ListAllergensRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListAllergens")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListAllergensResponseObject); ok {
-		if err := validResponse.VisitListAllergensResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListCategories operation middleware
-func (sh *strictHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
-	var request ListCategoriesRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListCategories(ctx, request.(ListCategoriesRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListCategories")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListCategoriesResponseObject); ok {
-		if err := validResponse.VisitListCategoriesResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListDietary operation middleware
-func (sh *strictHandler) ListDietary(w http.ResponseWriter, r *http.Request) {
-	var request ListDietaryRequestObject
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListDietary(ctx, request.(ListDietaryRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListDietary")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListDietaryResponseObject); ok {
-		if err := validResponse.VisitListDietaryResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // ListDishes operation middleware
 func (sh *strictHandler) ListDishes(w http.ResponseWriter, r *http.Request, params ListDishesParams) {
 	var request ListDishesRequestObject
@@ -4492,7 +4906,7 @@ func (sh *strictHandler) ListDishes(w http.ResponseWriter, r *http.Request, para
 }
 
 // GetDish operation middleware
-func (sh *strictHandler) GetDish(w http.ResponseWriter, r *http.Request, id PathID) {
+func (sh *strictHandler) GetDish(w http.ResponseWriter, r *http.Request, id PathIntID) {
 	var request GetDishRequestObject
 
 	request.Id = id
@@ -4662,100 +5076,107 @@ func (sh *strictHandler) UpdateProfile(w http.ResponseWriter, r *http.Request, p
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

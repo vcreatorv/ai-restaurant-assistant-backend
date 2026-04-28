@@ -213,6 +213,217 @@ GET /api/v1/profile
 | 12 | Auth middleware (через requireUser) → 401 |
 | 13 | CSRF middleware → 403 |
 
+# Меню (public + admin)
+
+Раздел тестирует фичу `menu`. Перед началом — пройди `Auth` runbook выше (хотя бы шаги 1–2), чтобы в БД появился customer.
+
+## Подготовить admin
+
+В БД нет ручки «создать админа», поэтому делаем это вручную через psql.
+
+1. Зарегистрировать customer'а через коллекцию (`Auth → 1.Bootstrap`, `Auth → 2.Register`) с `email = admin@example.com`, `password = adminpass1`.
+2. Промоутить его до admin'а:
+   ```sh
+   docker compose exec postgres psql -U restaurant -d restaurant -c "UPDATE users SET role='admin' WHERE email='admin@example.com';"
+   ```
+   `restaurant` — значения `POSTGRES_USER`/`POSTGRES_DB` из `.env`. Хардкод сделан намеренно, чтобы команда работала одинаково в bash, PowerShell и cmd без возни с экранированием `$`.
+3. Залогиниться через коллекцию (`Admin — login → Bootstrap session`, `Admin — login → Login as admin`). После этого `is_guest=false`, `role=admin`, новый CSRF подхватывается автоматически.
+
+> Алтернатива без второго юзера: промоуть уже зарегистрированного `test@example.com` — тогда `adminEmail`/`adminPassword` в коллекции замени на его значения.
+
+## Public read
+
+Эти три эндпойнта доступны всем (security: []), без cookie/CSRF.
+
+### 14. Список категорий
+
+```
+GET /api/v1/categories
+```
+Ожидание: `200`, `{"items": [...]}`. Сразу после миграций — пустой массив; после шагов 16+ — будет минимум одна категория.
+
+### 15. Каталог блюд
+
+```
+GET /api/v1/menu?limit=20&offset=0
+```
+Ожидание: `200`, `{"items": [...], "total": N, "limit": 20, "offset": 0}`. По умолчанию `available=true` фильтр на сервере: попадают только блюда `is_available=true`.
+
+С фильтрами:
+```
+GET /api/v1/menu?category_id={{categoryId}}&exclude_allergens=gluten&exclude_allergens=dairy&dietary=vegan&tag_ids={{tagId}}&q=&limit=20&offset=0
+```
+Семантика:
+- `category_id` — точное совпадение,
+- `exclude_allergens` (повторяется в query) — блюдо исключается, если в `allergens` есть **хотя бы один** из перечисленных (PG `&&`),
+- `dietary` — блюдо включается, если **все** запрошенные диеты содержатся в `dietary` блюда (PG `@>`),
+- `tag_ids` — блюдо включается, если **хотя бы один** из тегов привязан,
+- `q` — `ILIKE %name%`,
+- `available` (bool) — если задан `false`, сервер вернёт всё, включая стоп-лист.
+
+### 16. Детали блюда
+
+```
+GET /api/v1/menu/{{dishId}}
+```
+Ожидание: `200`, объект `Dish` со всеми полями + массив `tags` (Tag-объекты, не id-шники).
+
+### 17. Несуществующее блюдо
+
+```
+GET /api/v1/menu/999999
+```
+Ожидание: `404`, `{"error":{"code":"dish_not_found", ...}}`.
+
+## Admin CRUD
+
+Все запросы под `/admin/*` требуют сессии admin'а (см. «Подготовить admin» выше) и валидный `X-CSRF-Token`.
+
+### 18. Создать категорию
+
+```
+POST /api/v1/admin/categories
+{"name": "Супы", "sort_order": 10, "is_available": true}
+```
+Ожидание: `201`. ID категории сохраняется в `categoryId`.
+
+### 19. Обновить категорию
+
+```
+PATCH /api/v1/admin/categories/{{categoryId}}
+{"sort_order": 5}
+```
+Ожидание: `200`, `sort_order=5`.
+
+### 20. Дубликат имени категории → 409
+
+```
+POST /api/v1/admin/categories
+{"name": "Супы"}
+```
+Ожидание: `409`, `code=category_name_taken`.
+
+### 21. Создать тег
+
+```
+POST /api/v1/admin/tags
+{"name": "Острое", "slug": "spicy", "color": "#E53935"}
+```
+Ожидание: `201`. ID сохраняется в `tagId`.
+
+### 22. Список тегов
+
+```
+GET /api/v1/admin/tags
+```
+Ожидание: `200`, `{"items": [...]}`.
+
+### 23. Обновить тег
+
+```
+PATCH /api/v1/admin/tags/{{tagId}}
+{"color": "#FF0000"}
+```
+Ожидание: `200`.
+
+### 24. Создать блюдо
+
+```
+POST /api/v1/admin/menu
+{
+  "name": "Борщ с говядиной",
+  "description": "Классический борщ",
+  "composition": "Говядина, свёкла, капуста, картофель, лук, сметана",
+  "price_minor": 45000,
+  "currency": "RUB",
+  "calories_kcal": 320, "protein_g": 18.5, "fat_g": 15.0, "carbs_g": 22.0,
+  "portion_weight_g": 350,
+  "cuisine": "russian",
+  "category_id": {{categoryId}},
+  "allergens": ["dairy"],
+  "dietary": [],
+  "tag_ids": [{{tagId}}],
+  "is_available": true
+}
+```
+Ожидание: `201`, в ответе `tags: [...]` уже подгружены. ID сохраняется в `dishId`.
+
+### 25. Обновить блюдо
+
+```
+PATCH /api/v1/admin/menu/{{dishId}}
+{"price_minor": 49000, "description": "Обновлённое описание"}
+```
+Ожидание: `200`, поля обновлены. Если в теле есть `tag_ids` — связи перепривязываются полностью.
+
+### 26. Загрузить картинку
+
+```
+POST /api/v1/admin/menu/{{dishId}}/image
+Content-Type: multipart/form-data
+field: file = <photo.jpg>
+```
+В Postman: вкладка `Body → form-data → key=file, type=File`, выбрать файл `.jpg`/`.png`/`.webp` ≤ 5 MiB.
+
+Ожидание: `200`, `Dish` с `image_url=http://localhost:9000/restaurant/dishes/<id>-<ts>.<ext>`. Этот URL открывается в браузере (anonymous-read bucket настроен в `minio-init`).
+
+Ошибки:
+- слишком большой файл → `413 image_too_large`,
+- `Content-Type` не из (jpeg/png/webp) → `415 image_unsupported_type`,
+- запрос без поля `file` → `400`.
+
+### 27. Снять блюдо со стоп-листа (soft delete)
+
+```
+DELETE /api/v1/admin/menu/{{dishId}}
+```
+Ожидание: `204`. В БД блюдо физически остаётся, просто `is_available=false`. После этого `GET /menu` его не вернёт (по умолчанию фильтр `is_available=true`).
+
+### 28. Удалить тег
+
+```
+DELETE /api/v1/admin/tags/{{tagId}}
+```
+Ожидание: `204`. Связи в `dish_tags` удаляются каскадом.
+
+### 29. Удалить категорию с блюдами → 409
+
+```
+DELETE /api/v1/admin/categories/{{categoryId}}
+```
+Ожидание: `409`, `code=category_has_dishes`. Soft-delete блюда не освобождает категорию — нужно либо физически удалить блюдо в БД, либо переместить его в другую категорию через `PATCH /admin/menu/{id}`.
+
+### 30. Customer не может вызвать admin endpoint
+
+Залогинься под обычным `test@example.com` и:
+```
+POST /api/v1/admin/categories
+{"name": "Закуски"}
+```
+Ожидание: `403`.
+
+## Что проверяет каждый шаг (меню)
+
+| Шаг | Что валидируется |
+|---|---|
+| 14 | Public list categories |
+| 15 | Public list dishes + GIN-фильтры (allergens/dietary/tags) + ILIKE-поиск |
+| 16 | Public get dish + подтянутые tags |
+| 17 | 404 от sentinel ErrDishNotFound |
+| 18 | Create category, unique constraint name |
+| 19 | Patch category, partial update |
+| 20 | Unique violation на name → 409 category_name_taken |
+| 21 | Create tag |
+| 22 | List tags для admin-формы |
+| 23 | Patch tag |
+| 24 | Create dish — включая tags M2M в одной транзакции |
+| 25 | Patch dish, перепривязка тегов через UpdateDish(tagIDs!=nil) |
+| 26 | Multipart upload → S3 → image_url, mime-валидация, лимит размера |
+| 27 | Soft-delete через SetDishAvailability(false) |
+| 28 | Delete tag, каскад dish_tags |
+| 29 | DeleteCategory блокируется при наличии блюд |
+| 30 | requireAdmin() в delivery → 403 для customer |
+
 ## Если что-то не так
 
 Логи приложения:
@@ -228,8 +439,22 @@ docker compose exec redis redis-cli -a $REDIS_PASSWORD GET session:<uuid>
 
 Посмотреть user в PG:
 ```sh
-docker compose exec postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT id, email, role FROM users;"
+docker compose exec postgres psql -U restaurant -d restaurant -c "SELECT id, email, role FROM users;"
 ```
+
+Посмотреть меню в PG:
+```sh
+docker compose exec postgres psql -U restaurant -d restaurant -c "SELECT id, name, category_id, is_available FROM dishes;"
+docker compose exec postgres psql -U restaurant -d restaurant -c "SELECT * FROM categories; SELECT * FROM tags; SELECT * FROM dish_tags;"
+```
+
+Посмотреть объекты в MinIO (логин/пароль из `.env::MINIO_ROOT_*`):
+```sh
+docker compose exec minio-init mc alias set local http://minio:9000 restaurant Rk19Vc83Dn46QtMyHs07
+docker compose exec minio-init mc ls -r local/restaurant
+```
+Веб-консоль: http://localhost:9001.
+Веб-консоль: http://localhost:9001 (логин/пароль из `.env`).
 
 Сбросить всё:
 ```sh

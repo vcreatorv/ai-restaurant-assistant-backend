@@ -5,16 +5,21 @@ import (
 	"errors"
 	"fmt"
 
+	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
+	"github.com/example/ai-restaurant-assistant-backend/internal/user"
+
 	"github.com/google/uuid"
+
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-
-	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
-	"github.com/example/ai-restaurant-assistant-backend/internal/user"
 )
 
-const userColumns = `id, email, password_hash, role, first_name, last_name, phone, allergens, dietary, created_at, updated_at`
+const userColumns = `
+	id, email, password_hash, role,
+	first_name, last_name, phone,
+	allergens, dietary,
+	created_at, updated_at`
 
 const (
 	findByIDQuery    = `SELECT ` + userColumns + ` FROM users WHERE id = $1`

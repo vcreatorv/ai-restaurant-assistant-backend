@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
-
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
+	"github.com/google/uuid"
 )
 
 // ErrNotFound сессия не найдена

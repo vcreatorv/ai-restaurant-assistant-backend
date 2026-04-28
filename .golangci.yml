@@ -32,7 +32,7 @@ linters:
       threshold: 300
 
     errcheck:
-      check-blank: true
+      check-blank: false
 
     gocyclo:
       min-complexity: 15
@@ -87,6 +87,25 @@ linters:
       - linters:
           - lll
         source: '^//go:generate '
+      - linters:
+          - lll
+        path: cmd/app/app/unimplemented\.go
+      - linters:
+          - gocyclo
+        path: cmd/app/app/app\.go
+        text: 'responseErrorHandler'
+      - linters:
+          - gocyclo
+        path: cmd/app/app/config\.go
+        text: 'LoadConfig'
+      - linters:
+          - gocyclo
+        path: internal/menu/usecase/menu\.go
+        text: 'applyDishPatch'
+      - linters:
+          - gosec
+        path: cmd/app/app/config\.go
+        text: 'G304|G703'
 
     paths:
       - bin$

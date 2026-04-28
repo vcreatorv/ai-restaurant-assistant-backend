@@ -5,12 +5,14 @@ import (
 	"log/slog"
 	"os"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
+	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/datasources"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/s3"
 	"github.com/example/ai-restaurant-assistant-backend/internal/session"
 	"github.com/example/ai-restaurant-assistant-backend/internal/user"
+
+	"gopkg.in/yaml.v3"
 )
 
 // DefaultConfigPath путь к конфигу по умолчанию
@@ -26,12 +28,16 @@ type Config struct {
 	Postgres datasources.PostgresConfig `yaml:"postgres"`
 	// Redis параметры Redis
 	Redis datasources.RedisConfig `yaml:"redis"`
+	// S3 параметры S3-совместимого хранилища
+	S3 s3.Config `yaml:"s3"`
 	// Session параметры фичи session
 	Session session.Config `yaml:"session"`
 	// Auth параметры фичи auth
 	Auth auth.Config `yaml:"auth"`
 	// User параметры фичи user
 	User user.Config `yaml:"user"`
+	// Menu параметры фичи menu
+	Menu menu.Config `yaml:"menu"`
 }
 
 // HTTPConfig параметры HTTP-сервера и cookie
@@ -76,6 +82,21 @@ func LoadConfig(path string) (*Config, error) {
 	if v := os.Getenv("REDIS_PASSWORD"); v != "" {
 		c.Redis.Password = v
 	}
+	if v := os.Getenv("S3_ENDPOINT"); v != "" {
+		c.S3.Endpoint = v
+	}
+	if v := os.Getenv("S3_ACCESS_KEY"); v != "" {
+		c.S3.AccessKey = v
+	}
+	if v := os.Getenv("S3_SECRET_KEY"); v != "" {
+		c.S3.SecretKey = v
+	}
+	if v := os.Getenv("S3_BUCKET"); v != "" {
+		c.S3.Bucket = v
+	}
+	if v := os.Getenv("S3_PUBLIC_BASE_URL"); v != "" {
+		c.S3.PublicBaseURL = v
+	}
 
 	if c.Postgres.DSN == "" {
 		return nil, fmt.Errorf("postgres.dsn is required (set POSTGRES_DSN env)")
@@ -88,6 +109,22 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if c.Auth.Usecase.BcryptCost <= 0 {
 		return nil, fmt.Errorf("auth.usecase.bcrypt_cost is required")
+	}
+	if c.Menu.Delivery.DefaultLimit <= 0 {
+		c.Menu.Delivery.DefaultLimit = 20
+	}
+	if c.Menu.Delivery.MaxLimit <= 0 {
+		c.Menu.Delivery.MaxLimit = 100
+	}
+	if c.Menu.Delivery.MaxImageSizeBytes <= 0 {
+		c.Menu.Delivery.MaxImageSizeBytes = 5 * 1024 * 1024
+	}
+
+	if c.S3.Endpoint == "" {
+		return nil, fmt.Errorf("s3.endpoint is required")
+	}
+	if c.S3.Bucket == "" {
+		return nil, fmt.Errorf("s3.bucket is required")
 	}
 
 	return c, nil

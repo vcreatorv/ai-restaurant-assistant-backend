@@ -13,6 +13,15 @@ redis:
   password: ""
   db: 0
 
+s3:
+  endpoint: "localhost:9000"
+  access_key: ""
+  secret_key: ""
+  bucket: "restaurant"
+  region: "us-east-1"
+  use_ssl: false
+  public_base_url: "http://localhost:9000/restaurant"
+
 session:
   repository:
     ttl: 720h
@@ -22,3 +31,9 @@ auth:
     bcrypt_cost: 12
 
 user: {}
+
+menu:
+  delivery:
+    default_limit: 20
+    max_limit: 100
+    max_image_size_bytes: 5242880  # 5 MiB

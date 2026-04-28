@@ -1,8 +1,6 @@
 package api
 
 import (
-	openapi_types "github.com/oapi-codegen/runtime/types"
-
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 )
 
@@ -13,7 +11,7 @@ func SessionInfoFromUsecase(s *usecasemodels.Session, user *usecasemodels.User) 
 		IsGuest: user == nil || user.IsGuest(),
 	}
 	if s.UserID != nil {
-		u := openapi_types.UUID(*s.UserID)
+		u := *s.UserID
 		info.UserId = &u
 	}
 	if user != nil {

@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
-
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/logger"
 	"github.com/example/ai-restaurant-assistant-backend/internal/session"
+	"github.com/google/uuid"
 )
 
 type sessionCtxKey struct{}
