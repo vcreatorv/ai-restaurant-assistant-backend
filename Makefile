@@ -56,7 +56,11 @@ fmt:
 	goimports -w .
 
 group-imports:
-	python scripts/group-imports.py $$(find . -name '*.go' -not -path './api/generated/*')
+	find . -name '*.go' \
+	  -not -path './cmd/app/app/v1/*' \
+	  -not -path './internal/models/api/api.gen.go' \
+	  -not -path './bin/*' \
+	  -print0 | xargs -0 -n1 python scripts/group-imports.py
 
 tidy:
 	go mod tidy
@@ -112,5 +116,9 @@ fmt-check:
 	@test -z "$$(gofmt -l . | tee /dev/stderr)"
 	@test -z "$$(goimports -l . | tee /dev/stderr)"
 
-group-imports-check:
-	python scripts/group-imports.py --check $$(find . -name '*.go' -not -path './api/generated/*')
+group-imports-check: group-imports
+	@out=$$(git diff --name-only); \
+	if [ -n "$$out" ]; then \
+	  echo "import groups drifted:"; echo "$$out"; \
+	  git diff; exit 1; \
+	fi
