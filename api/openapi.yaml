@@ -1,0 +1,1266 @@
+openapi: 3.0.3
+
+info:
+  title: Restaurant AI Assistant API
+  version: 0.1.0
+  description: |
+    REST API бэкенда цифрового ассистента рекомендаций блюд.
+    Обслуживает SPA (гость / customer / админ).
+
+    Аутентификация — через cookie `session_id` (HttpOnly, Secure, SameSite=Lax).
+    Для мутирующих методов требуется заголовок `X-CSRF-Token`, сверяемый с
+    сессионным токеном (получается из `GET /auth/session`).
+
+servers:
+  - url: /api/v1
+
+tags:
+  - name: auth
+    description: Аутентификация и идентификация
+  - name: profile
+    description: Профиль текущего пользователя
+  - name: menu
+    description: Публичный каталог меню и справочники
+  - name: chats
+    description: Чаты и сообщения с ИИ-ассистентом
+  - name: cart
+    description: Корзина текущего пользователя
+  - name: orders
+    description: Заказы текущего пользователя
+  - name: admin-menu
+    description: Управление меню (только role=admin)
+  - name: admin-orders
+    description: Управление заказами (только role=admin)
+  - name: admin-analytics
+    description: Аналитика (только role=admin)
+
+security:
+  - cookieAuth: []
+
+paths:
+
+  # ===== AUTH =====
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Регистрация (апгрейд текущей guest-строки)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '200':
+          description: Успешная регистрация; CSRF ротирован
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionInfo' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Вход в существующий аккаунт
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Успешный вход; CSRF ротирован; корзина гостя смёрджена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionInfo' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Выход; сессия удаляется
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Успешный выход }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/session:
+    get:
+      operationId: getSession
+      tags: [auth]
+      summary: Текущая сессия — identity + CSRF-токен
+      security: []
+      responses:
+        '200':
+          description: Данные сессии (в т.ч. для гостя)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SessionInfo' }
+
+  /auth/password:
+    patch:
+      operationId: changePassword
+      tags: [auth]
+      summary: Смена пароля
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangePasswordRequest' }
+      responses:
+        '204': { description: Пароль изменён }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ===== PROFILE =====
+
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Профиль текущего пользователя
+      responses:
+        '200':
+          description: Профиль
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    patch:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Обновить профиль
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchProfileRequest' }
+      responses:
+        '200':
+          description: Обновлённый профиль
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Profile' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ===== MENU =====
+
+  /menu/categories:
+    get:
+      operationId: listCategories
+      tags: [menu]
+      summary: Список категорий
+      responses:
+        '200':
+          description: Категории
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CategoryList' }
+
+  /menu/dishes:
+    get:
+      operationId: listDishes
+      tags: [menu]
+      summary: Каталог блюд
+      parameters:
+        - { in: query, name: category,         schema: { type: string }, description: "код категории" }
+        - { in: query, name: exclude_allergen, schema: { type: array, items: { type: string } }, style: form, explode: true }
+        - { in: query, name: dietary,          schema: { type: string } }
+        - { in: query, name: max_spiciness,    schema: { type: integer, minimum: 0, maximum: 5 } }
+        - { in: query, name: q,                schema: { type: string }, description: "поиск по названию" }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Список блюд
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DishList' }
+
+  /menu/dishes/{id}:
+    get:
+      operationId: getDish
+      tags: [menu]
+      summary: Детали блюда
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+      responses:
+        '200':
+          description: Блюдо
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dish' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /menu/allergens:
+    get:
+      operationId: listAllergens
+      tags: [menu]
+      summary: Справочник аллергенов
+      responses:
+        '200':
+          description: Аллергены
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AllergenList' }
+
+  /menu/dietary:
+    get:
+      operationId: listDietary
+      tags: [menu]
+      summary: Справочник диетических предпочтений
+      responses:
+        '200':
+          description: Диеты
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DietaryList' }
+
+  # ===== CHATS =====
+
+  /chats:
+    get:
+      operationId: listChats
+      tags: [chats]
+      summary: Список чатов текущего пользователя
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Чаты
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      operationId: createChat
+      tags: [chats]
+      summary: Создать новый чат
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateChatRequest' }
+      responses:
+        '201':
+          description: Созданный чат
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Chat' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /chats/{id}:
+    get:
+      operationId: getChat
+      tags: [chats]
+      summary: Чат с сообщениями
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - { in: query, name: messages_limit,  schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { in: query, name: messages_before, schema: { type: string, format: uuid }, description: "cursor — id сообщения, до которого подгружаем" }
+      responses:
+        '200':
+          description: Чат + сообщения (последние N)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatWithMessages' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: deleteChat
+      tags: [chats]
+      summary: Удалить чат
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Удалено }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /chats/{id}/messages:
+    post:
+      operationId: sendMessage
+      tags: [chats]
+      summary: Отправить сообщение; ответ ассистента стримится через SSE
+      description: |
+        Ответ возвращается как `text/event-stream` с событиями:
+          - `meta`  — `{ "message_id": "...", "recommended_dish_ids": ["..."] }`
+          - `token` — `{ "delta": "..." }` (много раз)
+          - `done`  — `{ "tokens_in": N, "tokens_out": N, "latency_ms": N }`
+          - `error` — `{ "code": "...", "message": "..." }`
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SendMessageRequest' }
+      responses:
+        '200':
+          description: SSE-поток событий
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===== CART =====
+
+  /cart:
+    get:
+      operationId: getCart
+      tags: [cart]
+      summary: Текущая корзина
+      responses:
+        '200':
+          description: Корзина с итогом и предупреждениями
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cart' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      operationId: clearCart
+      tags: [cart]
+      summary: Очистить корзину
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Очищено }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /cart/items:
+    post:
+      operationId: addCartItem
+      tags: [cart]
+      summary: Добавить позицию
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddCartItemRequest' }
+      responses:
+        '201':
+          description: Добавлено; возвращается позиция
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartItem' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /cart/items/{dish_id}:
+    patch:
+      operationId: updateCartItem
+      tags: [cart]
+      summary: Изменить позицию (quantity / note / sort_order)
+      parameters:
+        - $ref: '#/components/parameters/PathDishID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchCartItemRequest' }
+      responses:
+        '200':
+          description: Изменённая позиция
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CartItem' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: removeCartItem
+      tags: [cart]
+      summary: Удалить позицию
+      parameters:
+        - $ref: '#/components/parameters/PathDishID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Удалено }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===== ORDERS =====
+
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Оформить заказ из корзины
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateOrderRequest' }
+      responses:
+        '201':
+          description: Созданный заказ; корзина очищена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: Список заказов текущего пользователя
+      parameters:
+        - { in: query, name: status, schema: { $ref: '#/components/schemas/OrderStatus' } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Заказы
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Детали заказа
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+      responses:
+        '200':
+          description: Заказ
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===== ADMIN: MENU =====
+
+  /admin/menu/categories:
+    post:
+      operationId: adminCreateCategory
+      tags: [admin-menu]
+      summary: Создать категорию
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateCategoryRequest' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /admin/menu/categories/{id}:
+    patch:
+      operationId: adminUpdateCategory
+      tags: [admin-menu]
+      summary: Обновить категорию
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchCategoryRequest' }
+      responses:
+        '200':
+          description: Обновлено
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: adminDeleteCategory
+      tags: [admin-menu]
+      summary: Удалить категорию
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Удалено }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: В категории есть блюда — удалить нельзя
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /admin/menu/dishes:
+    post:
+      operationId: adminCreateDish
+      tags: [admin-menu]
+      summary: Создать блюдо
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateDishRequest' }
+      responses:
+        '201':
+          description: Создано; embedding поставлен в очередь
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dish' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/menu/dishes/{id}:
+    patch:
+      operationId: adminUpdateDish
+      tags: [admin-menu]
+      summary: Обновить блюдо (пересчёт embedding при изменении description/ingredients)
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchDishRequest' }
+      responses:
+        '200':
+          description: Обновлено
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dish' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: adminDeleteDish
+      tags: [admin-menu]
+      summary: Удалить блюдо (soft delete)
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Помечено удалённым }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/menu/dishes/{id}/availability:
+    patch:
+      operationId: adminSetDishAvailability
+      tags: [admin-menu]
+      summary: Обновить стоп-лист (available + reason)
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchAvailabilityRequest' }
+      responses:
+        '200':
+          description: Обновлено
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dish' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===== ADMIN: ORDERS =====
+
+  /admin/orders:
+    get:
+      operationId: adminListOrders
+      tags: [admin-orders]
+      summary: Список всех заказов с фильтрами
+      parameters:
+        - { in: query, name: status,  schema: { $ref: '#/components/schemas/OrderStatus' } }
+        - { in: query, name: from,    schema: { type: string, format: date-time } }
+        - { in: query, name: to,      schema: { type: string, format: date-time } }
+        - { in: query, name: user_id, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Заказы
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/orders/{id}:
+    get:
+      operationId: adminGetOrder
+      tags: [admin-orders]
+      summary: Детали заказа
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+      responses:
+        '200':
+          description: Заказ
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/orders/{id}/status:
+    patch:
+      operationId: adminUpdateOrderStatus
+      tags: [admin-orders]
+      summary: Сменить статус заказа
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchOrderStatusRequest' }
+      responses:
+        '200':
+          description: Статус обновлён
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+        '400':
+          description: Недопустимый переход статуса
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===== ADMIN: ANALYTICS =====
+
+  /admin/analytics/overview:
+    get:
+      operationId: adminGetAnalyticsOverview
+      tags: [admin-analytics]
+      summary: Агрегированные показатели
+      parameters:
+        - { in: query, name: from, schema: { type: string, format: date-time } }
+        - { in: query, name: to,   schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Обзор
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnalyticsOverview' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/analytics/queries:
+    get:
+      operationId: adminListAnalyticsQueries
+      tags: [admin-analytics]
+      summary: Детальные события запросов к ассистенту
+      parameters:
+        - { in: query, name: from, schema: { type: string, format: date-time } }
+        - { in: query, name: to,   schema: { type: string, format: date-time } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Список событий
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/QueryEventList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+components:
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+
+  parameters:
+    PathID:
+      in: path
+      name: id
+      required: true
+      schema: { type: string, format: uuid }
+    PathDishID:
+      in: path
+      name: dish_id
+      required: true
+      schema: { type: string, format: uuid }
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Offset:
+      in: query
+      name: offset
+      schema: { type: integer, minimum: 0, default: 0 }
+    CSRFToken:
+      in: header
+      name: X-CSRF-Token
+      required: true
+      schema: { type: string }
+
+  responses:
+    BadRequest:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Не аутентифицирован или недействительная сессия
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Недостаточно прав
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Конфликт состояния
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+
+    # ----- common -----
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:    { type: string, example: "validation_failed" }
+            message: { type: string, example: "Please check the submitted data" }
+            details:
+              type: object
+              properties:
+                trace_id: { type: string }
+                fields:
+                  type: array
+                  items: { $ref: '#/components/schemas/FieldViolation' }
+              additionalProperties: true
+
+    FieldViolation:
+      type: object
+      required: [name, reason]
+      properties:
+        name:   { type: string }
+        reason:
+          type: string
+          enum: [required, invalid_format, too_short, too_long, out_of_range, unsupported_value, not_unique]
+        min: { oneOf: [ { type: integer }, { type: number }, { type: string } ] }
+        max: { oneOf: [ { type: integer }, { type: number }, { type: string } ] }
+
+    PaginationMeta:
+      type: object
+      required: [total, limit, offset]
+      properties:
+        total:  { type: integer, minimum: 0 }
+        limit:  { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+
+    # ----- enums -----
+
+    Role:
+      type: string
+      enum: [guest, customer, admin]
+
+    OrderStatus:
+      type: string
+      enum: [accepted, cooking, ready, in_delivery, closed, cancelled]
+
+    FulfillmentType:
+      type: string
+      enum: [delivery, pickup, dine_in]
+
+    PaymentMethod:
+      type: string
+      enum: [on_delivery, online_stub]
+
+    MessageRole:
+      type: string
+      enum: [user, assistant]
+
+    # ----- auth / profile -----
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:    { type: string, format: email }
+        password: { type: string, minLength: 8, maxLength: 100 }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:    { type: string, format: email }
+        password: { type: string }
+
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, new_password]
+      properties:
+        current_password: { type: string }
+        new_password:     { type: string, minLength: 8, maxLength: 100 }
+
+    SessionInfo:
+      type: object
+      required: [is_guest, csrf]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: "null если ещё не было стейтфул-действий — PG-строки пользователя пока нет"
+        role:
+          type: string
+          enum: [guest, customer, admin]
+          nullable: true
+        is_guest: { type: boolean }
+        csrf:     { type: string }
+
+    Profile:
+      type: object
+      required: [email, allergens, dietary]
+      properties:
+        email:      { type: string, format: email }
+        first_name: { type: string, nullable: true }
+        last_name:  { type: string, nullable: true }
+        phone:      { type: string, nullable: true, description: "E.164" }
+        allergens:  { type: array, items: { type: string }, description: "allergen codes" }
+        dietary:    { type: array, items: { type: string }, description: "dietary codes" }
+
+    PatchProfileRequest:
+      type: object
+      properties:
+        first_name: { type: string, nullable: true }
+        last_name:  { type: string, nullable: true }
+        phone:      { type: string, nullable: true }
+        allergens:  { type: array, items: { type: string } }
+        dietary:    { type: array, items: { type: string } }
+
+    # ----- menu -----
+
+    Category:
+      type: object
+      required: [id, code, name, sort_order, is_active]
+      properties:
+        id:         { type: string, format: uuid }
+        code:       { type: string }
+        name:       { type: string }
+        sort_order: { type: integer }
+        is_active:  { type: boolean }
+
+    CategoryList:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Category' } }
+
+    Allergen:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        icon: { type: string, nullable: true }
+
+    AllergenList:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Allergen' } }
+
+    Dietary:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        icon: { type: string, nullable: true }
+
+    DietaryList:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Dietary' } }
+
+    Dish:
+      type: object
+      required: [id, category_id, name, description, price, allergens, dietary, tags, ingredients, available]
+      properties:
+        id:               { type: string, format: uuid }
+        category_id:      { type: string, format: uuid }
+        name:             { type: string }
+        description:      { type: string }
+        price:            { type: string, description: "decimal, e.g. \"890.00\"" }
+        weight_label:     { type: string, nullable: true }
+        calories:         { type: integer, nullable: true }
+        spiciness:        { type: integer, minimum: 0, maximum: 5 }
+        allergens:        { type: array, items: { type: string } }
+        dietary:          { type: array, items: { type: string } }
+        tags:             { type: array, items: { type: string } }
+        ingredients:      { type: array, items: { type: string } }
+        pairs_well_with:  { type: array, items: { type: string, format: uuid } }
+        image_url:        { type: string, nullable: true }
+        available:        { type: boolean }
+        unavailable_reason: { type: string, nullable: true }
+        cooking_time_min: { type: integer, nullable: true }
+
+    DishList:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:  { type: array, items: { $ref: '#/components/schemas/Dish' } }
+        total:  { type: integer, minimum: 0 }
+        limit:  { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+
+    # ----- cart -----
+
+    CartItem:
+      type: object
+      required: [dish_id, name, price, quantity, line_total, sort_order, available]
+      properties:
+        dish_id:    { type: string, format: uuid }
+        name:       { type: string }
+        price:      { type: string }
+        quantity:   { type: integer, minimum: 1 }
+        note:       { type: string, nullable: true }
+        sort_order: { type: integer }
+        added_at:   { type: string, format: date-time }
+        available:  { type: boolean }
+        line_total: { type: string }
+
+    CartWarning:
+      type: object
+      required: [code, dish_id]
+      properties:
+        code:    { type: string, example: "dish_unavailable" }
+        dish_id: { type: string, format: uuid }
+
+    Cart:
+      type: object
+      required: [items, total, warnings]
+      properties:
+        items:    { type: array, items: { $ref: '#/components/schemas/CartItem' } }
+        total:    { type: string }
+        warnings: { type: array, items: { $ref: '#/components/schemas/CartWarning' } }
+
+    AddCartItemRequest:
+      type: object
+      required: [dish_id, quantity]
+      properties:
+        dish_id:  { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1 }
+        note:     { type: string, nullable: true }
+
+    PatchCartItemRequest:
+      type: object
+      properties:
+        quantity:   { type: integer, minimum: 1 }
+        note:       { type: string, nullable: true }
+        sort_order: { type: integer }
+
+    # ----- orders -----
+
+    OrderItem:
+      type: object
+      required: [dish_id, dish_name, dish_price, quantity, line_total, sort_order]
+      properties:
+        dish_id:    { type: string, format: uuid, nullable: true }
+        dish_name:  { type: string }
+        dish_price: { type: string }
+        quantity:   { type: integer, minimum: 1 }
+        line_total: { type: string }
+        sort_order: { type: integer }
+
+    Order:
+      type: object
+      required:
+        [id, user_id, status, fulfillment_type, total, payment_method,
+         customer_first_name, customer_last_name, customer_phone,
+         items, created_at, updated_at]
+      properties:
+        id:                 { type: string, format: uuid }
+        user_id:            { type: string, format: uuid }
+        status:             { $ref: '#/components/schemas/OrderStatus' }
+        fulfillment_type:   { $ref: '#/components/schemas/FulfillmentType' }
+        total:              { type: string }
+        payment_method:     { $ref: '#/components/schemas/PaymentMethod' }
+        customer_first_name: { type: string }
+        customer_last_name: { type: string }
+        customer_phone:     { type: string }
+        customer_email:     { type: string, format: email, nullable: true }
+        delivery_address:   { type: string, nullable: true }
+        delivery_notes:     { type: string, nullable: true }
+        notes:              { type: string, nullable: true }
+        items:              { type: array, items: { $ref: '#/components/schemas/OrderItem' } }
+        created_at:         { type: string, format: date-time }
+        updated_at:         { type: string, format: date-time }
+
+    OrderList:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:  { type: array, items: { $ref: '#/components/schemas/Order' } }
+        total:  { type: integer, minimum: 0 }
+        limit:  { type: integer, minimum: 1 }
+        offset: { type: integer, minimum: 0 }
+
+    CreateOrderRequest:
+      type: object
+      required: [fulfillment_type, payment_method]
+      properties:
+        fulfillment_type: { $ref: '#/components/schemas/FulfillmentType' }
+        delivery_address: { type: string, nullable: true }
+        delivery_notes:   { type: string, nullable: true }
+        payment_method:   { $ref: '#/components/schemas/PaymentMethod' }
+        notes:            { type: string, nullable: true }
+
+    # ----- chats -----
+
+    Chat:
+      type: object
+      required: [id, user_id, title, created_at, last_message_at]
+      properties:
+        id:              { type: string, format: uuid }
+        user_id:         { type: string, format: uuid }
+        title:           { type: string }
+        created_at:      { type: string, format: date-time }
+        last_message_at: { type: string, format: date-time }
+
+    ChatList:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:  { type: array, items: { $ref: '#/components/schemas/Chat' } }
+        total:  { type: integer }
+        limit:  { type: integer }
+        offset: { type: integer }
+
+    Message:
+      type: object
+      required: [id, chat_id, role, content, created_at]
+      properties:
+        id:                   { type: string, format: uuid }
+        chat_id:              { type: string, format: uuid }
+        role:                 { $ref: '#/components/schemas/MessageRole' }
+        content:              { type: string }
+        recommended_dish_ids: { type: array, items: { type: string, format: uuid } }
+        created_at:           { type: string, format: date-time }
+
+    ChatWithMessages:
+      type: object
+      required: [chat, messages]
+      properties:
+        chat:     { $ref: '#/components/schemas/Chat' }
+        messages:
+          type: array
+          description: "Сортировка — по created_at ASC (старые → новые)"
+          items: { $ref: '#/components/schemas/Message' }
+        has_more: { type: boolean, description: "Есть ли ещё более старые сообщения" }
+
+    CreateChatRequest:
+      type: object
+      properties:
+        title: { type: string, nullable: true }
+
+    SendMessageRequest:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 4000 }
+
+    # ----- admin menu -----
+
+    CreateCategoryRequest:
+      type: object
+      required: [code, name, sort_order]
+      properties:
+        code:       { type: string }
+        name:       { type: string }
+        sort_order: { type: integer }
+        is_active:  { type: boolean, default: true }
+
+    PatchCategoryRequest:
+      type: object
+      properties:
+        name:       { type: string }
+        sort_order: { type: integer }
+        is_active:  { type: boolean }
+
+    CreateDishRequest:
+      type: object
+      required: [category_id, name, description, price]
+      properties:
+        category_id:       { type: string, format: uuid }
+        name:              { type: string }
+        description:       { type: string }
+        price:             { type: string }
+        weight_label:      { type: string, nullable: true }
+        calories:          { type: integer, nullable: true }
+        spiciness:         { type: integer, minimum: 0, maximum: 5 }
+        allergens:         { type: array, items: { type: string } }
+        dietary:           { type: array, items: { type: string } }
+        tags:              { type: array, items: { type: string } }
+        ingredients:       { type: array, items: { type: string } }
+        pairs_well_with:   { type: array, items: { type: string, format: uuid } }
+        image_url:         { type: string, nullable: true }
+        available:         { type: boolean, default: true }
+        cooking_time_min:  { type: integer, nullable: true }
+
+    PatchDishRequest:
+      type: object
+      properties:
+        category_id:       { type: string, format: uuid }
+        name:              { type: string }
+        description:       { type: string }
+        price:             { type: string }
+        weight_label:      { type: string, nullable: true }
+        calories:          { type: integer, nullable: true }
+        spiciness:         { type: integer, minimum: 0, maximum: 5 }
+        allergens:         { type: array, items: { type: string } }
+        dietary:           { type: array, items: { type: string } }
+        tags:              { type: array, items: { type: string } }
+        ingredients:       { type: array, items: { type: string } }
+        pairs_well_with:   { type: array, items: { type: string, format: uuid } }
+        image_url:         { type: string, nullable: true }
+        cooking_time_min:  { type: integer, nullable: true }
+
+    PatchAvailabilityRequest:
+      type: object
+      required: [available]
+      properties:
+        available: { type: boolean }
+        reason:    { type: string, nullable: true }
+
+    # ----- admin orders -----
+
+    PatchOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        note:   { type: string, nullable: true }
+
+    # ----- admin analytics -----
+
+    AnalyticsOverview:
+      type: object
+      required: [period_from, period_to]
+      properties:
+        period_from:       { type: string, format: date-time }
+        period_to:         { type: string, format: date-time }
+        total_queries:     { type: integer }
+        total_users:       { type: integer }
+        total_orders:      { type: integer }
+        conversion_rate:   { type: number, format: float, description: "query → order ratio" }
+        top_dishes:
+          type: array
+          items:
+            type: object
+            required: [dish_id, name, count]
+            properties:
+              dish_id: { type: string, format: uuid }
+              name:    { type: string }
+              count:   { type: integer }
+        top_allergens_excluded:
+          type: array
+          items:
+            type: object
+            required: [code, count]
+            properties:
+              code:  { type: string }
+              count: { type: integer }
+
+    QueryEvent:
+      type: object
+      required: [id, user_id, created_at, text]
+      properties:
+        id:                { type: string, format: uuid }
+        user_id:           { type: string, format: uuid }
+        chat_id:           { type: string, format: uuid, nullable: true }
+        created_at:        { type: string, format: date-time }
+        text:              { type: string }
+        detected_allergens: { type: array, items: { type: string } }
+        detected_dietary:  { type: array, items: { type: string } }
+        recommended_ids:   { type: array, items: { type: string, format: uuid } }
+
+    QueryEventList:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        items:  { type: array, items: { $ref: '#/components/schemas/QueryEvent' } }
+        total:  { type: integer }
+        limit:  { type: integer }
+        offset: { type: integer }

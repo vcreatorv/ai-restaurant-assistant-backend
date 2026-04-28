@@ -1,0 +1,24 @@
+http:
+  addr: ":8080"
+  cookie_secure: false
+
+log:
+  level: info
+
+postgres:
+  dsn: ""
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+
+session:
+  repository:
+    ttl: 720h
+
+auth:
+  usecase:
+    bcrypt_cost: 12
+
+user: {}

@@ -1,0 +1,20 @@
+.git
+.gitignore
+.gitlab-ci.yml
+.golangci.yml
+.idea
+.vscode
+.env
+.env.*
+docker-compose*.yml
+Dockerfile
+Makefile
+README.md
+
+bin/
+.cache/
+tmp/
+
+# Тесты не нужны в build context для prod-образа
+**/*_test.go
+**/testdata/

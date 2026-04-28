@@ -1,0 +1,9 @@
+# Конфиг генерации DTO-типов из openapi.yaml.
+# Запуск: oapi-codegen -config api/types.cfg.yaml api/openapi.yaml
+
+package: api
+output: internal/models/api/api.gen.go
+
+generate:
+  models: true
+  embedded-spec: false

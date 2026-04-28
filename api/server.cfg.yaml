@@ -1,0 +1,19 @@
+# Конфиг генерации HTTP-сервера из openapi.yaml.
+# Сервер dot-импортит DTO-типы из internal/models/api, чтобы внутри сервера
+# имена выглядели как RegisterRequestObject (без префикса).
+# Запуск: oapi-codegen -config api/server.cfg.yaml api/openapi.yaml
+
+package: v1
+output: cmd/app/app/v1/server.gen.go
+
+import-mapping: {}
+
+additional-imports:
+  - package: github.com/example/ai-restaurant-assistant-backend/internal/models/api
+    alias: .
+
+generate:
+  std-http-server: true
+  strict-server: true
+  embedded-spec: true
+  models: false

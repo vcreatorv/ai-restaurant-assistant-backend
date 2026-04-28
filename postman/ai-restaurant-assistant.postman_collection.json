@@ -1,0 +1,467 @@
+{
+  "info": {
+    "name": "AI Restaurant Assistant — Auth runbook",
+    "description": "End-to-end прогон auth + profile по POSTMAN.md.\n\nКоллекция:\n- автоматически подставляет X-CSRF-Token из collection variable `csrf`;\n- автоматически обновляет `csrf` после ответов /auth/session, /auth/register, /auth/login;\n- использует cookie jar Postman (sessionid сохраняется между запросами).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "csrf",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "test@example.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "secret123",
+      "type": "string"
+    },
+    {
+      "key": "newPassword",
+      "value": "newsecret456",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const csrf = pm.collectionVariables.get('csrf');",
+          "if (csrf) {",
+          "    pm.request.headers.upsert({ key: 'X-CSRF-Token', value: csrf });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "try {",
+          "    const body = pm.response.json();",
+          "    if (body && typeof body.csrf === 'string' && body.csrf.length > 0) {",
+          "        pm.collectionVariables.set('csrf', body.csrf);",
+          "    }",
+          "} catch (e) {",
+          "    // not JSON (e.g. 204) — ничего не делаем",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Bootstrap session (GET /auth/session)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/session",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "session"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('is_guest = true', () => pm.expect(body.is_guest).to.eql(true));",
+              "pm.test('csrf set', () => pm.expect(body.csrf).to.be.a('string').and.not.empty);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Register (POST /auth/register)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('is_guest = false', () => pm.expect(body.is_guest).to.eql(false));",
+              "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));",
+              "pm.test('user_id присвоен', () => pm.expect(body.user_id).to.be.a('string'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Verify session (GET /auth/session)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/session",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "session"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('is_guest = false', () => pm.expect(body.is_guest).to.eql(false));",
+              "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Get profile (GET /profile)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["profile"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('email совпадает', () => pm.expect(body.email).to.eql(pm.collectionVariables.get('email')));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Patch profile (PATCH /profile)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["profile"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Иван\",\n  \"last_name\": \"Петров\",\n  \"phone\": \"+79001234567\",\n  \"allergens\": [\"shellfish\"],\n  \"dietary\": [\"vegan\"]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('first_name обновлён', () => pm.expect(body.first_name).to.eql('Иван'));",
+              "pm.test('allergens содержит shellfish', () => pm.expect(body.allergens).to.include('shellfish'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Change password (PATCH /auth/password)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/password",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "password"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"current_password\": \"{{password}}\",\n  \"new_password\": \"{{newPassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Logout (POST /auth/logout)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "logout"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('204 No Content', () => pm.response.to.have.status(204));",
+              "pm.collectionVariables.set('csrf', '');"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Guest after logout (GET /auth/session)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/session",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "session"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('is_guest = true', () => pm.expect(body.is_guest).to.eql(true));",
+              "pm.test('user_id = null', () => pm.expect(body.user_id).to.be.null);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Login with new password (POST /auth/login)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{newPassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('is_guest = false', () => pm.expect(body.is_guest).to.eql(false));",
+              "pm.test('role = customer', () => pm.expect(body.role).to.eql('customer'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Login wrong password (POST /auth/login → 401)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"wrong\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+              "const body = pm.response.json();",
+              "pm.test('code = invalid_credentials', () => pm.expect(body.error.code).to.eql('invalid_credentials'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Duplicate email (POST /auth/register → 409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"anotherpass\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+              "const body = pm.response.json();",
+              "pm.test('code = email_already_taken', () => pm.expect(body.error.code).to.eql('email_already_taken'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Profile w/o auth (Logout then GET /profile → 401)",
+      "description": "Логаутимся и сразу пробуем GET /profile.",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/profile",
+          "host": ["{{baseUrl}}"],
+          "path": ["profile"]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const baseUrl = pm.collectionVariables.get('baseUrl');",
+              "const csrf = pm.collectionVariables.get('csrf');",
+              "pm.sendRequest({",
+              "    url: baseUrl + '/auth/logout',",
+              "    method: 'POST',",
+              "    header: { 'X-CSRF-Token': csrf || '' }",
+              "}, () => {",
+              "    pm.collectionVariables.set('csrf', '');",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. CSRF missing (POST /auth/register без X-CSRF-Token → 403)",
+      "description": "Перед запросом скрипт сбрасывает csrf, чтобы pre-request не подставлял хедер.",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"another@example.com\",\n  \"password\": \"secret123\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Bootstrap новой гостевой сессии (cookie), но csrf не сохраняем,",
+              "// чтобы collection-level pre-request не вставил заголовок.",
+              "const baseUrl = pm.collectionVariables.get('baseUrl');",
+              "pm.sendRequest({ url: baseUrl + '/auth/session', method: 'GET' }, () => {",
+              "    pm.collectionVariables.set('csrf', '');",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('403 Forbidden', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
