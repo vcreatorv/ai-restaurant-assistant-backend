@@ -1,0 +1,169 @@
+Бабагануш	Закуски	european	Пита, орех кедровый, кинза, масло оливковое, лайм, баклажан, паста тахини, чеснок	light	vegetarian,vegan,lactose_free	gluten,nuts,sesame	200	318
+Баклажаны в панировке	Закуски	european	Баклажан, соус «Сладкий чили», микс салатов	spicy,light	vegetarian,vegan,lactose_free	gluten	260	279
+Вителло Тоннато	Закуски	italian	Ростбиф, соус Вителло тоннато, рукола, каперсы, масло оливковое	chef	gluten_free,lactose_free		200	723
+Карпаччо Денвер	Закуски	italian	Говядина, смесь перцев, уксус бальзамический, масло оливковое, сыр пармезан, рукола, каперсы		gluten_free	dairy	140	371
+Креветки в кляре	Закуски	european	Маринованные креветки в кляре, соус медово-горчичный		gluten_free,lactose_free	shellfish	130	535
+Крылья куриные	Закуски	european	В соусе сладкий чили, барбекю, соус 1000 островов	spicy	gluten_free,lactose_free	soy	270	1353
+Куриные стрипсы	Закуски	european	Филе куриное, панировочные сухари, соус чили, соус 1000 островов, кетчуп, молоко, яйцо	spicy		dairy,eggs,gluten,soy	310	887
+Мясное плато	Закуски	european	Салями чоризо, пармская ветчина, пастрами, вяленые томаты, гриссини		lactose_free	gluten	125	557
+Сырное плато	Закуски	italian	Сыр чеддер, сыр камамбер, сыр пармезан, сыр дор блю, соус вишневый, гриссини, орех грецкий		vegetarian	dairy,gluten,nuts	180	621
+Тартар из авокадо с креветками	Закуски	european	Креветки, авокадо, лук красный, томаты вяленые, перец чили, лайм, чипсы из креветок	spicy,light	gluten_free,lactose_free	shellfish	165	349
+Чесночные гренки	Закуски	european	Подаются с соусом блю-чиз		vegetarian,vegan,gluten_free,lactose_free		270	789
+Витаминный салат	Салаты	european	Клюква вяленая, зелень, масло оливковое, яблочный уксус, капуста белокочанная, морковь, перец болгарский, сельдерей	light	vegetarian,vegan,gluten_free,lactose_free	celery	200	301
+Греческий салат	Салаты	european	Томаты, перец болгарский, маслины, сербская брынза, красный лук, орегано, морская соль, огурцы, оливковое масло	hit,chef,light	vegetarian,vegan,gluten_free,lactose_free		250	257
+Пастрами салат	Салаты	european	Мраморная говядина, запеченные перцы, микс салатов, медово-горчичная заправка, хрустящий лук фри	light	lactose_free	gluten	210	299
+Салат Буррата с баклажанами	Салаты	asian	Буррата, баклажан, соус терияки, томаты, рукола, орех кедровый, масло оливковое, имбирь, перец чили	spicy	vegetarian,gluten_free	dairy,nuts	290	366
+Салат Бык-тейсти	Салаты	european	Фарш говяжий, сыр чеддер, салат айсберг, лук красный, томаты розовые, соус бургер, огурцы корнишоны, гренки бриошь		gluten_free	dairy	350	367
+Салат зелёный	Салаты	european	Шпинат, брокколи, цукини, огурец, горошек, сок лайма, авокадо, кинза, сельдерей, микс салатов, семена амаранта, мед, чили, уксус рисовый	spicy	vegetarian,vegan,gluten_free,lactose_free	celery	210	386
+Салат Капрезе	Салаты	italian	Томаты, рассольная моцарелла, микс салатов, соус песто, крем бальзамик	light	vegetarian,gluten_free	dairy	200	316
+Салат с говяжьим языком и ореховым соусом	Салаты	european	Язык говяжий, огурцы маринованные, перец сладкий, микс салатов, соус ореховый, соус соевый	light	vegetarian,vegan,gluten_free,lactose_free	nuts,soy	170	301
+Салат с креветками и соусом манго	Салаты	european	Вяленые томаты, помидоры, соус чили-манго, апельсин, перец болгарский, креветки, рукола	spicy,light	gluten_free,lactose_free	shellfish	200	216
+Салат с печеной тыквой и фетой	Салаты	european	Запечённая тыква, тыквенный мусс, микс салатов, фета, масло оливковое, вяленые томаты	light	vegetarian,gluten_free	dairy	240	306
+Салат с ростбифом	Салаты	european	Говядина поясничный отруб, микс салатов, томаты, масло оливковое, мед, соевый соус	light	gluten_free,lactose_free	soy	190	281
+Салат томаты со страчателлой	Салаты	italian	Томаты, сыр страчателла, соус песто, соус бальзамик, масло оливковое, салат рукола	light	vegetarian,gluten_free	dairy	240	259
+Салат Цезарь с креветками	Салаты	italian	Креветки, сыр пармезан, салат айсберг, салат романо, помидоры, соус цезарь, чесночное масло, бон багет			dairy,shellfish,gluten	230	517
+Салат Цезарь с курицей	Салаты	italian	Куриная грудка, сыр пармезан, салат айсберг, салат романо, помидоры, соус цезарь, чесночное масло, бон багет			dairy,gluten	240	481
+Стейк-салат	Салаты	european	Микс салатов, стриплойн су-вид, томаты, масло оливковое, бальзамик, мед, соевый соус	light	gluten_free,lactose_free	soy	220	297
+Теплый салат с цыпленком	Салаты	italian	Куриное филе, лук красный, томаты, цукини, кускус, микс салатов, соус ореховый, соус песто, чесночное масло, соус соевый	light	gluten_free,lactose_free	nuts,soy	300	326
+Бульон куриный	Супы	european	С добавлением лапши, зелени, куриного филе, яиц и бон багета	big	lactose_free	gluten	420	421
+Классический борщ	Супы	russian	Говядина поясничный отруб, сметана, укроп, петрушка, фокачча, сало свиное			dairy,gluten	330	978
+Крем-суп грибной	Супы	european	Грибы белые, шампиньоны, вешенки, картофель, лук репчатый, сливки, бон багет, трюфельное масло		vegetarian	dairy,gluten	330	371
+Крем-суп сырный	Супы	european	Сливочный сыр, копченое куриное филе, картофель, морковь, бон багет, чипсы из бекона			dairy,gluten	310	690
+Том-ям	Супы	asian	Креветки, кальмар, рис, грибы шампиньоны, лайм, кинза, томаты черри, паста том ям, перец чили	spicy	lactose_free	shellfish,gluten	370	419
+Пицца Баварская	Пицца и паста	italian	Пшеничное тесто, моцарелла, томатный соус, чоризо, бекон свиной, красный лук, колбаски, горчичный соус, шампиньоны, петрушка	big		dairy,gluten	415	1132
+Пицца Маргарита	Пицца и паста	italian	Пшеничное тесто, моцарелла, томатный соус, орегано		vegetarian	dairy,gluten	300	705
+Пицца Сырная	Пицца и паста	italian	Пшеничное тесто, моцарелла, чеддер, сыр пармезан, дор блю, томатный соус		vegetarian	dairy,gluten	350	910
+Пицца Цезарь	Пицца и паста	italian	Пшеничное тесто, моцарелла, сыр пармезан, салат романо, салат айсберг, куриное филе, томаты, соус цезарь, сливки	big		dairy,gluten	420	1038
+Пицца Чоризо	Пицца и паста	italian	Пшеничное тесто, моцарелла, чоризо, томатный соус			dairy,gluten	320	802
+Бифштекс 4 сыра	Гриль (хоспер)	italian	Бифштекс из говядины, моцарелла, сыр пармезан, чеддер, дор блю, сливки, лук фри, рукола, соус брусничный		gluten_free	dairy	270	950
+Говяжьи колбаски	Гриль (хоспер)	american	Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри		gluten_free,lactose_free	mustard	245	1204
+Кесадилья с говядиной	Гриль (хоспер)	asian	Фарш говяжий, тортилья, майонез, соус терияки, соус сальса, кукуруза, перец болгарский, сыр чеддер, сыр моцарелла			dairy,eggs,gluten	390	941
+Колбаска из индейки	Гриль (хоспер)	american	Колбаска, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри		gluten_free,lactose_free	mustard	245	803
+Куриные колбаски	Гриль (хоспер)	american	Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри		gluten_free,lactose_free	mustard	245	954
+Люля-кебаб из говядины	Гриль (хоспер)	american	Говядина, лук репчатый, чеснок, зира, кориандр, базилик, кинза, петрушка, томат, масло сливочное, лаваш, лук маринованный, соус сальса, перец острый маринованный	spicy	gluten_free	dairy	180	941
+Люля-кебаб из индейки	Гриль (хоспер)	american	Индейка, жир говяжий, лаваш, перец острый маринованный, кинза, лук маринованный, соус сальса, лук репчатый, масло сливочное, базилик, чеснок, зелень	spicy	gluten_free	dairy	180	941
+Медальоны из свинины	Гриль (хоспер)	american	Свиная вырезка, бекон, лаваш, лук маринованный, кинза, соус грибной		gluten_free,lactose_free		250	657
+Свиные колбаски	Гриль (хоспер)	american	Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри		gluten_free,lactose_free	mustard	245	1340
+Стейк индейки	Гриль (хоспер)	american	Филе индейки, жареная кукуруза, паприка, морская соль		gluten_free,lactose_free		185	551
+Шашлык из курицы	Гриль (хоспер)	american	Фермерская курица, лаваш, кинза, маринованный лук		gluten_free,lactose_free		180	813
+Шашлык из свиной шеи	Гриль (хоспер)	american	Свинина, лаваш, кинза, маринованный лук		gluten_free,lactose_free		180	1094
+Бефстроганов	Горячее — мясо	european	Говядина, шампиньоны, картофель беби, сливки, помидоры черри, репчатый лук, огурцы корнишоны, дижонская горчица		gluten_free	dairy,mustard	200	549
+Говядина по-тайски	Горячее — мясо	asian	Говядина, кунжутное масло, перец болгарский, шампиньоны, стебель сельдерея, лук красный, арахис, лук фри, соус тайский, чеснок, имбирь, перец чили, кинза, рис	spicy	gluten_free,lactose_free	peanuts,sesame,celery	390	621
+Говяжьи котлеты с картофельным пюре	Горячее — мясо	european	Фарш говяжий, картофельное пюре, соус брусничный, соус сливочно-горчичный		gluten_free,lactose_free		350	667
+Рваная говядина на подушке из стрипсов	Горячее — мясо	european	Томленая говядина, картофельные стрипсы, зелень, томаты черри, лук маринованный		gluten_free,lactose_free		300	653
+Свиные ребра «Барбекю»	Горячее — мясо	european	Свиные ребра су-вид, лук фри, соус барбекю, соус блю чиз		gluten_free,lactose_free		260	957
+Свиные ребра «Терияки»	Горячее — мясо	asian	Свиные ребра су-вид, семена кунжута, соус терияки, соус блю чиз		gluten_free,lactose_free	sesame	260	956
+Свиные ребра Jack Daniel’s	Горячее — мясо	european	Свиные ребра су-вид, фисташка, соус Jack Daniel’s, соус блю чиз		gluten_free,lactose_free	nuts	260	956
+Фокачча с розмарином	Закуски	european	Пшеничная основа, розмарин, чесночное масло		vegetarian,vegan,lactose_free	gluten	185	587
+Фокачча с томатами	Закуски	european	Пшеничная основа, помидоры черри, чесночное масло		vegetarian,vegan,lactose_free	gluten	195	546
+Хлебная корзина	Закуски	european	Фокачча, оливковое масло, крем бальзамик		vegetarian,vegan,lactose_free	gluten	200	821
+Дорадо	Горячее — рыба и морепродукты	european	Свежая охлажденная рыба дорадо, микс салатов, лайм, морская соль, крем бальзамик		gluten_free,lactose_free	fish	45	397
+Креветки Пиль-Пиль	Горячее — рыба и морепродукты	european	Креветка тигровая, масло сливочное, паприка, перец чили, чеснок, томаты черри, петрушка, фокачча	spicy		dairy,shellfish,gluten	300	665
+Паста болоньезе	Пицца и паста	italian	Спагетти, фарш говяжий, томаты пилатти, сыр пармезан, бекон свиной	big		dairy,gluten	430	816
+Паста с томлёной щекой	Пицца и паста	italian	Спагетти, щечки говяжьи, мясной соус, тимьян, чеснок, сливки, соус песто, сыр пармезан	hit,chef,big	vegetarian	dairy,gluten	410	1021
+Рибай Блэк Ангус	Стейки	american	Премиальный стейк породы Блэк Ангус смешанного откорма. Томат, жареная кукуруза, соль морская, паприка	hit,chef	gluten_free,lactose_free		350	687
+Рябчик в глазури Джек Дениелс	Горячее — мясо	european	Свиная голяшка томленая, картофельные стрипсы, лук зеленый, соус Джек Дениелс		gluten_free,lactose_free		370	979
+Свиная рулька	Горячее — мясо	european	Большая рулька на кости, квашеная капуста, медово-горчичный соус		vegetarian,vegan,gluten_free,lactose_free		100	2591
+Свиной томагавк	Стейки	american	Свиная корейка, маринованная капуста, томаты		vegetarian,vegan,gluten_free,lactose_free		360	796
+Сибас	Горячее — рыба и морепродукты	european	Свежая охлажденная рыба сибас, микс салатов, лайм, морская соль, крем бальзамик		gluten_free,lactose_free	fish	45	397
+Стейк NY травяной	Стейки	american	Говядина травяного откорма, томат, жареная кукуруза, соль морская, паприка		gluten_free,lactose_free		250	666
+Стейк Бавет (зерно)	Стейки	american	Стейк с мягким вкусом и волокнистой текстурой, томат, жареная кукуруза, соль морская, паприка	chef	gluten_free,lactose_free		250	621
+Стейк из форели	Горячее — рыба и морепродукты	european	Филе форели, микс салатов, лайм, специи	light	gluten_free,lactose_free	fish	180	270
+Стейк Рибай (трава)	Стейки	american	Премиальный стейк из спинной части, томат, жареная кукуруза, соль морская, паприка	hit,chef	gluten_free,lactose_free		300	1005
+Стейк Стриплойн (зерно)	Стейки	american	Стейк с плотным волокном и мясным вкусом, томат, жареная кукуруза, соль морская, паприка	chef	gluten_free,lactose_free		250	621
+Стейк Филе Миньон	Стейки	american	Стейк из поясничной мышцы, томат, жареная кукуруза, соль морская, паприка	hit,chef	gluten_free,lactose_free		250	621
+Стейк Шато Бриан	Стейки	american	Стейк из поясничной мышцы, томат, жареная кукуруза, соль морская, паприка	hit,chef	gluten_free,lactose_free		250	621
+Тартар из говядины	Закуски	italian	Вырезка говяжья, каперсы, вяленые томаты, бон багет, рукола, пармезан, песто из вяленых томатов, масло оливковое	chef		dairy,gluten	110	436
+Тартар из форели	Горячее — рыба и морепродукты	european	Филе форели, огурец свежий, авокадо, томаты розовые, лайм, перец чили, соевый соус, кинза, масло кунжутное, имбирь	spicy,light	gluten_free,lactose_free	fish,soy,sesame	200	280
+Утка конфи с печеными яблоками	Горячее — мясо	french	Утиная ножка, яблоки, мед, брусника, салат рукола, орех кедровый, масло сливочное, уксус яблочный, сахар	hit,chef	gluten_free	dairy,nuts	300	1276
+Шашлык из говядины	Горячее — мясо	european	Говядина, лаваш, кинза, маринованный лук		gluten_free,lactose_free		180	386
+Щёки с картофельным пюре	Горячее — мясо	european	Картофельное пюре, щечки говяжьи, мясной соус, томаты черри, лук зеленый, масло сливочное, сливки		vegetarian,gluten_free	dairy	390	1050
+Брискет	Стейки	american	Грудинка говяжья томленая, капуста маринованная, огурцы маринованные, соус сальса, горчица дижонская	chef	gluten_free,lactose_free	mustard	350	780
+Пиканья на пите	Стейки	american	Мраморная говядина, лепешка пита, соус сальса, сметана, лайм, кинза			dairy,gluten	300	792
+Ребра Кальби	Стейки	american	Ребро говяжье томленое, соус мясной, соус брусничный, зелень	chef,big	gluten_free,lactose_free		420	1062
+Стейк Фланк	Стейки	american	Отруб из пашины быка, томат, жареная кукуруза, специи		gluten_free,lactose_free		250	531
+Топ Сирлойн	Стейки	american	Верхняя часть тазобедренного отруба, томат, жареная кукуруза, специи		vegetarian,vegan,gluten_free,lactose_free		250	621
+Бургер Jack Daniel’s	Бургеры	american	Томленая говядина, карамелизированный лук, соус Jack Daniel’s, лук фри, соус блю чиз, сыр чеддер, булочка			dairy,gluten	280	
+Бургер THE БЫК	Бургеры	american	Премиальная котлета Блэк Ангус, карамелизированный лук, соус бургер, сыр чеддер, перец халапеньо, булочка	spicy,hit,chef		dairy,gluten	270	901
+Бургер Вишневый бизон	Бургеры	american	Премиальная котлета Блэк Ангус, жареный бекон, жареный лук, сыр чеддер, вишня с прованскими травами, соус блю чиз, булочка			dairy,gluten	280	
+Бургер с креветками	Бургеры	american	Дальневосточные креветки, помидоры, луковые кольца, салат романо, салат айсберг, соус 1000 островов, булочка		lactose_free	shellfish,gluten,soy	210	
+Чизбургер	Бургеры	american	Премиальная котлета Блэк Ангус, огурцы корнишоны, сыр чеддер, помидоры, соус барбекю, салат романо, салат айсберг, булочка			dairy,gluten	280	
+Брокколи	Гарниры	european	Микс салатов, смесь пяти перцев, морская соль, оливковое масло		vegetarian,vegan,gluten_free,lactose_free		225	121
+Картофель батат фри	Гарниры	european	Батат фри, соус блю чиз		vegetarian,vegan,gluten_free,lactose_free		230	
+Картофель Диппер	Гарниры	european	Картофель, майонез, соус Jack Daniel’s		vegetarian,gluten_free,lactose_free	eggs	270	
+Картофель по-деревенски	Гарниры	european	Большая порция картофеля бейби, кетчуп		vegetarian,vegan,gluten_free,lactose_free		300	
+Картофель фри	Гарниры	european	Большая порция картофеля фри, кетчуп		vegetarian,vegan,gluten_free,lactose_free		300	
+Картофель фри с пармезаном	Гарниры	italian	Картофель фри, сыр пармезан, трюфельное масло, соус блю чиз		vegetarian,gluten_free	dairy	200	
+Картофельное пюре	Гарниры	european	Картофель, масло сливочное, молоко		vegetarian,gluten_free	dairy	200	
+Овощи гриль	Гарниры	european	Помидоры, грибы, цукини, баклажаны, лук красный, перец болгарский, микс салатов, крем бальзамик		vegetarian,vegan,gluten_free,lactose_free		350	
+Рис с овощами	Гарниры	european	Рис, баклажаны, кабачки, шампиньоны, перец болгарский, лук красный, соевый соус, кунжутное масло, кинза, чесночное масло		vegetarian,vegan,gluten_free,lactose_free	soy,sesame	250	
+1000 островов	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	143
+Jack Daniel’s	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	
+Барбекю	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	51
+Блю чиз	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	190
+Грибной соус	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	68
+Кетчуп	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	42
+Медово-горчичный	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	251
+Перечный	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	61
+Сальса	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	28
+Сладкий чили	Соусы	european	Соус	spicy	vegetarian,vegan,gluten_free,lactose_free		40	90
+Соус Black Pepper	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	
+Соус брусничный с розмарином	Соусы	european	Соус		vegetarian,vegan,gluten_free,lactose_free		40	60
+Медовик	Десерты	european	Медовые коржи, сметанный крем, шоколадная печать, мёд гречишный		vegetarian,gluten_free	dairy	190	741
+Мороженое	Десерты	european	В ассортименте	light	vegetarian,vegan,gluten_free,lactose_free		150	312
+Панна-Котта с клубничным соусом	Десерты	european	Сливки, кокосовое молоко, сахар ванильный, желатин, клубничный соус, мята, кокосовая стружка		vegetarian,gluten_free	dairy	180	391
+Фисташковый рулет	Десерты	european	Меренга, сливочный крем, фисташки, соус малиновый		vegetarian,vegan,gluten_free,lactose_free	nuts	110	418
+Чизкейк баскский	Десерты	european	Сырная основа, песочный корж, чипсы апельсина, соленая карамель		vegetarian,gluten_free	dairy	210	1098
+Шоколадный Фондан	Десерты	european	Подается с шариком мороженого и шоколадным топпингом	light	vegetarian,vegan,gluten_free,lactose_free		100	316
+Айс Латте Карамель-Бузина	Напитки безалкогольные	european	Напиток кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Американо	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Бамбл апельсин	Напитки безалкогольные	european	Кофейный напиток	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Бамбл гранат	Напитки безалкогольные	european	Кофейный напиток	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Гляссе	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Горячий шоколад	Напитки безалкогольные	european	Горячий шоколад	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Двойной эспрессо	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Капучино	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Латте	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Раф	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Фильтр-Кофе	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Флэт Уайт	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Эспрессо	Напитки безалкогольные	european	Кофе	coffee	vegetarian,vegan,gluten_free,lactose_free			
+Какао с маршмелоу	Напитки безалкогольные	european	Банановое / кокосовое молоко	coffee	vegetarian,gluten_free	dairy		
+Капучино на альт. молоке	Напитки безалкогольные	european	Банановое / кокосовое молоко	coffee	vegetarian,gluten_free	dairy		
+Латте на альт. молоке	Напитки безалкогольные	european	Банановое / кокосовое молоко	coffee	vegetarian,gluten_free	dairy		
+Ассам	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Гречишный	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Жасминовый	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Манго & Имбирь & Кафирский лайм	Напитки безалкогольные	european	Авторский чай	tea	vegetarian,vegan,gluten_free,lactose_free			110
+Мандарин&Чёрная смородина	Напитки безалкогольные	european	Авторский чай	tea	vegetarian,vegan,gluten_free,lactose_free			110
+Молочный улун	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Облепиха&Груша	Напитки безалкогольные	european	Авторский чай	tea	vegetarian,vegan,gluten_free,lactose_free			110
+Ромашковый	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Сенча	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Таёжный	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Фруктовый пунш	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Цейлонский с чабрецом	Напитки безалкогольные	european	Чай	tea	vegetarian,vegan,gluten_free,lactose_free			24
+Б/А Number one / №1	Напитки безалкогольные	european	Драгонфрукт, личи, кардамон, содовая, лёд	lemonade	vegetarian,vegan,gluten_free,lactose_free			72
+Вишня & Миндаль	Напитки безалкогольные	european	Лимонад	lemonade	vegetarian,vegan,gluten_free,lactose_free	nuts		
+Лимонад Кола по-русски	Напитки безалкогольные	european	Только в Безлимите	lemonade	vegetarian,vegan,gluten_free,lactose_free			
+Лимонад Крем Сливки	Напитки безалкогольные	european	Только в Безлимите	lemonade	vegetarian,gluten_free	dairy		
+Лимонад Малина&Маракуйя	Напитки безалкогольные	european	Лимонад	lemonade	vegetarian,vegan,gluten_free,lactose_free			
+Лимонад Тархун	Напитки безалкогольные	european	Только в Безлимите	lemonade	vegetarian,vegan,gluten_free,lactose_free			
+Лимонад Щавель Клубника	Напитки безалкогольные	european	Только в Безлимите	lemonade	vegetarian,vegan,gluten_free,lactose_free			
+Лимонад Яблоко-киви	Напитки безалкогольные	european	Лимонад	lemonade	vegetarian,vegan,gluten_free,lactose_free			
+Свежий Мандарин	Напитки безалкогольные	european	Лимонад	lemonade	vegetarian,vegan,gluten_free,lactose_free			
+Б/А Number two / №2	Напитки безалкогольные	european	Манго, маракуйя, кокос, содовая, лёд	lemonade	vegetarian,vegan,gluten_free,lactose_free			72
+Б/А Number three / №3	Напитки безалкогольные	european	Васильки, черёмуха, голубика, содовая, лёд	lemonade	vegetarian,vegan,gluten_free,lactose_free			72
+Лимонад Лесная ягода	Напитки безалкогольные	european	Лимонад	lemonade	vegetarian,vegan,gluten_free,lactose_free			
+Глинтвейн б/а	Напитки безалкогольные	european	Вишневый сок, яблоко, апельсин, корица, гвоздика, мёд		vegetarian,vegan,gluten_free,lactose_free			
+Desalcoholized Red Albali Cabernet Tempranillo	Напитки алкогольные	european	Красное Б/А, Испания, Кастилия Ла Манча	wine	vegetarian,vegan,gluten_free,lactose_free			
+Desalcoholized White Vina Albali Sparkling White, 2023	Напитки алкогольные	european	Белое Б/А, Испания, Кастилия Ла Манча	wine	vegetarian,vegan,gluten_free,lactose_free			
+Hans Baer Riesling, Weinkellerei Hechtsheim	Напитки алкогольные	european	Рислинг безалкогольный	wine	vegetarian,vegan,gluten_free,lactose_free			
+Б/А Pabst	Напитки алкогольные	european	Пиво Б/А	beer	vegetarian,vegan,gluten_free,lactose_free			
+Вишневый Эль «The Бык»	Напитки алкогольные	european	Пиво	beer	vegetarian,vegan,gluten_free,lactose_free			
+Нефильтрованное «THE БЫК»	Напитки алкогольные	european	Пиво	beer	vegetarian,vegan,gluten_free,lactose_free			
+Сидр «THE БЫК»	Напитки алкогольные	european	Сидр	beer	vegetarian,vegan,gluten_free,lactose_free			
+Темное «THE БЫК»	Напитки алкогольные	european	Пиво	beer	vegetarian,vegan,gluten_free,lactose_free			
+Ячменный лагер «THE БЫК»	Напитки алкогольные	european	Пиво	beer	vegetarian,vegan,gluten_free,lactose_free			
+Апероль number one / №1	Напитки безалкогольные	european	Минеральная вода, Апероль Б/А, апельсин		vegetarian,vegan,gluten_free,lactose_free			
+Апероль number one / №2	Напитки безалкогольные	european	Сидр яблочный, Апероль Б/А, апельсин, лёд		vegetarian,vegan,gluten_free,lactose_free			

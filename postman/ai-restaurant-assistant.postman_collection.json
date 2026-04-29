@@ -15,7 +15,8 @@
     { "key": "adminPassword", "value": "adminpass1",                    "type": "string" },
     { "key": "categoryId",    "value": "",                              "type": "string" },
     { "key": "tagId",         "value": "",                              "type": "string" },
-    { "key": "dishId",        "value": "",                              "type": "string" }
+    { "key": "dishId",        "value": "",                              "type": "string" },
+    { "key": "chatId",        "value": "",                              "type": "string" }
   ],
   "event": [
     {
@@ -330,6 +331,146 @@
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('404', () => pm.response.to.have.status(404));",
             "pm.test('code = dish_not_found', () => pm.expect(pm.response.json().error.code).to.eql('dish_not_found'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Chats",
+      "description": "Чат с ассистентом. Требует customer-сессии (зарегистрироваться через секцию Auth перед запуском). На A1 ответ ассистента — echo-заглушка через SSE (event: meta → token → done).",
+      "item": [
+        {
+          "name": "1. Active chat (GET /chats/active)",
+          "description": "Возвращает текущий чат пользователя или создаёт новый, если последний устарел (по умолчанию TTL 6 часов). Сохраняет chatId в коллекционную переменную.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/chats/active", "host": ["{{baseUrl}}"], "path": ["chats", "active"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('id is uuid', () => pm.expect(body.id).to.match(/^[0-9a-f-]{36}$/i));",
+            "pm.test('user_id present', () => pm.expect(body.user_id).to.be.a('string'));",
+            "pm.collectionVariables.set('chatId', body.id);"
+          ] } }]
+        },
+        {
+          "name": "2. List chats (GET /chats)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats?limit=20&offset=0",
+              "host": ["{{baseUrl}}"], "path": ["chats"],
+              "query": [
+                { "key": "limit",  "value": "20" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('shape', () => pm.expect(body).to.have.all.keys('items','total','limit','offset'));"
+          ] } }]
+        },
+        {
+          "name": "3. Create new chat (POST /chats)",
+          "description": "Принудительно создаёт новый чат, не зависит от auto-new-after.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats", "host": ["{{baseUrl}}"], "path": ["chats"] },
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Обед в офисе\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "const body = pm.response.json();",
+            "pm.test('title set', () => pm.expect(body.title).to.eql('Обед в офисе'));",
+            "pm.collectionVariables.set('chatId', body.id);"
+          ] } }]
+        },
+        {
+          "name": "4. Send message (POST /chats/{id}/messages, SSE)",
+          "description": "Отвечает SSE-стримом: event: meta → event: token → event: done. На A1 ассистент эхо-отвечает; реальный LLM появится в шаге A3.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Что у вас острого без молочки?\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('content-type SSE', () => pm.expect(pm.response.headers.get('Content-Type') || '').to.include('text/event-stream'));",
+            "const text = pm.response.text();",
+            "pm.test('contains meta event',  () => pm.expect(text).to.include('event: meta'));",
+            "pm.test('contains token event', () => pm.expect(text).to.include('event: token'));",
+            "pm.test('contains done event',  () => pm.expect(text).to.include('event: done'));",
+            "pm.test('echo includes prompt', () => pm.expect(text).to.include('echo: Что у вас острого без молочки?'));"
+          ] } }]
+        },
+        {
+          "name": "5. Get chat with messages (GET /chats/{id})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats/{{chatId}}?messages_limit=50",
+              "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}"],
+              "query": [
+                { "key": "messages_limit", "value": "50" }
+              ]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('chat present', () => pm.expect(body.chat).to.be.an('object'));",
+            "pm.test('messages array', () => pm.expect(body.messages).to.be.an('array'));",
+            "pm.test('first message role = user', () => pm.expect(body.messages[0].role).to.eql('user'));",
+            "pm.test('second message role = assistant', () => pm.expect(body.messages[1].role).to.eql('assistant'));",
+            "pm.test('ASC order — created_at growing', () => {",
+            "  for (let i = 1; i < body.messages.length; i++) {",
+            "    pm.expect(new Date(body.messages[i].created_at).getTime()).to.be.at.least(new Date(body.messages[i-1].created_at).getTime());",
+            "  }",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "6. Send empty message (→ 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ] } }]
+        },
+        {
+          "name": "7. Foreign chat (→ 403/404)",
+          "description": "Несуществующий или чужой chat_id — должен дать 404 (не найден) или 403 (не наш).",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/chats/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["chats", "00000000-0000-0000-0000-000000000000"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404 or 403', () => pm.expect([403, 404]).to.include(pm.response.code));"
+          ] } }]
+        },
+        {
+          "name": "8. Delete chat (DELETE /chats/{id})",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('204 No Content', () => pm.response.to.have.status(204));",
+            "pm.collectionVariables.set('chatId', '');"
           ] } }]
         }
       ]

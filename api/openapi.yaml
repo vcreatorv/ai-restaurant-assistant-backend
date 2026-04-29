@@ -254,6 +254,23 @@ paths:
               schema: { $ref: '#/components/schemas/Chat' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /chats/active:
+    get:
+      operationId: getActiveChat
+      tags: [chats]
+      summary: Активный чат пользователя (auto-create если нет / устарел)
+      description: |
+        Возвращает «текущий» чат пользователя.
+        Если у пользователя нет чатов или последнее сообщение в самом свежем чате старше
+        порога `chat.usecase.auto_new_chat_after`, создаётся новый чат и возвращается он.
+      responses:
+        '200':
+          description: Активный чат
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Chat' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
   /chats/{id}:
     get:
       operationId: getChat
@@ -809,7 +826,14 @@ components:
       in: path
       name: id
       required: true
-      schema: { type: string, format: uuid }
+      # pattern обязателен: gorillamux router (kin-openapi) не использует format: uuid для
+      # сужения матчинга. Без pattern шаблон /chats/{id} сматчил бы /chats/active. Регекс
+      # описывает RFC 4122 UUID и через расширение x-go-type-skip-optional-pointer не
+      # портит сгенерированный Go-тип openapi_types.UUID.
+      schema:
+        type: string
+        format: uuid
+        pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
     PathIntID:
       in: path
       name: id
@@ -1160,11 +1184,11 @@ components:
 
     Chat:
       type: object
-      required: [id, user_id, title, created_at, last_message_at]
+      required: [id, user_id, created_at, last_message_at]
       properties:
         id:              { type: string, format: uuid }
         user_id:         { type: string, format: uuid }
-        title:           { type: string }
+        title:           { type: string, nullable: true }
         created_at:      { type: string, format: date-time }
         last_message_at: { type: string, format: date-time }
 

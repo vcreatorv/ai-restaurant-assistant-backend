@@ -424,6 +424,147 @@ POST /api/v1/admin/categories
 | 29 | DeleteCategory блокируется при наличии блюд |
 | 30 | requireAdmin() в delivery → 403 для customer |
 
+# Chats
+
+Чат с ассистентом (на A1 — эхо-заглушка). Перед прогоном пройди шаги 1–2 из секции Auth, чтобы появился customer.
+
+## 31. Активный чат (auto-create)
+
+```
+GET /api/v1/chats/active
+```
+Возвращает текущий чат пользователя. Если у него нет чата или последний устарел (по умолчанию — `chat.usecase.auto_new_chat_after = 6h`), создаётся новый и возвращается. ID активного чата сохраняется в коллекционную переменную `chatId`.
+
+Ожидание: `200`, `Chat`:
+```json
+{
+  "id": "<uuid>",
+  "user_id": "<uuid>",
+  "title": null,
+  "created_at": "...",
+  "last_message_at": "..."
+}
+```
+
+## 32. Список чатов
+
+```
+GET /api/v1/chats?limit=20&offset=0
+```
+Ожидание: `200`, `{"items": [...], "total": N, "limit": 20, "offset": 0}`. Сортировка — DESC по `last_message_at`.
+
+## 33. Создать новый чат явно
+
+```
+POST /api/v1/chats
+{ "title": "Обед в офисе" }
+```
+Ожидание: `201`, `Chat`. `title` опционален.
+
+## 34. Отправить сообщение (SSE-стрим)
+
+```
+POST /api/v1/chats/{{chatId}}/messages
+Headers: X-CSRF-Token (auto), Content-Type: application/json
+Body: { "content": "Что у вас острого без молочки?" }
+```
+
+Ожидание: `200`, `Content-Type: text/event-stream`, тело — три события:
+```
+event: meta
+data: {"message_id":"<uuid>","recommended_dish_ids":[]}
+
+event: token
+data: {"delta":"echo: Что у вас острого без молочки?"}
+
+event: done
+data: {"tokens_in":0,"tokens_out":0,"latency_ms":<N>}
+```
+
+На A1 ассистент отвечает эхо-заглушкой одним токеном, реальный LLM появится в шаге A3. И user-сообщение, и assistant-сообщение пишутся в `chat_messages` атомарно (вместе с `last_message_at` чата).
+
+## 35. История сообщений
+
+```
+GET /api/v1/chats/{{chatId}}?messages_limit=50
+```
+Ожидание: `200`, `ChatWithMessages`:
+- `chat` — мета чата,
+- `messages` — массив, отсортированный **ASC по created_at** (старые → новые),
+- `has_more` — есть ли ещё более старые сообщения за пределами лимита.
+
+Курсорная пагинация:
+```
+GET /api/v1/chats/{{chatId}}?messages_before={{messageId}}&messages_limit=50
+```
+Вернёт N сообщений строго старше указанного `messages_before`.
+
+## 36. Пустое сообщение → 400
+
+```
+POST /api/v1/chats/{{chatId}}/messages
+Body: { "content": "" }
+```
+Ожидание: `400 validation_failed`. Также 400 если content состоит только из пробелов (валидация на уровне usecase, чтобы не писать в БД мусор).
+
+## 37. Несуществующий чат → 404
+
+```
+GET /api/v1/chats/00000000-0000-0000-0000-000000000000
+```
+Ожидание: `404 chat_not_found`.
+
+## 38. Чужой чат → 403
+
+Если зарегистрированный customer попытается обратиться к `chatId` другого пользователя:
+```
+GET /api/v1/chats/{{chatIdДругогоЮзера}}
+```
+Ожидание: `403 access_denied` (`Chat does not belong to this user`).
+
+## 39. Чат без авторизации → 401
+
+```
+POST /api/v1/auth/logout    (сначала вышли)
+GET /api/v1/chats/active
+```
+Ожидание: `401 unauthorized`. На A1 чат требует `session.UserID != nil` — гость без явного `Register/Login` его не видит. Lazy-создание guest-юзера для чатов будет добавлено отдельной задачей.
+
+## 40. Удалить чат
+
+```
+DELETE /api/v1/chats/{{chatId}}
+```
+Ожидание: `204`. Сообщения чата удаляются каскадом (FK `chat_messages.chat_id ON DELETE CASCADE`).
+
+## Что проверяет каждый шаг (chats)
+
+| Шаг | Что валидируется |
+|---|---|
+| 31 | GetActive: auto-create нового / возврат свежего; client сохраняет id |
+| 32 | List по убыванию last_message_at, total/limit/offset |
+| 33 | Принудительное создание нового чата |
+| 34 | SendMessage: атомарная запись user+assistant в БД, SSE-формат meta/token/done |
+| 35 | GetWithMessages: ASC-сортировка для UI, has_more, курсор before |
+| 36 | Валидация пустого/whitespace-only content |
+| 37 | Sentinel ErrChatNotFound → 404 |
+| 38 | Проверка владельца чата → 403 |
+| 39 | Требуется session.UserID (на A1 — без lazy-guest) |
+| 40 | Cascade delete сообщений |
+
+## Если что-то не так
+
+Посмотреть чаты пользователя в PG:
+```sh
+docker compose exec postgres psql -U restaurant -d restaurant -c "SELECT id, user_id, title, last_message_at FROM chats ORDER BY last_message_at DESC LIMIT 10;"
+docker compose exec postgres psql -U restaurant -d restaurant -c "SELECT chat_id, role, LEFT(content, 60) AS preview, created_at FROM chat_messages ORDER BY created_at DESC LIMIT 20;"
+```
+
+Сбросить чаты конкретного пользователя:
+```sh
+docker compose exec postgres psql -U restaurant -d restaurant -c "DELETE FROM chats WHERE user_id IN (SELECT id FROM users WHERE email='test@example.com');"
+```
+
 ## Если что-то не так
 
 Логи приложения:

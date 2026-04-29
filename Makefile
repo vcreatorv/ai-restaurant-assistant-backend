@@ -1,4 +1,4 @@
-.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api seed \
+.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api seed seed-descriptions \
         migrate-up migrate-down migrate-create \
         docker-build docker-up docker-down docker-logs \
         ci-check fmt-check group-imports-check
@@ -15,6 +15,7 @@ help:
 	@echo "  tidy               - go mod tidy + verify"
 	@echo "  generate-api       - сгенерировать код из OpenAPI"
 	@echo "  seed               - залить меню (seed/menu.json) в PG + картинки в MinIO"
+	@echo "  seed-descriptions  - обновить только description у блюд из seed/menu.json"
 	@echo "  migrate-up         - применить миграции"
 	@echo "  migrate-down       - откатить последнюю миграцию"
 	@echo "  migrate-create     - создать новую миграцию (NAME=имя)"
@@ -92,6 +93,18 @@ seed:
 	  S3_BUCKET=$$MINIO_BUCKET \
 	  S3_PUBLIC_BASE_URL=http://localhost:$${MINIO_API_PORT:-9000}/$$MINIO_BUCKET \
 	  go run ./cmd/seed -config configs/config.yaml -seed seed/menu.json -assets seed/assets'
+
+# Обновляет только description у уже существующих блюд по name. Картинки/S3 не трогаются.
+# S3-env пробрасываются ради валидации конфига, сам S3-клиент в этом режиме не создаётся.
+seed-descriptions:
+	@bash -c 'set -a && . ./.env && set +a && \
+	  POSTGRES_DSN="postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@localhost:5432/$$POSTGRES_DB?sslmode=disable" \
+	  S3_ENDPOINT=localhost:$${MINIO_API_PORT:-9000} \
+	  S3_ACCESS_KEY=$$MINIO_ROOT_USER \
+	  S3_SECRET_KEY=$$MINIO_ROOT_PASSWORD \
+	  S3_BUCKET=$$MINIO_BUCKET \
+	  S3_PUBLIC_BASE_URL=http://localhost:$${MINIO_API_PORT:-9000}/$$MINIO_BUCKET \
+	  go run ./cmd/seed -config configs/config.yaml -seed seed/menu.json -mode=update-descriptions'
 
 # ----- Migrations -----
 

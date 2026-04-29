@@ -136,7 +136,7 @@
   "dishes": [
     {
       "name": "Бабагануш",
-      "description": "",
+      "description": "Восточная закуска из печёного баклажана с пастой тахини, кедровым орехом и кинзой, подаётся с тёплой питой.",
       "composition": "Пита, орех кедровый, кинза, масло оливковое, лайм, баклажан, паста тахини, чеснок",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%91%D0%B0%D0%B1%D0%B0%D0%B3%D0%B0%D0%BD%D1%83%D1%88-scaled-1.jpg",
       "image_key": "dishes/2149c8be61da.jpg",
@@ -167,7 +167,7 @@
     },
     {
       "name": "Баклажаны в панировке",
-      "description": "",
+      "description": "Ломтики баклажана в хрустящей панировке, поданы с азиатским соусом «Сладкий чили» и миксом салатов.",
       "composition": "Баклажан, соус «Сладкий чили», микс салатов",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B0%D0%BA%D0%BB%D0%B0%D0%B6%D0%B0%D0%BD%D1%8B-%D0%B2-%D0%BF%D0%B0%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%BA%D0%B5-scaled-2.jpg",
       "image_key": "dishes/da84e6541aa2.jpg",
@@ -197,7 +197,7 @@
     },
     {
       "name": "Вителло Тоннато",
-      "description": "",
+      "description": "Тонко нарезанный ростбиф под кремовым соусом из тунца с каперсами и руколой — итальянская закуска родом из Пьемонта.",
       "composition": "Ростбиф, соус Вителло тоннато, рукола, каперсы, масло оливковое",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%92%D0%B8%D1%82%D0%B5%D0%BB%D0%BB%D0%BE.jpg",
       "image_key": "dishes/184419c5fea7.jpg",
@@ -223,7 +223,7 @@
     },
     {
       "name": "Карпаччо Денвер",
-      "description": "",
+      "description": "Тончайшие лепестки говядины с пармезаном, руколой и каперсами под бальзамическим уксусом и оливковым маслом.",
       "composition": "Говядина, смесь перцев, уксус бальзамический, масло оливковое, сыр пармезан, рукола, каперсы",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D1%80%D0%BF%D0%B0%D1%87%D1%87%D0%BE-%D0%B4%D0%B5%D0%BD%D0%B2%D0%B5%D1%80.jpg",
       "image_key": "dishes/b86f3b23d55b.jpg",
@@ -248,7 +248,7 @@
     },
     {
       "name": "Креветки в кляре",
-      "description": "",
+      "description": "Маринованные креветки в воздушном кляре, поданы с медово-горчичным соусом.",
       "composition": "Маринованные креветки в кляре, соус медово-горчичный",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B8-%D0%B2-%D0%BA%D0%BB%D1%8F%D1%80%D0%B5-scaled-1-1.jpg",
       "image_key": "dishes/d245aa30cd32.jpg",
@@ -274,7 +274,7 @@
     },
     {
       "name": "Крылья куриные",
-      "description": "",
+      "description": "Запечённые куриные крылья в трио соусов: сладкий чили, барбекю и 1000 островов.",
       "composition": "В соусе сладкий чили, барбекю, соус 1000 островов",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D1%8B%D0%BB%D1%8C%D1%8F-%D0%BA%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B5-scaled-1-1.jpg",
       "image_key": "dishes/9c10e254b488.jpg",
@@ -302,7 +302,7 @@
     },
     {
       "name": "Куриные стрипсы",
-      "description": "",
+      "description": "Полоски куриного филе в сухарной панировке, поданы с пряным соусом чили, 1000 островов и кетчупом.",
       "composition": "Филе куриное, панировочные сухари, соус чили, соус 1000 островов, кетчуп, молоко, яйцо",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B5-%D1%81%D1%82%D1%80%D0%B8%D0%BF%D1%81%D1%8B-scaled-1-1.jpg",
       "image_key": "dishes/42a14c20faca.jpg",
@@ -330,7 +330,7 @@
     },
     {
       "name": "Мясное плато",
-      "description": "",
+      "description": "Сет итальянских мясных деликатесов: салями чоризо, пармская ветчина и пастрами с вялеными томатами и хрустящими гриссини.",
       "composition": "Салями чоризо, пармская ветчина, пастрами, вяленые томаты, гриссини",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D1%8F%D1%81%D0%BD%D0%BE%D0%B5-%D0%9F%D0%BB%D0%B0%D1%82%D0%BE-scaled-1-1.jpg",
       "image_key": "dishes/4d09010c3931.jpg",
@@ -355,7 +355,7 @@
     },
     {
       "name": "Сырное плато",
-      "description": "",
+      "description": "Чеддер, камамбер, пармезан и дор-блю с вишнёвым соусом и грецким орехом для медленной дегустации.",
       "composition": "Сыр чеддер, сыр камамбер, сыр пармезан, сыр дор блю, соус вишневый, гриссини, орех грецкий",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D1%8B%D1%80%D0%BD%D0%BE%D0%B5-%D0%BF%D0%BB%D0%B0%D1%82%D0%BE-scaled-1-1.jpg",
       "image_key": "dishes/80699619cf60.jpg",
@@ -382,7 +382,7 @@
     },
     {
       "name": "Тартар из авокадо с креветками",
-      "description": "",
+      "description": "Кубики авокадо и креветки с красным луком, чили и лаймом, поданы с хрустящими чипсами из креветок.",
       "composition": "Креветки, авокадо, лук красный, томаты вяленые, перец чили, лайм, чипсы из креветок",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%B0%D1%80-%D0%A2%D0%B0%D1%80-%D0%B8%D0%B7-%D0%B0%D0%B2%D0%BE%D0%BA%D0%B0%D0%B4%D0%BE-%D1%81-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/3436a3279836.jpg",
@@ -411,7 +411,7 @@
     },
     {
       "name": "Чесночные гренки",
-      "description": "",
+      "description": "Поджаренные хрустящие гренки с ароматом чеснока, поданы с соусом блю-чиз.",
       "composition": "Подаются с соусом блю-чиз",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A7%D0%B5%D1%81%D0%BD%D0%BE%D1%87%D0%BD%D1%8B%D0%B5-%D0%B3%D1%80%D0%BD%D0%B5%D0%BD%D0%BA%D0%B8.jpg",
       "image_key": "dishes/cd8cb5299cb7.jpg",
@@ -437,7 +437,7 @@
     },
     {
       "name": "Витаминный салат",
-      "description": "",
+      "description": "Хрустящий салат из белокочанной капусты, моркови и сельдерея с яблочным уксусом и вяленой клюквой.",
       "composition": "Клюква вяленая, зелень, масло оливковое, яблочный уксус, капуста белокочанная, морковь, перец болгарский, сельдерей",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%81%D0%B0%D0%BB%D0%B0%D1%82-%D0%B2%D0%B8%D1%82%D0%B0%D0%BC%D0%B8%D0%BD%D0%BD%D1%8B%D0%B9-scaled-1.jpg",
       "image_key": "dishes/d68edce4d003.jpg",
@@ -467,7 +467,7 @@
     },
     {
       "name": "Греческий салат",
-      "description": "",
+      "description": "Сочные томаты, огурцы, маслины и сербская брынза с орегано, красным луком и оливковым маслом.",
       "composition": "Томаты, перец болгарский, маслины, сербская брынза, красный лук, орегано, морская соль, огурцы, оливковое масло",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%93%D1%80%D0%B5%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9-scaled-1-1.jpg",
       "image_key": "dishes/be09a3efa1d4.jpg",
@@ -497,7 +497,7 @@
     },
     {
       "name": "Пастрами салат",
-      "description": "",
+      "description": "Тёплый салат с мраморной говядиной, запечёнными перцами и медово-горчичной заправкой, увенчанный хрустящим луком фри.",
       "composition": "Мраморная говядина, запеченные перцы, микс салатов, медово-горчичная заправка, хрустящий лук фри",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B0%D1%81%D1%82%D1%80%D0%B0%D0%BC%D0%B8-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-scaled-1-1.jpg",
       "image_key": "dishes/20d6783f3d00.jpg",
@@ -524,7 +524,7 @@
     },
     {
       "name": "Салат Буррата с баклажанами",
-      "description": "",
+      "description": "Кремовая буррата на баклажане в соусе терияки с томатами, кедровым орехом и пряным имбирём.",
       "composition": "Буррата, баклажан, соус терияки, томаты, рукола, орех кедровый, масло оливковое, имбирь, перец чили",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B0%D0%BA%D0%BB%D0%B0%D0%B6%D0%B0%D0%BD%D1%87%D0%B8%D0%BA-%D1%81-%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D0%B0%D0%BC%D0%B8-1.jpg",
       "image_key": "dishes/fac6e1d9b179.jpg",
@@ -553,7 +553,7 @@
     },
     {
       "name": "Салат Бык-тейсти",
-      "description": "",
+      "description": "Сытный салат-бургер: говяжий фарш, чеддер, айсберг, корнишоны, томаты и фирменный соус с хрустящими гренками бриошь.",
       "composition": "Фарш говяжий, сыр чеддер, салат айсберг, лук красный, томаты розовые, соус бургер, огурцы корнишоны, гренки бриошь",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D0%91%D0%AB%D0%9A-%D0%A2%D0%B5%D0%B9%D1%81%D1%82%D0%B8-scaled-1.jpg",
       "image_key": "dishes/7043ce435c42.jpg",
@@ -578,7 +578,7 @@
     },
     {
       "name": "Салат зелёный",
-      "description": "",
+      "description": "Шпинат, брокколи, цукини и авокадо с заправкой из лайма, мёда и чили, посыпан семенами амаранта.",
       "composition": "Шпинат, брокколи, цукини, огурец, горошек, сок лайма, авокадо, кинза, сельдерей, микс салатов, семена амаранта, мед, чили, уксус рисовый",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%97%D0%B5%D0%BB%D0%B5%D0%BD%D1%8B%D0%B9-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-scaled-1-1.jpg",
       "image_key": "dishes/a1b3d64794b1.jpg",
@@ -608,7 +608,7 @@
     },
     {
       "name": "Салат Капрезе",
-      "description": "",
+      "description": "Спелые томаты и рассольная моцарелла с зелёным песто и кремом бальзамик — итальянская классика.",
       "composition": "Томаты, рассольная моцарелла, микс салатов, соус песто, крем бальзамик",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D0%BF%D1%80%D0%B5%D0%B7%D0%B5-scaled-1-1.jpg",
       "image_key": "dishes/27858ec6f92a.jpg",
@@ -636,7 +636,7 @@
     },
     {
       "name": "Салат с говяжьим языком и ореховым соусом",
-      "description": "",
+      "description": "Отварной говяжий язык с маринованными огурцами и сладким перцем под бархатным ореховым соусом.",
       "composition": "Язык говяжий, огурцы маринованные, перец сладкий, микс салатов, соус ореховый, соус соевый",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B6%D1%8C%D0%B8%D0%BC-%D1%8F%D0%B7%D1%8B%D0%BA%D0%BE%D0%BC-%D0%B8-%D0%BE%D1%80%D0%B5%D1%85%D0%BE%D0%B2%D1%8B%D0%BC-scaled-1-1.jpg",
       "image_key": "dishes/0e9baafc3d45.jpg",
@@ -667,7 +667,7 @@
     },
     {
       "name": "Салат с креветками и соусом манго",
-      "description": "",
+      "description": "Креветки с апельсином, вялеными томатами и соусом чили-манго на подушке руколы.",
       "composition": "Вяленые томаты, помидоры, соус чили-манго, апельсин, перец болгарский, креветки, рукола",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B0%D0%BC%D0%B8-%D0%B8-%D0%BC%D0%B0%D0%BD%D0%B3%D0%BE-scaled-1-1.jpg",
       "image_key": "dishes/acdeb00ecff0.jpg",
@@ -696,7 +696,7 @@
     },
     {
       "name": "Салат с печеной тыквой и фетой",
-      "description": "",
+      "description": "Карамелизованная тыква с тыквенным муссом, солоноватой фетой и вялеными томатами на оливковом масле.",
       "composition": "Запечённая тыква, тыквенный мусс, микс салатов, фета, масло оливковое, вяленые томаты",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1-%D0%BF%D0%B5%D1%87%D0%B5%D0%BD%D0%BE%D0%B9-%D1%82%D1%8B%D0%BA%D0%B2%D0%BE%D0%B9-%D0%B8-%D1%84%D0%B5%D1%82%D0%BE%D0%B9-scaled-1-1.jpg",
       "image_key": "dishes/c051c1ec849a.jpg",
@@ -724,7 +724,7 @@
     },
     {
       "name": "Салат с ростбифом",
-      "description": "",
+      "description": "Ростбиф из говядины поясничного отруба на миксе салатов с медово-соевой заправкой.",
       "composition": "Говядина поясничный отруб, микс салатов, томаты, масло оливковое, мед, соевый соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D0%A0%D0%BE%D1%81%D1%82%D1%8C%D0%B8%D1%84%D0%BE%D0%BC-scaled-1-1.jpg",
       "image_key": "dishes/99712cd1d901.jpg",
@@ -752,7 +752,7 @@
     },
     {
       "name": "Салат томаты со страчателлой",
-      "description": "",
+      "description": "Сочные томаты, тающая страчателла и соусы песто и бальзамик с руколой и оливковым маслом.",
       "composition": "Томаты, сыр страчателла, соус песто, соус бальзамик, масло оливковое, салат рукола",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%BE%D0%BC%D0%B0%D1%82%D1%8B-%D1%81%D0%BE-%D1%81%D1%82%D1%80%D0%B0%D1%87%D0%B0%D1%82%D0%B5%D0%BB%D0%BB%D0%BE%D0%B9-1-scaled-1.jpg",
       "image_key": "dishes/6f54b6047500.jpg",
@@ -780,7 +780,7 @@
     },
     {
       "name": "Салат Цезарь с креветками",
-      "description": "",
+      "description": "Тигровые креветки на листьях романо и айсберг с пармезаном, томатами и фирменным соусом Цезарь, подаётся с бон-багетом.",
       "composition": "Креветки, сыр пармезан, салат айсберг, салат романо, помидоры, соус цезарь, чесночное масло, бон багет",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A6%D0%B5%D0%B7%D0%B0%D1%80%D1%8C-%D1%81-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/6979f794160a.jpg",
@@ -805,7 +805,7 @@
     },
     {
       "name": "Салат Цезарь с курицей",
-      "description": "",
+      "description": "Куриная грудка-гриль на листьях романо и айсберг с пармезаном, томатами и соусом Цезарь, подаётся с бон-багетом.",
       "composition": "Куриная грудка, сыр пармезан, салат айсберг, салат романо, помидоры, соус цезарь, чесночное масло, бон багет",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A6%D0%B5%D0%B7%D0%B0%D1%80%D1%8C-%D1%81-%D0%BA%D1%83%D1%80%D0%B8%D1%86%D0%B5%D0%B9-scaled-1-1.jpg",
       "image_key": "dishes/6a474f63160a.jpg",
@@ -829,7 +829,7 @@
     },
     {
       "name": "Стейк-салат",
-      "description": "",
+      "description": "Стриплойн су-вид на миксе салатов с томатами и медово-соевой заправкой — салат-полноценный ужин.",
       "composition": "Микс салатов, стриплойн су-вид, томаты, масло оливковое, бальзамик, мед, соевый соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D1%82%D0%B5%D0%B9%D0%BA-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-scaled-1-1.jpg",
       "image_key": "dishes/8681e7d4e0dc.jpg",
@@ -857,7 +857,7 @@
     },
     {
       "name": "Теплый салат с цыпленком",
-      "description": "",
+      "description": "Куриное филе, цукини и кускус под двойной заправкой из песто и орехового соуса.",
       "composition": "Куриное филе, лук красный, томаты, цукини, кускус, микс салатов, соус ореховый, соус песто, чесночное масло, соус соевый",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%B5%D0%BF%D0%BB%D1%8B%D0%B9-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D1%86%D1%8B%D0%BF%D0%BB%D0%B5%D0%BD%D0%BA%D0%BE%D0%BC-%D1%81%D0%BE%D1%83%D1%81%D0%BE%D0%BC-scaled-1-1.jpg",
       "image_key": "dishes/f526825998ee.jpg",
@@ -886,7 +886,7 @@
     },
     {
       "name": "Бульон куриный",
-      "description": "",
+      "description": "Прозрачный куриный бульон с домашней лапшой, куриным филе, яйцом и зеленью, подаётся с бон-багетом.",
       "composition": "С добавлением лапши, зелени, куриного филе, яиц и бон багета",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D1%83%D0%BB%D1%8C%D0%BE%D0%BD-%D0%BA%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B9-scaled-1-1.jpg",
       "image_key": "dishes/7bfaef9e88d0.jpg",
@@ -913,7 +913,7 @@
     },
     {
       "name": "Классический борщ",
-      "description": "",
+      "description": "Густой борщ на говядине со свеклой и капустой, подаётся со сметаной, салом и тёплой фокаччей — глубокий вкус русской кухни.",
       "composition": "Говядина поясничный отруб, сметана, укроп, петрушка, фокачча, сало свиное",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%BE%D1%80%D1%89-%D0%BD%D0%BE%D0%B2%D0%B0%D1%8F-%D0%BF%D0%BE%D0%B4%D0%B0%D1%87%D0%B0-scaled-1.jpg",
       "image_key": "dishes/18a69647cd2e.jpg",
@@ -937,7 +937,7 @@
     },
     {
       "name": "Крем-суп грибной",
-      "description": "",
+      "description": "Бархатный крем-суп из белых грибов, шампиньонов и вешенок на сливках, с трюфельным маслом и бон-багетом.",
       "composition": "Грибы белые, шампиньоны, вешенки, картофель, лук репчатый, сливки, бон багет, трюфельное масло",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%BC-%D1%81%D1%83%D0%BF-%D0%B3%D1%80%D0%B8%D0%B1%D0%BD%D0%BE%D0%B9.jpg",
       "image_key": "dishes/f66e95c1e767.jpg",
@@ -963,7 +963,7 @@
     },
     {
       "name": "Крем-суп сырный",
-      "description": "",
+      "description": "Кремовый сырный суп на сливочном сыре с копчёным цыплёнком и хрустящими чипсами из бекона.",
       "composition": "Сливочный сыр, копченое куриное филе, картофель, морковь, бон багет, чипсы из бекона",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%BC-%D1%81%D1%83%D0%BF-%D1%81%D1%8B%D1%80%D0%BD%D1%8B%D0%B9-scaled-1-1.jpg",
       "image_key": "dishes/e01243cb3259.jpg",
@@ -987,7 +987,7 @@
     },
     {
       "name": "Том-ям",
-      "description": "",
+      "description": "Тайский острый суп с креветками, кальмаром и шампиньонами на пасте том-ям, с лаймом, кинзой и томатами черри.",
       "composition": "Креветки, кальмар, рис, грибы шампиньоны, лайм, кинза, томаты черри, паста том ям, перец чили",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%82%D0%BE%D0%BC-%D1%8F%D0%BC-scaled-1.jpg",
       "image_key": "dishes/18a0d7db22e0.jpg",
@@ -1015,7 +1015,7 @@
     },
     {
       "name": "Пицца Баварская",
-      "description": "",
+      "description": "Пицца на тонком тесте с моцареллой, чоризо, беконом, колбасками и горчичным соусом — мужская классика.",
       "composition": "Пшеничное тесто, моцарелла, томатный соус, чоризо, бекон свиной, красный лук, колбаски, горчичный соус, шампиньоны, петрушка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%91%D0%B0%D0%B2%D0%B0%D1%80%D1%81%D0%BA%D0%B0%D1%8F-scaled-1-1.jpg",
       "image_key": "dishes/a96cbbd442a8.jpg",
@@ -1041,7 +1041,7 @@
     },
     {
       "name": "Пицца Маргарита",
-      "description": "",
+      "description": "Пицца на тонком тесте с томатным соусом, моцареллой и орегано — итальянская классика.",
       "composition": "Пшеничное тесто, моцарелла, томатный соус, орегано",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%9C%D0%B0%D1%80%D0%B3%D0%B0%D1%80%D0%B8%D1%82%D0%B0-scaled-1-1.jpg",
       "image_key": "dishes/b0cd8f3874a6.jpg",
@@ -1067,7 +1067,7 @@
     },
     {
       "name": "Пицца Сырная",
-      "description": "",
+      "description": "Пицца на тонком тесте с четырьмя сырами: моцарелла, чеддер, пармезан и дор-блю, на томатном соусе.",
       "composition": "Пшеничное тесто, моцарелла, чеддер, сыр пармезан, дор блю, томатный соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D1%81%D1%8B%D1%80%D0%BD%D0%B0%D1%8F-scaled-1-1.jpg",
       "image_key": "dishes/52a1bb1a7b95.jpg",
@@ -1093,7 +1093,7 @@
     },
     {
       "name": "Пицца Цезарь",
-      "description": "",
+      "description": "Пицца на тонком тесте с куриным филе, листьями романо, пармезаном и фирменным соусом Цезарь со сливками.",
       "composition": "Пшеничное тесто, моцарелла, сыр пармезан, салат романо, салат айсберг, куриное филе, томаты, соус цезарь, сливки",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%A6%D0%B5%D0%B7%D0%B0%D1%80%D1%8C-scaled-1-1.jpg",
       "image_key": "dishes/5896bce80148.jpg",
@@ -1119,7 +1119,7 @@
     },
     {
       "name": "Пицца Чоризо",
-      "description": "",
+      "description": "Пицца на тонком тесте с пряной чоризо, моцареллой и томатным соусом — насыщенный мясной вкус без лишнего.",
       "composition": "Пшеничное тесто, моцарелла, чоризо, томатный соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%A7%D0%BE%D1%80%D0%B8%D0%B7%D0%BE-scaled-1-1.jpg",
       "image_key": "dishes/07f156de96cd.jpg",
@@ -1143,7 +1143,7 @@
     },
     {
       "name": "Бифштекс 4 сыра",
-      "description": "",
+      "description": "Сочный бифштекс из говядины под расплавленным четырёхсырным соусом из моцареллы, пармезана, чеддера и дор-блю, увенчан руколой и хрустящим луком фри.",
       "composition": "Бифштекс из говядины, моцарелла, сыр пармезан, чеддер, дор блю, сливки, лук фри, рукола, соус брусничный",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B8%D1%84%D1%88%D1%82%D0%B5%D0%BA%D1%81-4-%D1%81%D1%8B%D1%80%D0%B0-scaled-1-1.jpg",
       "image_key": "dishes/57bdd93a74d8.jpg",
@@ -1168,7 +1168,7 @@
     },
     {
       "name": "Говяжьи колбаски",
-      "description": "",
+      "description": "Ароматные говяжьи колбаски с дымком хоспера, поданы с квашеной капустой, картофелем беби и горчицей.",
       "composition": "Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B6%D1%8C%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/f0b6f4afdf3d.jpg",
@@ -1194,7 +1194,7 @@
     },
     {
       "name": "Кесадилья с говядиной",
-      "description": "",
+      "description": "Хрустящая тортилья с говяжьим фаршем, чеддером и моцареллой, соусом терияки, кукурузой и сальсой.",
       "composition": "Фарш говяжий, тортилья, майонез, соус терияки, соус сальса, кукуруза, перец болгарский, сыр чеддер, сыр моцарелла",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B5%D1%81%D0%B0%D0%B4%D0%B8%D0%BB%D1%8C%D1%8F-%D1%81-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D0%BE%D0%B9-scaled-1-1.jpg",
       "image_key": "dishes/2e18e52ecc91.jpg",
@@ -1219,7 +1219,7 @@
     },
     {
       "name": "Колбаска из индейки",
-      "description": "",
+      "description": "Колбаска из индейки на углях хоспера, подаётся с квашеной капустой, картофелем беби и дижонской горчицей.",
       "composition": "Колбаска, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-%D0%B8%D0%B7-%D0%B8%D0%BD%D0%B4%D0%B5%D0%B9%D0%BA%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/c056cc203370.jpg",
@@ -1245,7 +1245,7 @@
     },
     {
       "name": "Куриные колбаски",
-      "description": "",
+      "description": "Куриные колбаски на углях хоспера, поданы с квашеной капустой, картофелем беби и горчицей.",
       "composition": "Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B5-%D0%BA%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/56a9f5f40322.jpg",
@@ -1271,7 +1271,7 @@
     },
     {
       "name": "Люля-кебаб из говядины",
-      "description": "",
+      "description": "Сочный люля из рубленой говядины с зирой, кориандром и базиликом, на лаваше с маринованным луком и сальсой.",
       "composition": "Говядина, лук репчатый, чеснок, зира, кориандр, базилик, кинза, петрушка, томат, масло сливочное, лаваш, лук маринованный, соус сальса, перец острый маринованный",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9B%D1%8E%D0%BB%D1%8E-%D0%BA%D0%B5%D0%B1%D0%B0%D0%B1-%D0%B8%D0%B7-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D1%8B-scaled-1-1.jpg",
       "image_key": "dishes/dbcf456591ed.jpg",
@@ -1298,7 +1298,7 @@
     },
     {
       "name": "Люля-кебаб из индейки",
-      "description": "",
+      "description": "Воздушный люля из индейки с зеленью, чесноком и пряностями, на лаваше с маринованным луком и сальсой.",
       "composition": "Индейка, жир говяжий, лаваш, перец острый маринованный, кинза, лук маринованный, соус сальса, лук репчатый, масло сливочное, базилик, чеснок, зелень",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9B%D1%8E%D0%BB%D1%8F-%D0%B8%D0%B7-%D0%98%D0%BD%D0%B4%D0%B5%D0%B9%D0%BA%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/375fc85ac4b0.jpg",
@@ -1325,7 +1325,7 @@
     },
     {
       "name": "Медальоны из свинины",
-      "description": "",
+      "description": "Свиная вырезка в беконе с лавашом, маринованным луком и грибным соусом — мужская подача из хоспера.",
       "composition": "Свиная вырезка, бекон, лаваш, лук маринованный, кинза, соус грибной",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%B5%D0%B4%D0%B0%D0%BB%D1%8C%D0%BE%D0%BD%D1%8B-%D0%B8%D0%B7-%D1%81%D0%B2%D0%B8%D0%BD%D0%B8%D0%BD%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/7fb3f1228d46.jpg",
@@ -1349,7 +1349,7 @@
     },
     {
       "name": "Свиные колбаски",
-      "description": "",
+      "description": "Сочные свиные колбаски с дымком хоспера, поданы с квашеной капустой, картофелем беби и горчицей.",
       "composition": "Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D0%9A%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/1dc9c0df239c.jpg",
@@ -1375,7 +1375,7 @@
     },
     {
       "name": "Стейк индейки",
-      "description": "",
+      "description": "Филе индейки на углях с жареной кукурузой, паприкой и морской солью.",
       "composition": "Филе индейки, жареная кукуруза, паприка, морская соль",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%98%D0%BD%D0%B4%D0%B5%D0%B9%D0%BA%D0%B0-scaled-1.jpg",
       "image_key": "dishes/a36c0b136ecf.jpg",
@@ -1399,7 +1399,7 @@
     },
     {
       "name": "Шашлык из курицы",
-      "description": "",
+      "description": "Фермерская курица на углях, подаётся с лавашом, кинзой и маринованным луком.",
       "composition": "Фермерская курица, лаваш, кинза, маринованный лук",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%B0%D1%88%D0%BB%D1%8B%D0%BA-%D0%B8%D0%B7-%D0%BA%D1%83%D1%80%D0%B8%D1%86%D1%8B-scaled-1-1.jpg",
       "image_key": "dishes/ae91428d8643.jpg",
@@ -1423,7 +1423,7 @@
     },
     {
       "name": "Шашлык из свиной шеи",
-      "description": "",
+      "description": "Шашлык из свиной шеи на углях, подаётся с лавашом, кинзой и маринованным луком.",
       "composition": "Свинина, лаваш, кинза, маринованный лук",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%B0%D1%88%D0%BB%D1%8B%D0%BA-%D0%B8%D0%B7-%D1%81%D0%B2%D0%B8%D0%BD%D0%B8%D0%BD%D1%8B-scaled-1-1.jpg",
       "image_key": "dishes/103d9e3cc88c.jpg",
@@ -1447,7 +1447,7 @@
     },
     {
       "name": "Бефстроганов",
-      "description": "",
+      "description": "Нежные ломтики говядины с шампиньонами и репчатым луком в сливочно-горчичном соусе, подаётся с картофелем беби — классика русской кухни.",
       "composition": "Говядина, шампиньоны, картофель беби, сливки, помидоры черри, репчатый лук, огурцы корнишоны, дижонская горчица",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B5%D1%84%D1%82%D1%80%D0%BE%D0%B3%D0%B0%D0%BD%D0%BE%D0%B2-scaled-2.jpg",
       "image_key": "dishes/3198bc8ca31a.jpg",
@@ -1473,7 +1473,7 @@
     },
     {
       "name": "Говядина по-тайски",
-      "description": "",
+      "description": "Говядина wok в кунжутном масле с арахисом, болгарским перцем, шампиньонами и сельдереем под тайским соусом, подаётся с рисом.",
       "composition": "Говядина, кунжутное масло, перец болгарский, шампиньоны, стебель сельдерея, лук красный, арахис, лук фри, соус тайский, чеснок, имбирь, перец чили, кинза, рис",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%93%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D0%B0-%D0%BF%D0%BE-%D1%82%D0%B0%D0%B9%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/da0b97dcbf16.jpg",
@@ -1503,7 +1503,7 @@
     },
     {
       "name": "Говяжьи котлеты с картофельным пюре",
-      "description": "",
+      "description": "Воздушные говяжьи котлеты на картофельном пюре, поданы с брусничным и сливочно-горчичным соусом.",
       "composition": "Фарш говяжий, картофельное пюре, соус брусничный, соус сливочно-горчичный",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%93%D0%BE%D0%B2%D1%8F%D0%B6%D1%8C%D0%B8-%D0%BA%D0%BE%D1%82%D0%BB%D0%B5%D1%82%D1%8B-%D1%81-%D0%BA%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%BC-%D0%BF%D1%8E%D1%80%D0%B5.jpg",
       "image_key": "dishes/82ef797d92c0.jpg",
@@ -1527,7 +1527,7 @@
     },
     {
       "name": "Рваная говядина на подушке из стрипсов",
-      "description": "",
+      "description": "Длительно томлёная говядина на хрустящих картофельных стрипсах, с томатами черри и маринованным луком.",
       "composition": "Томленая говядина, картофельные стрипсы, зелень, томаты черри, лук маринованный",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%80%D0%B2%D0%B0%D0%BD%D0%B0%D1%8F-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D0%B0-scaled-1.jpg",
       "image_key": "dishes/c12aa1f4a5e5.jpg",
@@ -1551,7 +1551,7 @@
     },
     {
       "name": "Свиные ребра «Барбекю»",
-      "description": "",
+      "description": "Свиные рёбра су-вид в густом соусе барбекю с хрустящим луком фри, поданы с соусом блю-чиз.",
       "composition": "Свиные ребра су-вид, лук фри, соус барбекю, соус блю чиз",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D1%80%D0%B5%D0%B1%D1%80%D0%B0-%D0%91%D0%B0%D1%80%D0%B1%D0%B5%D0%BA%D1%8E-scaled-1-1.jpg",
       "image_key": "dishes/c14f3a610481.jpg",
@@ -1575,7 +1575,7 @@
     },
     {
       "name": "Свиные ребра «Терияки»",
-      "description": "",
+      "description": "Свиные рёбра су-вид в карамельно-сладком соусе терияки с кунжутом, поданы с соусом блю-чиз.",
       "composition": "Свиные ребра су-вид, семена кунжута, соус терияки, соус блю чиз",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D1%80%D0%B5%D0%B1%D1%80%D0%B0-%D0%A2%D0%B5%D1%80%D0%B8%D1%8F%D0%BA%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/5dbc7de8d4c6.jpg",
@@ -1601,7 +1601,7 @@
     },
     {
       "name": "Свиные ребра Jack Daniel’s",
-      "description": "",
+      "description": "Свиные рёбра су-вид в фирменном соусе на бурбоне Jack Daniel’s с фисташками, поданы с соусом блю-чиз.",
       "composition": "Свиные ребра су-вид, фисташка, соус Jack Daniel’s, соус блю чиз",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D1%80%D0%B5%D0%B1%D1%80%D0%B0-%D0%94%D0%B6%D0%B5%D0%BA-%D0%B4%D1%8D%D0%BD%D0%B8%D0%B5%D0%BB%D1%81-scaled-1-1.jpg",
       "image_key": "dishes/881fcb993103.jpg",
@@ -1627,7 +1627,7 @@
     },
     {
       "name": "Фокачча с розмарином",
-      "description": "",
+      "description": "Воздушная итальянская лепёшка с хрустящей корочкой, ароматом розмарина и чесночного масла.",
       "composition": "Пшеничная основа, розмарин, чесночное масло",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%BE%D0%BA%D0%B0%D1%87%D1%87%D0%B0-%D1%81-%D1%80%D0%BE%D0%B7%D0%BC%D0%B0%D1%80%D0%B8%D0%BD%D0%BE%D0%BC-scaled-1-1.jpg",
       "image_key": "dishes/b7e3a13b336b.jpg",
@@ -1654,7 +1654,7 @@
     },
     {
       "name": "Фокачча с томатами",
-      "description": "",
+      "description": "Мягкая фокачча с томатами черри и чесночным маслом — тёплая альтернатива привычному хлебу к столу.",
       "composition": "Пшеничная основа, помидоры черри, чесночное масло",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%BE%D0%BA%D0%B0%D1%87%D1%87%D0%B0-%D1%81-%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/86c2d58c6714.jpg",
@@ -1681,7 +1681,7 @@
     },
     {
       "name": "Хлебная корзина",
-      "description": "",
+      "description": "Тёплая фокачча, оливковое масло и крем бальзамик — приятное начало любой трапезы.",
       "composition": "Фокачча, оливковое масло, крем бальзамик",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A5%D0%BB%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F-%D0%BA%D0%BE%D1%80%D0%B7%D0%B8%D0%BD%D0%B0-scaled-1-1.jpg",
       "image_key": "dishes/da67b67a9373.jpg",
@@ -1708,7 +1708,7 @@
     },
     {
       "name": "Дорадо",
-      "description": "",
+      "description": "Свежая дорадо целиком с лаймом, морской солью и кремом бальзамик, подаётся с миксом салатов.",
       "composition": "Свежая охлажденная рыба дорадо, микс салатов, лайм, морская соль, крем бальзамик",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%94%D0%BE%D1%80%D0%B0%D0%B4%D0%BE-scaled-1-1.jpg",
       "image_key": "dishes/07ec6bdfbf74.jpg",
@@ -1734,7 +1734,7 @@
     },
     {
       "name": "Креветки Пиль-Пиль",
-      "description": "",
+      "description": "Тигровые креветки в ароматном масле с чесноком, паприкой и чили, подаются с фокаччей для макания — испанская тапа.",
       "composition": "Креветка тигровая, масло сливочное, паприка, перец чили, чеснок, томаты черри, петрушка, фокачча",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B8-%D0%BF%D0%B8%D0%BB%D1%8C-%D0%BF%D0%B8%D0%BB%D1%8C.jpg",
       "image_key": "dishes/1b49dca71cc7.jpg",
@@ -1761,7 +1761,7 @@
     },
     {
       "name": "Паста болоньезе",
-      "description": "",
+      "description": "Спагетти с густым соусом из говяжьего фарша, томатов пилатти и бекона, посыпаны пармезаном — итальянская классика родом из Болоньи.",
       "composition": "Спагетти, фарш говяжий, томаты пилатти, сыр пармезан, бекон свиной",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B0%D1%81%D1%82%D0%B0-%D0%B1%D0%BE%D0%BB%D0%BE%D0%BD%D1%8C%D0%B5%D0%B7%D0%B5.jpg",
       "image_key": "dishes/62df7382228a.jpg",
@@ -1787,7 +1787,7 @@
     },
     {
       "name": "Паста с томлёной щекой",
-      "description": "",
+      "description": "Спагетти с томлёными говяжьими щеками в сливочно-мясном соусе с тимьяном, чесноком, песто и пармезаном — рекомендация шефа.",
       "composition": "Спагетти, щечки говяжьи, мясной соус, тимьян, чеснок, сливки, соус песто, сыр пармезан",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B0%D1%81%D1%82%D0%B0-%D1%81-%D1%82%D0%BE%D0%BC%D0%BB%D1%91%D0%BD%D0%BE%D0%B9-%D1%89%D0%B5%D0%BA%D0%BE%D0%B9.jpg",
       "image_key": "dishes/ccdffe92b791.jpg",
@@ -1817,7 +1817,7 @@
     },
     {
       "name": "Рибай Блэк Ангус",
-      "description": "",
+      "description": "Премиальный стейк из спинной части бычка породы Блэк Ангус смешанного откорма — мраморность и насыщенный мясной вкус.",
       "composition": "Премиальный стейк породы Блэк Ангус смешанного откорма. Томат, жареная кукуруза, соль морская, паприка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%A0%D0%B8%D0%B1%D0%B0%D0%B9-%D0%B7%D0%B5%D1%80%D0%BD%D0%BE-1.jpg",
       "image_key": "dishes/f74ee62eb43d.jpg",
@@ -1844,7 +1844,7 @@
     },
     {
       "name": "Рябчик в глазури Джек Дениелс",
-      "description": "",
+      "description": "Свиная голяшка томлёная до бархатной мягкости в глазури на бурбоне Jack Daniel’s, подаётся с картофельными стрипсами.",
       "composition": "Свиная голяшка томленая, картофельные стрипсы, лук зеленый, соус Джек Дениелс",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%80%D1%8F%D0%B1%D1%87%D0%B8%D0%BA-scaled-1.jpg",
       "image_key": "dishes/2815ddd8b2c6.jpg",
@@ -1868,7 +1868,7 @@
     },
     {
       "name": "Свиная рулька",
-      "description": "",
+      "description": "Запечённая рулька на кости с квашеной капустой и медово-горчичным соусом — баварская подача для большой компании.",
       "composition": "Большая рулька на кости, квашеная капуста, медово-горчичный соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/2025-10-16_11-15-10.png",
       "image_key": "dishes/3472fa4f9e7f.jpg",
@@ -1894,7 +1894,7 @@
     },
     {
       "name": "Свиной томагавк",
-      "description": "",
+      "description": "Эффектный свиной стейк на длинной кости с маринованной капустой и томатами — впечатляющая подача.",
       "composition": "Свиная корейка, маринованная капуста, томаты",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D0%BE%D0%B9-%D0%A2%D0%BE%D0%BC%D0%B0%D0%B3%D0%B0%D0%B2%D0%BA-scaled-1-1.jpg",
       "image_key": "dishes/88eedbd49626.jpg",
@@ -1920,7 +1920,7 @@
     },
     {
       "name": "Сибас",
-      "description": "",
+      "description": "Свежий сибас целиком с лаймом, морской солью и кремом бальзамик, подаётся с миксом салатов.",
       "composition": "Свежая охлажденная рыба сибас, микс салатов, лайм, морская соль, крем бальзамик",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B8%D0%B1%D0%B0%D1%81-scaled-1-1.jpg",
       "image_key": "dishes/eff437a88e36.jpg",
@@ -1946,7 +1946,7 @@
     },
     {
       "name": "Стейк NY травяной",
-      "description": "",
+      "description": "Стриплойн травяного откорма с томатом, жареной кукурузой и паприкой — выразительный мясной вкус и плотная текстура.",
       "composition": "Говядина травяного откорма, томат, жареная кукуруза, соль морская, паприка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9D%D1%8C%D1%8E-%D0%99%D0%BE%D1%80%D0%BA-%D0%BD%D0%BE%D0%B2%D1%8B%D0%B9-scaled-1.jpg",
       "image_key": "dishes/9206a75c0196.jpg",
@@ -1970,7 +1970,7 @@
     },
     {
       "name": "Стейк Бавет (зерно)",
-      "description": "",
+      "description": "Стейк из пашины зернового откорма с мягким вкусом и волокнистой текстурой — выбор шефа.",
       "composition": "Стейк с мягким вкусом и волокнистой текстурой, томат, жареная кукуруза, соль морская, паприка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B0%D0%B2%D0%B5%D1%82-1.jpg",
       "image_key": "dishes/ec532e743583.jpg",
@@ -1996,7 +1996,7 @@
     },
     {
       "name": "Стейк из форели",
-      "description": "",
+      "description": "Филе форели с лаймом, морской солью и пряностями, подаётся на миксе салатов.",
       "composition": "Филе форели, микс салатов, лайм, специи",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D1%81%D1%82%D0%B5%D0%B9%D0%BA-%D0%B8%D0%B7-%D1%84%D0%BE%D1%80%D0%B5%D0%BB%D0%B8-scaled-1.jpg",
       "image_key": "dishes/88c5059f2ff8.jpg",
@@ -2024,7 +2024,7 @@
     },
     {
       "name": "Стейк Рибай (трава)",
-      "description": "",
+      "description": "Премиальный рибай травяного откорма с томатом, жареной кукурузой и паприкой — мраморный, ароматный, с глубоким мясным характером.",
       "composition": "Премиальный стейк из спинной части, томат, жареная кукуруза, соль морская, паприка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A0%D0%B8%D0%B1%D0%B0%D0%B9-%D1%82%D1%80%D0%B0%D0%B2%D0%B0-1.jpg",
       "image_key": "dishes/9a267984f913.jpg",
@@ -2051,7 +2051,7 @@
     },
     {
       "name": "Стейк Стриплойн (зерно)",
-      "description": "",
+      "description": "Стриплойн зернового откорма с плотной волокнистой текстурой и насыщенным мясным вкусом.",
       "composition": "Стейк с плотным волокном и мясным вкусом, томат, жареная кукуруза, соль морская, паприка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D1%82%D1%80%D0%B8%D0%BF%D0%BB%D0%BE%D0%B9%D0%BD-%D0%B7%D0%B5%D1%80%D0%BD%D0%BE-1.jpg",
       "image_key": "dishes/ee7852bcc340.jpg",
@@ -2077,7 +2077,7 @@
     },
     {
       "name": "Стейк Филе Миньон",
-      "description": "",
+      "description": "Стейк из поясничной мышцы — самый нежный отруб с тающей текстурой и деликатным вкусом.",
       "composition": "Стейк из поясничной мышцы, томат, жареная кукуруза, соль морская, паприка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%B8%D0%BD%D1%8C%D0%BE%D0%BD-1.jpg",
       "image_key": "dishes/73145b3e7dc5.jpg",
@@ -2104,7 +2104,7 @@
     },
     {
       "name": "Стейк Шато Бриан",
-      "description": "",
+      "description": "Центральная часть вырезки — отруб особой нежности для торжественного случая.",
       "composition": "Стейк из поясничной мышцы, томат, жареная кукуруза, соль морская, паприка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%B0%D1%82%D0%BE-%D0%B1%D1%80%D0%B8%D0%B0%D0%BD-1.jpg",
       "image_key": "dishes/241f30bc58f4.jpg",
@@ -2131,7 +2131,7 @@
     },
     {
       "name": "Тартар из говядины",
-      "description": "",
+      "description": "Рубленая говяжья вырезка с каперсами, вялеными томатами и песто, подаётся с пармезаном и хрустящим бон-багетом.",
       "composition": "Вырезка говяжья, каперсы, вяленые томаты, бон багет, рукола, пармезан, песто из вяленых томатов, масло оливковое",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%82%D0%B0%D1%80%D1%82%D0%B0%D1%80-scaled-1.jpg",
       "image_key": "dishes/19e2e752ddd7.jpg",
@@ -2157,7 +2157,7 @@
     },
     {
       "name": "Тартар из форели",
-      "description": "",
+      "description": "Кубики свежей форели с авокадо, огурцом и томатами под соевым соусом, кунжутным маслом и чили.",
       "composition": "Филе форели, огурец свежий, авокадо, томаты розовые, лайм, перец чили, соевый соус, кинза, масло кунжутное, имбирь",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%B0%D1%80-%D1%82%D0%B0%D1%80-scaled-1.jpg",
       "image_key": "dishes/a22b51d5661e.jpg",
@@ -2188,7 +2188,7 @@
     },
     {
       "name": "Утка конфи с печеными яблоками",
-      "description": "",
+      "description": "Утиная ножка конфи с печёными яблоками, брусникой, кедровым орехом и руколой — классика французской кухни, рекомендация шефа.",
       "composition": "Утиная ножка, яблоки, мед, брусника, салат рукола, орех кедровый, масло сливочное, уксус яблочный, сахар",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%A3%D1%82%D0%BA%D0%B0-%D0%BA%D0%BE%D0%BD%D1%84%D0%B8-scaled-1.jpg",
       "image_key": "dishes/337297b73a50.jpg",
@@ -2217,7 +2217,7 @@
     },
     {
       "name": "Шашлык из говядины",
-      "description": "",
+      "description": "Шашлык из говядины на углях, подаётся с лавашом, кинзой и маринованным луком.",
       "composition": "Говядина, лаваш, кинза, маринованный лук",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D1%88%D0%B0%D1%88%D0%BB%D1%8B%D0%BA-%D0%B8%D0%B7-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D1%8B-1.jpg",
       "image_key": "dishes/e12b9365cc2d.jpg",
@@ -2241,7 +2241,7 @@
     },
     {
       "name": "Щёки с картофельным пюре",
-      "description": "",
+      "description": "Томлёные говяжьи щёки в густом мясном соусе на бархатном картофельном пюре с томатами черри.",
       "composition": "Картофельное пюре, щечки говяжьи, мясной соус, томаты черри, лук зеленый, масло сливочное, сливки",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A9%D1%91%D0%BA%D0%B8-%D1%81-%D0%BA%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%BC-.jpg",
       "image_key": "dishes/8a77a9989ff8.jpg",
@@ -2267,7 +2267,7 @@
     },
     {
       "name": "Брискет",
-      "description": "",
+      "description": "Длительно томлёная говяжья грудинка с маринованной капустой, дижонской горчицей и сальсой — техасская классика.",
       "composition": "Грудинка говяжья томленая, капуста маринованная, огурцы маринованные, соус сальса, горчица дижонская",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D1%80%D0%B8%D1%81%D0%BA%D0%B5%D1%82.jpg",
       "image_key": "dishes/3e16517fa30e.jpg",
@@ -2295,7 +2295,7 @@
     },
     {
       "name": "Пиканья на пите",
-      "description": "",
+      "description": "Мраморная говядина на лепёшке пита со сметаной, сальсой, лаймом и кинзой — бразильская подача churrasco в формате уличной еды.",
       "composition": "Мраморная говядина, лепешка пита, соус сальса, сметана, лайм, кинза",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D0%BA%D0%B0%D0%BD%D1%8C%D1%8F-%D0%BD%D0%B0-%D0%9F%D0%B8%D1%82%D1%82%D0%B5.jpg",
       "image_key": "dishes/d3f2fedbaa71.jpg",
@@ -2319,7 +2319,7 @@
     },
     {
       "name": "Ребра Кальби",
-      "description": "",
+      "description": "Томлёные говяжьи рёбра в мясном соусе с брусничным акцентом — большая порция, рекомендация шефа.",
       "composition": "Ребро говяжье томленое, соус мясной, соус брусничный, зелень",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A0%D0%B5%D0%B1%D1%80%D0%B0%D0%BA%D0%B0%D0%BB%D1%8C%D0%B1%D0%B8.jpg",
       "image_key": "dishes/fc3d0edd7653.jpg",
@@ -2346,7 +2346,7 @@
     },
     {
       "name": "Стейк Фланк",
-      "description": "",
+      "description": "Отруб из пашины быка с выраженной мясной текстурой, с томатом, жареной кукурузой и специями.",
       "composition": "Отруб из пашины быка, томат, жареная кукуруза, специи",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%BB%D0%B0%D0%BD%D0%BA-1.jpg",
       "image_key": "dishes/a12db4b14c12.jpg",
@@ -2370,7 +2370,7 @@
     },
     {
       "name": "Топ Сирлойн",
-      "description": "",
+      "description": "Постный стейк из верхней части тазобедренного отруба с томатом, жареной кукурузой и специями.",
       "composition": "Верхняя часть тазобедренного отруба, томат, жареная кукуруза, специи",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/04/%D1%82%D0%BE%D0%BF-%D1%81%D0%B8%D1%80%D0%BB%D0%BE%D0%B9%D0%BD-scaled.jpg",
       "image_key": "dishes/faa45011fe5d.jpg",
@@ -2396,7 +2396,7 @@
     },
     {
       "name": "Бургер Jack Daniel’s",
-      "description": "",
+      "description": "Томлёная говядина в фирменном соусе на бурбоне Jack Daniel’s с карамелизованным луком, чеддером и луком фри в булочке.",
       "composition": "Томленая говядина, карамелизированный лук, соус Jack Daniel’s, лук фри, соус блю чиз, сыр чеддер, булочка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%94%D0%B6%D0%B5%D0%BA-%D0%94%D0%B5%D0%BD%D0%B8%D0%B5%D0%BB%D0%B7.jpg",
       "image_key": "dishes/4f9fe89489a8.jpg",
@@ -2420,7 +2420,7 @@
     },
     {
       "name": "Бургер THE БЫК",
-      "description": "",
+      "description": "Премиальная котлета Блэк Ангус с чеддером, перцем халапеньо и фирменным соусом — флагманский бургер, рекомендация шефа.",
       "composition": "Премиальная котлета Блэк Ангус, карамелизированный лук, соус бургер, сыр чеддер, перец халапеньо, булочка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/THE-%D0%91%D0%AB%D0%9A.jpg",
       "image_key": "dishes/6c303b9785f7.jpg",
@@ -2448,7 +2448,7 @@
     },
     {
       "name": "Бургер Вишневый бизон",
-      "description": "",
+      "description": "Премиальная котлета Блэк Ангус с жареным беконом, чеддером и неожиданным акцентом из вишни с прованскими травами под соусом блю-чиз.",
       "composition": "Премиальная котлета Блэк Ангус, жареный бекон, жареный лук, сыр чеддер, вишня с прованскими травами, соус блю чиз, булочка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%92%D0%B8%D1%88%D0%BD%D1%91%D0%B2%D1%8B%D0%B9-%D0%B1%D0%B8%D0%B7%D0%BE%D0%BD.jpg",
       "image_key": "dishes/526b709a07d9.jpg",
@@ -2472,7 +2472,7 @@
     },
     {
       "name": "Бургер с креветками",
-      "description": "",
+      "description": "Тигровые креветки в булочке с салатом романо, айсберг, томатами, луковыми кольцами и соусом 1000 островов.",
       "composition": "Дальневосточные креветки, помидоры, луковые кольца, салат романо, салат айсберг, соус 1000 островов, булочка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%BE%D0%B9.jpg",
       "image_key": "dishes/76209f6a1c21.jpg",
@@ -2499,7 +2499,7 @@
     },
     {
       "name": "Чизбургер",
-      "description": "",
+      "description": "Премиальная котлета Блэк Ангус с чеддером, томатами, корнишонами и соусом барбекю на листьях романо и айсберг.",
       "composition": "Премиальная котлета Блэк Ангус, огурцы корнишоны, сыр чеддер, помидоры, соус барбекю, салат романо, салат айсберг, булочка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A7%D0%B8%D0%B7%D0%B1%D1%83%D1%80%D0%B3%D0%B5%D1%80.jpg",
       "image_key": "dishes/aea444216fb7.jpg",
@@ -2523,7 +2523,7 @@
     },
     {
       "name": "Брокколи",
-      "description": "",
+      "description": "Брокколи на гарнир с миксом салатов, оливковым маслом, морской солью и смесью пяти перцев.",
       "composition": "Микс салатов, смесь пяти перцев, морская соль, оливковое масло",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D1%80%D0%BE%D0%BA%D0%BA%D0%BE%D0%BB%D0%B8-scaled-2.jpg",
       "image_key": "dishes/7fd6b8274920.jpg",
@@ -2549,7 +2549,7 @@
     },
     {
       "name": "Картофель батат фри",
-      "description": "",
+      "description": "Сладкий батат-фри с золотистой корочкой, подаётся с соусом блю-чиз.",
       "composition": "Батат фри, соус блю чиз",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%B1%D0%B0%D1%82%D0%B0%D1%82.jpg",
       "image_key": "dishes/6d7406f9d83e.jpg",
@@ -2575,7 +2575,7 @@
     },
     {
       "name": "Картофель Диппер",
-      "description": "",
+      "description": "Картофельные ломтики с майонезом и фирменным соусом Jack Daniel’s.",
       "composition": "Картофель, майонез, соус Jack Daniel’s",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%B4%D0%B8%D0%BF%D1%8B-scaled-1.jpg",
       "image_key": "dishes/237b97ac933e.jpg",
@@ -2602,7 +2602,7 @@
     },
     {
       "name": "Картофель по-деревенски",
-      "description": "",
+      "description": "Большая порция картофеля беби с румяной корочкой, подаётся с кетчупом.",
       "composition": "Большая порция картофеля бейби, кетчуп",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C-%D0%BF%D0%BE-%D0%B4%D0%B5%D1%80%D0%B5%D0%B2%D0%B5%D0%BD%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/f017ab1ee36e.jpg",
@@ -2628,7 +2628,7 @@
     },
     {
       "name": "Картофель фри",
-      "description": "",
+      "description": "Большая порция хрустящей картошки фри, подаётся с кетчупом.",
       "composition": "Большая порция картофеля фри, кетчуп",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C-%D1%84%D1%80%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/875513a2bf83.jpg",
@@ -2654,7 +2654,7 @@
     },
     {
       "name": "Картофель фри с пармезаном",
-      "description": "",
+      "description": "Картофель фри, припорошённый пармезаном и сбрызнутый трюфельным маслом, подаётся с соусом блю-чиз.",
       "composition": "Картофель фри, сыр пармезан, трюфельное масло, соус блю чиз",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D1%84%D1%80%D0%B8-%D1%81-%D0%BF%D0%B0%D1%80%D0%BC%D0%B5%D0%B7%D0%B0%D0%BD%D0%BE%D0%BC.jpg",
       "image_key": "dishes/38b27d413b8b.jpg",
@@ -2680,7 +2680,7 @@
     },
     {
       "name": "Картофельное пюре",
-      "description": "",
+      "description": "Воздушное картофельное пюре на сливочном масле и молоке.",
       "composition": "Картофель, масло сливочное, молоко",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D1%8E%D1%80%D0%B5-scaled-1.jpg",
       "image_key": "dishes/e4a7730c0d1a.jpg",
@@ -2706,7 +2706,7 @@
     },
     {
       "name": "Овощи гриль",
-      "description": "",
+      "description": "Цукини, баклажан, болгарский перец и шампиньоны на гриле с миксом салатов и кремом бальзамик.",
       "composition": "Помидоры, грибы, цукини, баклажаны, лук красный, перец болгарский, микс салатов, крем бальзамик",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9E%D0%B2%D0%BE%D1%89%D0%B8-%D0%B3%D1%80%D0%B8%D0%BB%D1%8C-scaled-1-1.jpg",
       "image_key": "dishes/6ff426015170.jpg",
@@ -2732,7 +2732,7 @@
     },
     {
       "name": "Рис с овощами",
-      "description": "",
+      "description": "Рис wok с баклажанами, цукини, шампиньонами и болгарским перцем в соевом и кунжутном маслах с кинзой.",
       "composition": "Рис, баклажаны, кабачки, шампиньоны, перец болгарский, лук красный, соевый соус, кунжутное масло, кинза, чесночное масло",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A0%D0%B8%D1%81-%D1%81-%D0%BE%D0%B2%D0%BE%D1%89%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
       "image_key": "dishes/b4424d5ea984.jpg",
@@ -2761,7 +2761,7 @@
     },
     {
       "name": "1000 островов",
-      "description": "",
+      "description": "Кремовый американский соус с кисло-сладким балансом — универсален к мясу, бургерам и крылышкам.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/dce3a6711e8d.jpg",
@@ -2787,7 +2787,7 @@
     },
     {
       "name": "Jack Daniel’s",
-      "description": "",
+      "description": "Фирменный соус на бурбоне Jack Daniel’s с карамельной сладостью и лёгким дымом — особенно хорош к рёбрам и томлёному мясу.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/b5a60714b935.jpg",
@@ -2813,7 +2813,7 @@
     },
     {
       "name": "Барбекю",
-      "description": "",
+      "description": "Классический копчёный соус барбекю на томатной базе — must-have к рёбрам и мясу с гриля.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/f3fc9eba758e.jpg",
@@ -2839,7 +2839,7 @@
     },
     {
       "name": "Блю чиз",
-      "description": "",
+      "description": "Кремовый соус с благородной плесенью и лёгкой солоноватостью — к стейку и крыльям.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/db64f42012bb.jpg",
@@ -2865,7 +2865,7 @@
     },
     {
       "name": "Грибной соус",
-      "description": "",
+      "description": "Сливочный соус с белыми грибами и шампиньонами — глубокий лесной вкус к мясным блюдам.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/bc29797ce730.jpg",
@@ -2891,7 +2891,7 @@
     },
     {
       "name": "Кетчуп",
-      "description": "",
+      "description": "Классический томатный кетчуп — то, что просто работает.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/58e98c29a676.jpg",
@@ -2917,7 +2917,7 @@
     },
     {
       "name": "Медово-горчичный",
-      "description": "",
+      "description": "Сладко-острый соус с дижонской горчицей и мёдом — золотая середина к курице и фритюру.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/5db04bede10d.jpg",
@@ -2943,7 +2943,7 @@
     },
     {
       "name": "Перечный",
-      "description": "",
+      "description": "Острый соус с молотым чёрным перцем на сливочной основе — резкий акцент к стейку.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/c5c319cce009.jpg",
@@ -2969,7 +2969,7 @@
     },
     {
       "name": "Сальса",
-      "description": "",
+      "description": "Свежая мексиканская сальса с томатами, чили и кинзой — яркий и лёгкий аккомпанемент.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/761458efbc4a.jpg",
@@ -2995,7 +2995,7 @@
     },
     {
       "name": "Сладкий чили",
-      "description": "",
+      "description": "Острый азиатский соус с балансом сладости и перца — фаворит к жареному и хрустящему.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/ac6a49df32ac.jpg",
@@ -3023,7 +3023,7 @@
     },
     {
       "name": "Соус Black Pepper",
-      "description": "",
+      "description": "Густой сливочный соус с чёрным перцем — для любителей выраженной перечной ноты.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/1f6fba46393b.jpg",
@@ -3049,7 +3049,7 @@
     },
     {
       "name": "Соус брусничный с розмарином",
-      "description": "",
+      "description": "Кисло-сладкий соус из брусники с ароматом розмарина — лучший друг утки и баранины.",
       "composition": "Соус",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
       "image_key": "dishes/f10b1348089b.jpg",
@@ -3075,7 +3075,7 @@
     },
     {
       "name": "Медовик",
-      "description": "",
+      "description": "Многослойный медовик на гречишном мёду с нежным сметанным кремом и шоколадной печатью.",
       "composition": "Медовые коржи, сметанный крем, шоколадная печать, мёд гречишный",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%B5%D0%B4%D0%BE%D0%B2%D0%B8%D0%BA-scaled-1-1.jpg",
       "image_key": "dishes/90babc55a572.jpg",
@@ -3101,7 +3101,7 @@
     },
     {
       "name": "Мороженое",
-      "description": "",
+      "description": "Шарики мороженого в ассортименте — лёгкий финал ужина.",
       "composition": "В ассортименте",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%BE%D1%80%D0%BE%D0%B6%D0%B5%D0%BD%D0%BE%D0%B5-scaled-1-1.jpg",
       "image_key": "dishes/2db2bce936d7.jpg",
@@ -3129,7 +3129,7 @@
     },
     {
       "name": "Панна-Котта с клубничным соусом",
-      "description": "",
+      "description": "Сливочно-кокосовая панна-котта с ярким клубничным соусом, мятой и кокосовой стружкой — итальянская классика.",
       "composition": "Сливки, кокосовое молоко, сахар ванильный, желатин, клубничный соус, мята, кокосовая стружка",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%9F%D0%B0%D0%BD%D0%BD%D0%B0-%D0%BA%D0%BE%D1%82%D1%82%D0%B0-%D0%B1%D1%8B%D0%BA-1-scaled-1.jpg",
       "image_key": "dishes/eede81c486cb.jpg",
@@ -3155,7 +3155,7 @@
     },
     {
       "name": "Фисташковый рулет",
-      "description": "",
+      "description": "Меренговый рулет со сливочным кремом, фисташками и малиновым соусом.",
       "composition": "Меренга, сливочный крем, фисташки, соус малиновый",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%B8%D1%81%D1%82%D0%B0%D1%88%D0%BA%D0%BE%D0%B2%D1%8B%D0%B9-%D1%80%D1%83%D0%BB%D0%B5%D1%82-scaled-1-1.jpg",
       "image_key": "dishes/261b77e86fca.jpg",
@@ -3183,7 +3183,7 @@
     },
     {
       "name": "Чизкейк баскский",
-      "description": "",
+      "description": "Баскский чизкейк с лёгкой карамельной корочкой, песочной основой, чипсами апельсина и солёной карамелью.",
       "composition": "Сырная основа, песочный корж, чипсы апельсина, соленая карамель",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A7%D0%B8%D0%B7%D0%BA%D0%B5%D0%B9%D0%BA-%D0%B1%D0%B0%D1%81%D0%BA%D1%81%D0%BA%D0%B8%D0%B9-scaled-1-1.jpg",
       "image_key": "dishes/e32616a5b6ce.jpg",
@@ -3209,7 +3209,7 @@
     },
     {
       "name": "Шоколадный Фондан",
-      "description": "",
+      "description": "Тёплый шоколадный фондан с жидкой сердцевиной, подаётся с шариком мороженого и шоколадным топпингом.",
       "composition": "Подается с шариком мороженого и шоколадным топпингом",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%D0%B4%D0%BD%D1%8B%D0%B9-%D1%84%D0%BE%D0%BD%D0%B4%D0%B0%D0%BD-2-scaled-1-1.jpg",
       "image_key": "dishes/e2478422b292.jpg",
@@ -3237,7 +3237,7 @@
     },
     {
       "name": "Айс Латте Карамель-Бузина",
-      "description": "",
+      "description": "Холодный латте на эспрессо с нотами карамели и бузины — освежающий летний кофейный напиток.",
       "composition": "Напиток кофе",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
       "image_key": "dishes/b29ced089ecd.jpg",
@@ -3265,7 +3265,7 @@
     },
     {
       "name": "Американо",
-      "description": "",
+      "description": "Эспрессо, разбавленный горячей водой — чистый кофейный вкус без излишеств.",
       "composition": "Кофе",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
       "image_key": "dishes/cd9eb22064ae.jpg",
@@ -3293,7 +3293,7 @@
     },
     {
       "name": "Бамбл апельсин",
-      "description": "",
+      "description": "Эспрессо со льдом и апельсиновым фрешем — освежающий бамбл с цитрусовой яркостью.",
       "composition": "Кофейный напиток",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
       "image_key": "dishes/1de453dd68ea.jpg",
@@ -3321,7 +3321,7 @@
     },
     {
       "name": "Бамбл гранат",
-      "description": "",
+      "description": "Эспрессо со льдом и гранатовым соком — освежающий бамбл с терпкой гранатовой нотой.",
       "composition": "Кофейный напиток",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
       "image_key": "dishes/7df9197c521b.jpg",
@@ -3349,7 +3349,7 @@
     },
     {
       "name": "Гляссе",
-      "description": "",
+      "description": "Холодный кофе с шариком мороженого — десерт и напиток в одном бокале.",
       "composition": "Кофе",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
       "image_key": "dishes/b2e818273320.jpg",
@@ -3377,7 +3377,7 @@
     },
     {
       "name": "Горячий шоколад",
-      "description": "",
+      "description": "Густой горячий шоколад с насыщенным какао-вкусом.",
       "composition": "Горячий шоколад",
       "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
       "image_key": "dishes/6df66eb8d6e5.jpg",
@@ -3405,7 +3405,7 @@
     },
     {
       "name": "Двойной эспрессо",
-      "description": "",
+      "description": "Двойная порция эспрессо — концентрированный кофейный вкус для ценителей.",
       "composition": "Кофе",
       "image_url_external": "",
       "image_key": "",
@@ -3433,7 +3433,7 @@
     },
     {
       "name": "Капучино",
-      "description": "",
+      "description": "Эспрессо с воздушной молочной пеной — баланс кофе и молока в классической пропорции.",
       "composition": "Кофе",
       "image_url_external": "",
       "image_key": "",
@@ -3461,7 +3461,7 @@
     },
     {
       "name": "Латте",
-      "description": "",
+      "description": "Эспрессо с большим количеством молока и тонкой пенкой — мягкий и нежный кофейный напиток.",
       "composition": "Кофе",
       "image_url_external": "",
       "image_key": "",
@@ -3489,7 +3489,7 @@
     },
     {
       "name": "Раф",
-      "description": "",
+      "description": "Эспрессо со сливками и ванильным сахаром — авторская российская классика с кремовой пенкой.",
       "composition": "Кофе",
       "image_url_external": "",
       "image_key": "",
@@ -3517,7 +3517,7 @@
     },
     {
       "name": "Фильтр-Кофе",
-      "description": "",
+      "description": "Кофе альтернативного заваривания через бумажный фильтр — раскрывает тонкие вкусовые ноты зерна.",
       "composition": "Кофе",
       "image_url_external": "",
       "image_key": "",
@@ -3545,7 +3545,7 @@
     },
     {
       "name": "Флэт Уайт",
-      "description": "",
+      "description": "Двойной эспрессо с тонкой бархатной микропеной — для любителей насыщенного молочного кофе.",
       "composition": "Кофе",
       "image_url_external": "",
       "image_key": "",
@@ -3573,7 +3573,7 @@
     },
     {
       "name": "Эспрессо",
-      "description": "",
+      "description": "Маленькая концентрированная чашка кофе — основа любого кофейного ритуала.",
       "composition": "Кофе",
       "image_url_external": "",
       "image_key": "",
@@ -3601,7 +3601,7 @@
     },
     {
       "name": "Какао с маршмелоу",
-      "description": "",
+      "description": "Тёплое какао на банановом или кокосовом молоке с воздушными маршмелоу.",
       "composition": "Банановое / кокосовое молоко",
       "image_url_external": "",
       "image_key": "",
@@ -3629,7 +3629,7 @@
     },
     {
       "name": "Капучино на альт. молоке",
-      "description": "",
+      "description": "Капучино на банановом или кокосовом молоке — растительная альтернатива классики.",
       "composition": "Банановое / кокосовое молоко",
       "image_url_external": "",
       "image_key": "",
@@ -3657,7 +3657,7 @@
     },
     {
       "name": "Латте на альт. молоке",
-      "description": "",
+      "description": "Латте на банановом или кокосовом молоке — мягкий растительный вариант.",
       "composition": "Банановое / кокосовое молоко",
       "image_url_external": "",
       "image_key": "",
@@ -3685,7 +3685,7 @@
     },
     {
       "name": "Ассам",
-      "description": "",
+      "description": "Крепкий индийский чёрный чай с насыщенным солодовым вкусом — классика к завтраку.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3713,7 +3713,7 @@
     },
     {
       "name": "Гречишный",
-      "description": "",
+      "description": "Чай из обжаренной гречихи с ореховой ноткой — без кофеина.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3741,7 +3741,7 @@
     },
     {
       "name": "Жасминовый",
-      "description": "",
+      "description": "Зелёный чай с цветами жасмина — нежный аромат и мягкий вкус.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3769,7 +3769,7 @@
     },
     {
       "name": "Манго & Имбирь & Кафирский лайм",
-      "description": "",
+      "description": "Авторский чай с тропическим манго, согревающим имбирём и пряным кафирским лаймом.",
       "composition": "Авторский чай",
       "image_url_external": "",
       "image_key": "",
@@ -3797,7 +3797,7 @@
     },
     {
       "name": "Мандарин&Чёрная смородина",
-      "description": "",
+      "description": "Авторский чай с яркой цитрусовой ноткой и терпкостью смородины.",
       "composition": "Авторский чай",
       "image_url_external": "",
       "image_key": "",
@@ -3825,7 +3825,7 @@
     },
     {
       "name": "Молочный улун",
-      "description": "",
+      "description": "Полуферментированный китайский чай с кремовой молочной нотой.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3853,7 +3853,7 @@
     },
     {
       "name": "Облепиха&Груша",
-      "description": "",
+      "description": "Авторский чай с витаминной облепихой и медовой грушей.",
       "composition": "Авторский чай",
       "image_url_external": "",
       "image_key": "",
@@ -3881,7 +3881,7 @@
     },
     {
       "name": "Ромашковый",
-      "description": "",
+      "description": "Травяной чай из цветков ромашки — без кофеина.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3909,7 +3909,7 @@
     },
     {
       "name": "Сенча",
-      "description": "",
+      "description": "Японский зелёный чай с травянистой нотой и лёгкой сладостью.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3937,7 +3937,7 @@
     },
     {
       "name": "Таёжный",
-      "description": "",
+      "description": "Травяной сбор с ароматами хвои и сибирских трав.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3965,7 +3965,7 @@
     },
     {
       "name": "Фруктовый пунш",
-      "description": "",
+      "description": "Яркий фруктовый купаж — насыщенный вкус для тёплого согревания.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -3993,7 +3993,7 @@
     },
     {
       "name": "Цейлонский с чабрецом",
-      "description": "",
+      "description": "Цейлонский чёрный чай с ароматным чабрецом — пряный и бодрящий.",
       "composition": "Чай",
       "image_url_external": "",
       "image_key": "",
@@ -4021,7 +4021,7 @@
     },
     {
       "name": "Б/А Number one / №1",
-      "description": "",
+      "description": "Авторский безалкогольный коктейль из драгонфрукта, личи и кардамона на содовой со льдом.",
       "composition": "Драгонфрукт, личи, кардамон, содовая, лёд",
       "image_url_external": "",
       "image_key": "",
@@ -4049,7 +4049,7 @@
     },
     {
       "name": "Вишня & Миндаль",
-      "description": "",
+      "description": "Лимонад с вишнёвой кислинкой и тёплой миндальной нотой.",
       "composition": "Лимонад",
       "image_url_external": "",
       "image_key": "",
@@ -4079,7 +4079,7 @@
     },
     {
       "name": "Лимонад Кола по-русски",
-      "description": "",
+      "description": "Авторская кола в нашей интерпретации — карамельная и пряная.",
       "composition": "Только в Безлимите",
       "image_url_external": "",
       "image_key": "",
@@ -4107,7 +4107,7 @@
     },
     {
       "name": "Лимонад Крем Сливки",
-      "description": "",
+      "description": "Сливочно-ванильный лимонад с молочной нежностью — десертный по характеру.",
       "composition": "Только в Безлимите",
       "image_url_external": "",
       "image_key": "",
@@ -4135,7 +4135,7 @@
     },
     {
       "name": "Лимонад Малина&Маракуйя",
-      "description": "",
+      "description": "Кисло-сладкий лимонад с яркой малиной и тропической маракуйей.",
       "composition": "Лимонад",
       "image_url_external": "",
       "image_key": "",
@@ -4163,7 +4163,7 @@
     },
     {
       "name": "Лимонад Тархун",
-      "description": "",
+      "description": "Зелёный лимонад с травяным ароматом тархуна — освежающая советская классика.",
       "composition": "Только в Безлимите",
       "image_url_external": "",
       "image_key": "",
@@ -4191,7 +4191,7 @@
     },
     {
       "name": "Лимонад Щавель Клубника",
-      "description": "",
+      "description": "Травянисто-ягодный лимонад со щавелем и клубникой.",
       "composition": "Только в Безлимите",
       "image_url_external": "",
       "image_key": "",
@@ -4219,7 +4219,7 @@
     },
     {
       "name": "Лимонад Яблоко-киви",
-      "description": "",
+      "description": "Свежий лимонад с яблочной кислинкой и киви.",
       "composition": "Лимонад",
       "image_url_external": "",
       "image_key": "",
@@ -4247,7 +4247,7 @@
     },
     {
       "name": "Свежий Мандарин",
-      "description": "",
+      "description": "Лимонад на свежевыжатом мандариновом соке.",
       "composition": "Лимонад",
       "image_url_external": "",
       "image_key": "",
@@ -4275,7 +4275,7 @@
     },
     {
       "name": "Б/А Number two / №2",
-      "description": "",
+      "description": "Авторский безалкогольный коктейль из манго, маракуйи и кокоса на содовой со льдом.",
       "composition": "Манго, маракуйя, кокос, содовая, лёд",
       "image_url_external": "",
       "image_key": "",
@@ -4303,7 +4303,7 @@
     },
     {
       "name": "Б/А Number three / №3",
-      "description": "",
+      "description": "Авторский безалкогольный коктейль с васильками, черёмухой и голубикой на содовой со льдом.",
       "composition": "Васильки, черёмуха, голубика, содовая, лёд",
       "image_url_external": "",
       "image_key": "",
@@ -4331,7 +4331,7 @@
     },
     {
       "name": "Лимонад Лесная ягода",
-      "description": "",
+      "description": "Лимонад на миксе лесных ягод — насыщенный и слегка терпкий.",
       "composition": "Лимонад",
       "image_url_external": "",
       "image_key": "",
@@ -4359,7 +4359,7 @@
     },
     {
       "name": "Глинтвейн б/а",
-      "description": "",
+      "description": "Безалкогольный глинтвейн на вишнёвом соке с яблоком, апельсином, корицей, гвоздикой и мёдом.",
       "composition": "Вишневый сок, яблоко, апельсин, корица, гвоздика, мёд",
       "image_url_external": "",
       "image_key": "",
@@ -4385,7 +4385,7 @@
     },
     {
       "name": "Desalcoholized Red Albali Cabernet Tempranillo",
-      "description": "",
+      "description": "Красное безалкогольное вино из винодельческого региона Кастилия Ла Манча, Испания — каберне совиньон и темпранильо без градуса.",
       "composition": "Красное Б/А, Испания, Кастилия Ла Манча",
       "image_url_external": "",
       "image_key": "",
@@ -4413,7 +4413,7 @@
     },
     {
       "name": "Desalcoholized White Vina Albali Sparkling White, 2023",
-      "description": "",
+      "description": "Белое игристое безалкогольное вино из Кастилии Ла Манча, Испания, урожай 2023.",
       "composition": "Белое Б/А, Испания, Кастилия Ла Манча",
       "image_url_external": "",
       "image_key": "",
@@ -4441,7 +4441,7 @@
     },
     {
       "name": "Hans Baer Riesling, Weinkellerei Hechtsheim",
-      "description": "",
+      "description": "Немецкий безалкогольный рислинг с фруктовой ноткой и характерной кислинкой.",
       "composition": "Рислинг безалкогольный",
       "image_url_external": "",
       "image_key": "",
@@ -4469,7 +4469,7 @@
     },
     {
       "name": "Б/А Pabst",
-      "description": "",
+      "description": "Американское безалкогольное пиво Pabst.",
       "composition": "Пиво Б/А",
       "image_url_external": "",
       "image_key": "",
@@ -4497,7 +4497,7 @@
     },
     {
       "name": "Вишневый Эль «The Бык»",
-      "description": "",
+      "description": "Авторский эль THE БЫК с фруктовой вишнёвой ноткой.",
       "composition": "Пиво",
       "image_url_external": "",
       "image_key": "",
@@ -4525,7 +4525,7 @@
     },
     {
       "name": "Нефильтрованное «THE БЫК»",
-      "description": "",
+      "description": "Наше нефильтрованное пиво — плотное, с насыщенным солодовым вкусом.",
       "composition": "Пиво",
       "image_url_external": "",
       "image_key": "",
@@ -4553,7 +4553,7 @@
     },
     {
       "name": "Сидр «THE БЫК»",
-      "description": "",
+      "description": "Авторский яблочный сидр THE БЫК с лёгкой кислинкой.",
       "composition": "Сидр",
       "image_url_external": "",
       "image_key": "",
@@ -4581,7 +4581,7 @@
     },
     {
       "name": "Темное «THE БЫК»",
-      "description": "",
+      "description": "Тёмное авторское пиво THE БЫК с карамельным телом и нотами обжарки.",
       "composition": "Пиво",
       "image_url_external": "",
       "image_key": "",
@@ -4609,7 +4609,7 @@
     },
     {
       "name": "Ячменный лагер «THE БЫК»",
-      "description": "",
+      "description": "Классический ячменный лагер THE БЫК — освежающий, с чистым солодовым вкусом.",
       "composition": "Пиво",
       "image_url_external": "",
       "image_key": "",
@@ -4637,7 +4637,7 @@
     },
     {
       "name": "Апероль number one / №1",
-      "description": "",
+      "description": "Безалкогольный аперитив на минеральной воде с Апероль Б/А и апельсином.",
       "composition": "Минеральная вода, Апероль Б/А, апельсин",
       "image_url_external": "",
       "image_key": "",
@@ -4663,7 +4663,7 @@
     },
     {
       "name": "Апероль number one / №2",
-      "description": "",
+      "description": "Безалкогольный аперитив на яблочном сидре с Апероль Б/А и апельсином.",
       "composition": "Сидр яблочный, Апероль Б/А, апельсин, лёд",
       "image_url_external": "",
       "image_key": "",
@@ -4689,7 +4689,7 @@
     },
     {
       "name": "Том-ям с креветками",
-      "description": "Классический тайский острый суп с креветками, грибами шиитаке и кокосовым молоком.",
+      "description": "Классический тайский острый суп на кокосовом молоке с тигровыми креветками, грибами шиитаке, лимонной травой и галангалом.",
       "composition": "Креветки тигровые, кокосовое молоко, грибы шиитаке, лимонная трава, галангал, листья каффир-лайма, лайм, чили, рыбный соус, кинза.",
       "image_url_external": "",
       "image_key": "",
@@ -4719,7 +4719,7 @@
     },
     {
       "name": "Мисо-суп с тофу",
-      "description": "Лёгкий японский бульон даси с пастой мисо, кубиками тофу и нори.",
+      "description": "Лёгкий японский бульон даси с пастой мисо, кубиками тофу, водорослями вакамэ и нори.",
       "composition": "Бульон даси, паста мисо, тофу, водоросли вакамэ, зелёный лук, нори.",
       "image_url_external": "",
       "image_key": "",
@@ -4751,7 +4751,7 @@
     },
     {
       "name": "Рамен с курицей",
-      "description": "Японская лапша в курином бульоне с маринованным яйцом и побегами бамбука.",
+      "description": "Японская лапша рамен в курином бульоне с филе, маринованным яйцом, побегами бамбука менма, нори и кунжутом.",
       "composition": "Куриный бульон, лапша рамен, филе курицы, маринованное яйцо, побеги бамбука менма, зелёный лук, нори, кунжут.",
       "image_url_external": "",
       "image_key": "",
@@ -4782,7 +4782,7 @@
     },
     {
       "name": "Ролл Филадельфия",
-      "description": "Классический ролл с лососем и сливочным сыром.",
+      "description": "Японский ролл со слабосолёным лососем, сливочным сыром Филадельфия, авокадо и огурцом в нори.",
       "composition": "Лосось слабосолёный, сливочный сыр Филадельфия, рис, нори, огурец, авокадо.",
       "image_url_external": "",
       "image_key": "",
@@ -4810,7 +4810,7 @@
     },
     {
       "name": "Ролл Калифорния",
-      "description": "Ролл с крабом, авокадо и икрой тобико.",
+      "description": "Японский ролл с крабом, авокадо и огурцом, обсыпанный икрой тобико.",
       "composition": "Краб, авокадо, рис, нори, икра тобико, огурец, майонез.",
       "image_url_external": "",
       "image_key": "",
@@ -4841,7 +4841,7 @@
     },
     {
       "name": "Пад-тай с курицей",
-      "description": "Тайская рисовая лапша вок с курицей, арахисом и яйцом.",
+      "description": "Тайская рисовая лапша wok с куриным филе, ростками сои, арахисом и яйцом в соусе из тамаринда и рыбного соуса.",
       "composition": "Лапша рисовая, филе курицы, ростки сои, арахис, яйцо, лук репчатый, тамаринд, лайм, рыбный соус, чили.",
       "image_url_external": "",
       "image_key": "",
@@ -4871,7 +4871,7 @@
     },
     {
       "name": "Карбонара",
-      "description": "Спагетти в классическом соусе из желтка, гуанчале и пекорино.",
+      "description": "Спагетти в классическом соусе из желтка, гуанчале, пекорино романо и чёрного перца — настоящая римская карбонара.",
       "composition": "Спагетти, гуанчале, желток куриный, сыр пекорино романо, чёрный перец.",
       "image_url_external": "",
       "image_key": "",
@@ -4898,7 +4898,7 @@
     },
     {
       "name": "Паста Аррабиата",
-      "description": "Пенне в остром томатном соусе с чесноком и чили.",
+      "description": "Пенне в остром томатном соусе с чесноком, чили и петрушкой на оливковом масле — традиция Лацио.",
       "composition": "Пенне, томаты в собственном соку, чеснок, чили, оливковое масло, петрушка.",
       "image_url_external": "",
       "image_key": "",
@@ -4929,7 +4929,7 @@
     },
     {
       "name": "Ризотто с белыми грибами",
-      "description": "Кремовое ризотто с белыми грибами и пармезаном.",
+      "description": "Кремовое ризотто на рисе арборио с белыми грибами, белым сухим вином и пармезаном, обогащённое сливочным маслом по-итальянски.",
       "composition": "Рис арборио, белые грибы, лук репчатый, белое сухое вино, пармезан, сливочное масло, петрушка.",
       "image_url_external": "",
       "image_key": "",
@@ -4957,7 +4957,7 @@
     },
     {
       "name": "Боул с киноа и авокадо",
-      "description": "Сытный веганский боул с киноа, авокадо, нутом и табуле.",
+      "description": "Сытный веганский боул: киноа, нут, авокадо и помидоры черри с лимоном, оливковым маслом и зеленью.",
       "composition": "Киноа, авокадо, нут, помидоры черри, огурец, петрушка, кинза, лимон, оливковое масло.",
       "image_url_external": "",
       "image_key": "",
@@ -4986,7 +4986,7 @@
     },
     {
       "name": "Овощное рагу по-провански",
-      "description": "Рататуй из овощей, томлёный с прованскими травами.",
+      "description": "Рататуй: томлёные баклажаны, кабачки, перцы и помидоры с тимьяном, базиликом и оливковым маслом — классика прованской кухни.",
       "composition": "Баклажаны, кабачки, болгарский перец, помидоры, лук, чеснок, оливковое масло, тимьян, базилик.",
       "image_url_external": "",
       "image_key": "",
@@ -5016,7 +5016,7 @@
     },
     {
       "name": "Гранола с фруктами и кокосовым молоком",
-      "description": "Веганский десерт-завтрак: домашняя гранола, ягоды, кокосовое молоко.",
+      "description": "Домашняя овсяная гранола с миндалём, бананом, клубникой и голубикой, подаётся с кокосовым молоком — веганский десерт-завтрак.",
       "composition": "Овсяные хлопья, мёд (опционально кленовый сироп), миндаль, кокосовая стружка, банан, клубника, голубика, кокосовое молоко.",
       "image_url_external": "",
       "image_key": "",
@@ -5046,7 +5046,7 @@
     },
     {
       "name": "Хумус с овощами и питой",
-      "description": "Восточная закуска: классический хумус с оливковым маслом, овощи и тёплая пита.",
+      "description": "Кремовый хумус из нута с пастой тахини и оливковым маслом, подаётся со свежими овощами и тёплой питой.",
       "composition": "Нут, тахини, чеснок, лимон, оливковое масло, паприка, морковь, огурец, болгарский перец, пита.",
       "image_url_external": "",
       "image_key": "",
@@ -5077,7 +5077,7 @@
     },
     {
       "name": "Шашлык из ягнёнка халяль",
-      "description": "Маринованная баранина на шпажках, приготовленная на углях.",
+      "description": "Маринованная баранина халяль на углях с зирой, кориандром и чёрным перцем.",
       "composition": "Мякоть ягнёнка, лук репчатый, кориандр, зира, перец чёрный, оливковое масло.",
       "image_url_external": "",
       "image_key": "",
@@ -5104,7 +5104,7 @@
     },
     {
       "name": "Куриный шашлык в маринаде sriracha",
-      "description": "Острые шпажки куриного бедра в маринаде sriracha и чесноке.",
+      "description": "Шпажки куриного бедра в остром маринаде sriracha с чесноком, мёдом, соевым соусом и имбирём.",
       "composition": "Бедро куриное, чеснок, sriracha, мёд, соевый соус, имбирь, лайм.",
       "image_url_external": "",
       "image_key": "",
@@ -5134,7 +5134,7 @@
     },
     {
       "name": "Лосось на пару с овощами",
-      "description": "Лёгкий стейк лосося на пару с сезонными овощами.",
+      "description": "Стейк лосося на пару с брокколи, цветной капустой и морковью, с лимоном и оливковым маслом.",
       "composition": "Лосось, брокколи, морковь, цветная капуста, лимон, оливковое масло, морская соль.",
       "image_url_external": "",
       "image_key": "",
@@ -5163,7 +5163,7 @@
     },
     {
       "name": "Чизкейк Нью-Йорк",
-      "description": "Классический чизкейк на песочной основе с ягодным соусом.",
+      "description": "Классический американский чизкейк на сливочном сыре с песочной основой и ягодным соусом.",
       "composition": "Сливочный сыр, песочное тесто, яйца, сахар, ваниль, соус из ягод.",
       "image_url_external": "",
       "image_key": "",
@@ -5192,7 +5192,7 @@
     },
     {
       "name": "Тирамису",
-      "description": "Воздушный итальянский десерт с маскарпоне и кофейным сиропом.",
+      "description": "Воздушный итальянский десерт из маскарпоне, савоярди, кофе эспрессо и какао.",
       "composition": "Маскарпоне, печенье савоярди, кофе эспрессо, какао, желток, сахар.",
       "image_url_external": "",
       "image_key": "",
@@ -5220,7 +5220,7 @@
     },
     {
       "name": "Эклер с заварным кремом",
-      "description": "Французский эклер с классическим заварным кремом.",
+      "description": "Французский эклер из заварного теста с ванильным заварным кремом и шоколадной глазурью.",
       "composition": "Заварное тесто, заварной крем, ванильный сахар, шоколадная глазурь, яйца, молоко.",
       "image_url_external": "",
       "image_key": "",
@@ -5251,7 +5251,7 @@
     },
     {
       "name": "Большое мясное плато для компании",
-      "description": "Ассорти мясных деликатесов на компанию из 4-6 человек.",
+      "description": "Большое плато на 4–6 человек: пармская ветчина, пастрами, чоризо и ростбиф с гриссини, оливками и дижонской горчицей.",
       "composition": "Пармская ветчина, пастрами, салями чоризо, ростбиф, вяленые томаты, гриссини, оливки, корнишоны, дижонская горчица.",
       "image_url_external": "",
       "image_key": "",
@@ -5281,7 +5281,7 @@
     },
     {
       "name": "Сырная доска для компании",
-      "description": "Ассорти сыров с медом, орехами и виноградом для большой компании.",
+      "description": "Большое сырное плато на компанию: пармезан, дор-блю, бри, чеддер и моцарелла с мёдом, грецким орехом и виноградом.",
       "composition": "Пармезан, дор-блю, бри, чеддер, моцарелла, мёд, грецкий орех, миндаль, виноград, гриссини.",
       "image_url_external": "",
       "image_key": "",
@@ -5312,7 +5312,7 @@
     },
     {
       "name": "Морское плато",
-      "description": "Ассорти морепродуктов с лимоном и тремя соусами на 3-4 персоны.",
+      "description": "Большое ассорти на 3–4 персоны: тигровые креветки, мидии в раковине, осьминог и стейк лосося с тремя соусами — айоли, коктейль, тартар.",
       "composition": "Тигровые креветки, мидии в раковине, осьминог отварной, стейк лосося, лимон, соус айоли, соус коктейль, соус тартар.",
       "image_url_external": "",
       "image_key": "",
@@ -5343,7 +5343,7 @@
     },
     {
       "name": "Стейк-сет на двоих",
-      "description": "Два премиальных стейка (рибай и бавет) с тремя соусами для двоих.",
+      "description": "Сет на двоих: рибай Блэк Ангус и бавет с тремя соусами — демиглас, перечный и чимичурри, подаются с картофелем беби, морской солью и розмарином.",
       "composition": "Стейк рибай блэк ангус, стейк бавет, гарнир из картофеля бэби, соус демиглас, соус перечный, соус чимичурри, морская соль, розмарин.",
       "image_url_external": "",
       "image_key": "",
@@ -5371,7 +5371,7 @@
     },
     {
       "name": "Закусочный сет на компанию",
-      "description": "Большой сет горячих закусок к пиву на 4 человек.",
+      "description": "Большой сет на компанию: куриные крылья барбекю, чесночные гренки, картофель фри, луковые кольца и кесадилья с тремя соусами.",
       "composition": "Куриные крылья BBQ, чесночные гренки, картофель фри, луковые кольца, кесадилья с курицей, соус 1000 островов, соус блю чиз, соус сладкий чили.",
       "image_url_external": "",
       "image_key": "",

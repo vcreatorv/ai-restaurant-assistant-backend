@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
+	"github.com/example/ai-restaurant-assistant-backend/internal/chat"
 	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/datasources"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/s3"
@@ -38,6 +40,8 @@ type Config struct {
 	User user.Config `yaml:"user"`
 	// Menu параметры фичи menu
 	Menu menu.Config `yaml:"menu"`
+	// Chat параметры фичи chat
+	Chat chat.Config `yaml:"chat"`
 }
 
 // HTTPConfig параметры HTTP-сервера и cookie
@@ -118,6 +122,22 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if c.Menu.Delivery.MaxImageSizeBytes <= 0 {
 		c.Menu.Delivery.MaxImageSizeBytes = 5 * 1024 * 1024
+	}
+
+	if c.Chat.Usecase.AutoNewChatAfter <= 0 {
+		c.Chat.Usecase.AutoNewChatAfter = 6 * time.Hour
+	}
+	if c.Chat.Delivery.MessagesDefaultLimit <= 0 {
+		c.Chat.Delivery.MessagesDefaultLimit = 50
+	}
+	if c.Chat.Delivery.MessagesMaxLimit <= 0 {
+		c.Chat.Delivery.MessagesMaxLimit = 200
+	}
+	if c.Chat.Delivery.ListDefaultLimit <= 0 {
+		c.Chat.Delivery.ListDefaultLimit = 20
+	}
+	if c.Chat.Delivery.ListMaxLimit <= 0 {
+		c.Chat.Delivery.ListMaxLimit = 100
 	}
 
 	if c.S3.Endpoint == "" {

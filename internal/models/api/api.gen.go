@@ -267,7 +267,7 @@ type Chat struct {
 	CreatedAt     time.Time          `json:"created_at"`
 	Id            openapi_types.UUID `json:"id"`
 	LastMessageAt time.Time          `json:"last_message_at"`
-	Title         string             `json:"title"`
+	Title         *string            `json:"title,omitempty"`
 	UserId        openapi_types.UUID `json:"user_id"`
 }
 

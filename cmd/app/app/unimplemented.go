@@ -50,26 +50,6 @@ func (Unimplemented) UpdateCartItem(_ context.Context, _ v1.UpdateCartItemReques
 	return nil, apperrors.ErrNotImplemented
 }
 
-func (Unimplemented) ListChats(_ context.Context, _ v1.ListChatsRequestObject) (v1.ListChatsResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) CreateChat(_ context.Context, _ v1.CreateChatRequestObject) (v1.CreateChatResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) DeleteChat(_ context.Context, _ v1.DeleteChatRequestObject) (v1.DeleteChatResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) GetChat(_ context.Context, _ v1.GetChatRequestObject) (v1.GetChatResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
-func (Unimplemented) SendMessage(_ context.Context, _ v1.SendMessageRequestObject) (v1.SendMessageResponseObject, error) {
-	return nil, apperrors.ErrNotImplemented
-}
-
 func (Unimplemented) ListOrders(_ context.Context, _ v1.ListOrdersRequestObject) (v1.ListOrdersResponseObject, error) {
 	return nil, apperrors.ErrNotImplemented
 }

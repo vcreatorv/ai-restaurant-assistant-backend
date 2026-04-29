@@ -76,11 +76,18 @@ func main() {
 	os.Exit(run())
 }
 
+// Режимы работы сидера.
+const (
+	modeFull               = "full"
+	modeUpdateDescriptions = "update-descriptions"
+)
+
 func run() int {
 	cfgPath := flag.String("config", app.DefaultConfigPath, "path to yaml config")
 	seedPath := flag.String("seed", "seed/menu.json", "path to seed/menu.json")
 	assetsDir := flag.String("assets", "seed/assets", "path to assets dir (default images)")
 	skipImages := flag.Bool("skip-images", false, "skip downloading external images (use defaults / empty)")
+	mode := flag.String("mode", modeFull, "seed mode: full | update-descriptions")
 	flag.Parse()
 
 	cfg, err := app.LoadConfig(*cfgPath)
@@ -98,15 +105,31 @@ func run() int {
 	}
 	defer pool.Close()
 
-	storage, err := s3.New(cfg.S3)
-	if err != nil {
-		slog.Error("s3", "err", err)
-		return 1
-	}
-
 	data, err := loadSeed(*seedPath)
 	if err != nil {
 		slog.Error("load seed", "err", err)
+		return 1
+	}
+
+	switch *mode {
+	case modeUpdateDescriptions:
+		updated, err := updateDescriptions(ctx, pool, data.Dishes)
+		if err != nil {
+			slog.Error("update descriptions", "err", err)
+			return 1
+		}
+		slog.Info("descriptions updated", "count", updated)
+		return 0
+	case modeFull:
+		// продолжаем ниже
+	default:
+		slog.Error("unknown mode", "mode", *mode)
+		return 1
+	}
+
+	storage, err := s3.New(cfg.S3)
+	if err != nil {
+		slog.Error("s3", "err", err)
 		return 1
 	}
 
@@ -143,6 +166,32 @@ func run() int {
 		"images_failed", r.imagesFailed,
 	)
 	return 0
+}
+
+// updateDescriptions обновляет поле description у уже существующих блюд по name.
+// Не создаёт новые блюда, не трогает остальные поля. Используется после ручной
+// правки seed/menu.json для перезаливки текстов без переинсёрта.
+func updateDescriptions(ctx context.Context, pool *pgxpool.Pool, dishes []SeedDish) (int, error) {
+	updated := 0
+	for i := range dishes {
+		d := &dishes[i]
+		if d.Description == "" {
+			continue
+		}
+		tag, err := pool.Exec(ctx,
+			`UPDATE dishes SET description = $1, updated_at = now() WHERE name = $2`,
+			d.Description, d.Name,
+		)
+		if err != nil {
+			return updated, fmt.Errorf("update %q: %w", d.Name, err)
+		}
+		if tag.RowsAffected() == 0 {
+			slog.Warn("dish not found in db, skipped", "name", d.Name)
+			continue
+		}
+		updated++
+	}
+	return updated, nil
 }
 
 func loadSeed(path string) (*Seed, error) {

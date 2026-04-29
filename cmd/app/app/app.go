@@ -13,6 +13,10 @@ import (
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
 	authhttp "github.com/example/ai-restaurant-assistant-backend/internal/auth/delivery/v1/http"
 	authusecase "github.com/example/ai-restaurant-assistant-backend/internal/auth/usecase"
+	"github.com/example/ai-restaurant-assistant-backend/internal/chat"
+	chathttp "github.com/example/ai-restaurant-assistant-backend/internal/chat/delivery/v1/http"
+	chatpostgres "github.com/example/ai-restaurant-assistant-backend/internal/chat/repository/postgres"
+	chatusecase "github.com/example/ai-restaurant-assistant-backend/internal/chat/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
 	menuhttp "github.com/example/ai-restaurant-assistant-backend/internal/menu/delivery/v1/http"
 	menupostgres "github.com/example/ai-restaurant-assistant-backend/internal/menu/repository/postgres"
@@ -137,20 +141,24 @@ func buildAPI(
 	sessionRepository := sessionredis.New(redisManager, cfg.Session.Repository.TTL)
 	userRepository := userpostgres.New(pgPool)
 	menuRepository := menupostgres.New(pgPool)
+	chatRepository := chatpostgres.New(pgPool)
 
 	sessionUsecase := sessionusecase.New(sessionRepository, uuidGen, csrfGen)
 	userUsecase := userusecase.New(userRepository)
 	authUsecase := authusecase.New(userRepository, sessionUsecase, bcryptHasher, uuidGen)
 	menuUsecase := menuusecase.New(menuRepository, s3Storage)
+	chatUsecase := chatusecase.New(chatRepository, uuidGen, cfg.Chat.Usecase)
 
 	authHandler := authhttp.New(authUsecase, userUsecase)
 	userHandler := userhttp.New(userUsecase)
 	menuHandler := menuhttp.New(cfg.Menu.Delivery, menuUsecase, userUsecase)
+	chatHandler := chathttp.New(cfg.Chat.Delivery, chatUsecase)
 
 	handler := Handler{
 		AuthHandler: authHandler,
 		UserHandler: userHandler,
 		MenuHandler: menuHandler,
+		ChatHandler: chatHandler,
 	}
 
 	swagger, err := v1.GetSwagger()
@@ -248,6 +256,13 @@ func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 		writeError(w, http.StatusRequestEntityTooLarge, "image_too_large", "Image exceeds maximum allowed size")
 	case errors.Is(err, menu.ErrImageUnsupportedType):
 		writeError(w, http.StatusUnsupportedMediaType, "image_unsupported_type", "Unsupported image content type")
+
+	case errors.Is(err, chat.ErrChatNotFound):
+		writeError(w, http.StatusNotFound, "chat_not_found", "Chat not found")
+	case errors.Is(err, chat.ErrChatForbidden):
+		writeError(w, http.StatusForbidden, "access_denied", "Chat does not belong to this user")
+	case errors.Is(err, chat.ErrEmptyMessage):
+		writeError(w, http.StatusBadRequest, "validation_failed", "Message content is empty")
 
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "An unexpected error occurred")
