@@ -1,4 +1,4 @@
-.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api \
+.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api seed \
         migrate-up migrate-down migrate-create \
         docker-build docker-up docker-down docker-logs \
         ci-check fmt-check group-imports-check
@@ -14,6 +14,7 @@ help:
 	@echo "  group-imports      - группировка импортов через scripts/group-imports.py"
 	@echo "  tidy               - go mod tidy + verify"
 	@echo "  generate-api       - сгенерировать код из OpenAPI"
+	@echo "  seed               - залить меню (seed/menu.json) в PG + картинки в MinIO"
 	@echo "  migrate-up         - применить миграции"
 	@echo "  migrate-down       - откатить последнюю миграцию"
 	@echo "  migrate-create     - создать новую миграцию (NAME=имя)"
@@ -77,6 +78,20 @@ gen-types:
 gen-server:
 	mkdir -p cmd/app/app/v1
 	oapi-codegen -config api/server.cfg.yaml api/openapi.yaml
+
+# ----- Seed -----
+
+# Запускать с хоста: переменные берутся из .env, PG/MinIO открыты на localhost.
+# Перед запуском: make docker-up (нужны postgres/minio со сделанными миграциями).
+seed:
+	@bash -c 'set -a && . ./.env && set +a && \
+	  POSTGRES_DSN="postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@localhost:5432/$$POSTGRES_DB?sslmode=disable" \
+	  S3_ENDPOINT=localhost:$${MINIO_API_PORT:-9000} \
+	  S3_ACCESS_KEY=$$MINIO_ROOT_USER \
+	  S3_SECRET_KEY=$$MINIO_ROOT_PASSWORD \
+	  S3_BUCKET=$$MINIO_BUCKET \
+	  S3_PUBLIC_BASE_URL=http://localhost:$${MINIO_API_PORT:-9000}/$$MINIO_BUCKET \
+	  go run ./cmd/seed -config configs/config.yaml -seed seed/menu.json -assets seed/assets'
 
 # ----- Migrations -----
 

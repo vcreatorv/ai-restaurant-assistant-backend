@@ -2,8 +2,10 @@ package s3
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/minio/minio-go/v7"
@@ -16,6 +18,10 @@ type Storage interface {
 	Upload(ctx context.Context, key, contentType string, body io.Reader, size int64) (string, error)
 	// Delete удаляет объект по ключу
 	Delete(ctx context.Context, key string) error
+	// Exists проверяет, есть ли объект по ключу
+	Exists(ctx context.Context, key string) (bool, error)
+	// URL формирует публичный URL объекта по ключу
+	URL(key string) string
 }
 
 type minioStorage struct {
@@ -67,4 +73,22 @@ func (s *minioStorage) Delete(ctx context.Context, key string) error {
 		return fmt.Errorf("remove object: %w", err)
 	}
 	return nil
+}
+
+// Exists возвращает true, если объект уже залит
+func (s *minioStorage) Exists(ctx context.Context, key string) (bool, error) {
+	_, err := s.client.StatObject(ctx, s.bucket, key, minio.StatObjectOptions{})
+	if err == nil {
+		return true, nil
+	}
+	var resp minio.ErrorResponse
+	if errors.As(err, &resp) && resp.StatusCode == http.StatusNotFound {
+		return false, nil
+	}
+	return false, fmt.Errorf("stat object: %w", err)
+}
+
+// URL возвращает публичный URL для ключа
+func (s *minioStorage) URL(key string) string {
+	return s.publicBaseURL + "/" + key
 }

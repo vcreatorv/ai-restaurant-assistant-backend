@@ -1,0 +1,5404 @@
+{
+  "categories": [
+    {
+      "name": "Закуски",
+      "sort_order": 10,
+      "is_available": true
+    },
+    {
+      "name": "Салаты",
+      "sort_order": 20,
+      "is_available": true
+    },
+    {
+      "name": "Супы",
+      "sort_order": 30,
+      "is_available": true
+    },
+    {
+      "name": "Пицца и паста",
+      "sort_order": 40,
+      "is_available": true
+    },
+    {
+      "name": "Бургеры",
+      "sort_order": 50,
+      "is_available": true
+    },
+    {
+      "name": "Стейки",
+      "sort_order": 60,
+      "is_available": true
+    },
+    {
+      "name": "Гриль (хоспер)",
+      "sort_order": 70,
+      "is_available": true
+    },
+    {
+      "name": "Горячее — мясо",
+      "sort_order": 80,
+      "is_available": true
+    },
+    {
+      "name": "Горячее — рыба и морепродукты",
+      "sort_order": 90,
+      "is_available": true
+    },
+    {
+      "name": "Гарниры",
+      "sort_order": 100,
+      "is_available": true
+    },
+    {
+      "name": "Соусы",
+      "sort_order": 110,
+      "is_available": true
+    },
+    {
+      "name": "Десерты",
+      "sort_order": 120,
+      "is_available": true
+    },
+    {
+      "name": "Напитки безалкогольные",
+      "sort_order": 130,
+      "is_available": true
+    },
+    {
+      "name": "Напитки алкогольные",
+      "sort_order": 140,
+      "is_available": true
+    }
+  ],
+  "tags": [
+    {
+      "name": "Хит сезона",
+      "slug": "hit",
+      "color": "#FB8C00"
+    },
+    {
+      "name": "Новинка",
+      "slug": "new",
+      "color": "#43A047"
+    },
+    {
+      "name": "Острое",
+      "slug": "spicy",
+      "color": "#E53935"
+    },
+    {
+      "name": "Шеф рекомендует",
+      "slug": "chef",
+      "color": "#9C27B0"
+    },
+    {
+      "name": "Большая порция",
+      "slug": "big",
+      "color": "#5D4037"
+    },
+    {
+      "name": "Для компании",
+      "slug": "share",
+      "color": "#00897B"
+    },
+    {
+      "name": "Лёгкое",
+      "slug": "light",
+      "color": "#0288D1"
+    },
+    {
+      "name": "Кофе",
+      "slug": "coffee",
+      "color": "#6D4C41"
+    },
+    {
+      "name": "Чай",
+      "slug": "tea",
+      "color": "#8BC34A"
+    },
+    {
+      "name": "Лимонад",
+      "slug": "lemonade",
+      "color": "#FFC107"
+    },
+    {
+      "name": "Вино",
+      "slug": "wine",
+      "color": "#7B1FA2"
+    },
+    {
+      "name": "Пиво",
+      "slug": "beer",
+      "color": "#FFB300"
+    }
+  ],
+  "dishes": [
+    {
+      "name": "Бабагануш",
+      "description": "",
+      "composition": "Пита, орех кедровый, кинза, масло оливковое, лайм, баклажан, паста тахини, чеснок",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%91%D0%B0%D0%B1%D0%B0%D0%B3%D0%B0%D0%BD%D1%83%D1%88-scaled-1.jpg",
+      "image_key": "dishes/2149c8be61da.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 318,
+      "protein_g": 9.0,
+      "fat_g": 17.0,
+      "carbs_g": 30.0,
+      "portion_weight_g": 200,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten",
+        "nuts",
+        "sesame"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Баклажаны в панировке",
+      "description": "",
+      "composition": "Баклажан, соус «Сладкий чили», микс салатов",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B0%D0%BA%D0%BB%D0%B0%D0%B6%D0%B0%D0%BD%D1%8B-%D0%B2-%D0%BF%D0%B0%D0%BD%D0%B8%D1%80%D0%BE%D0%B2%D0%BA%D0%B5-scaled-2.jpg",
+      "image_key": "dishes/da84e6541aa2.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 279,
+      "protein_g": 3.0,
+      "fat_g": 5.0,
+      "carbs_g": 58.0,
+      "portion_weight_g": 260,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Вителло Тоннато",
+      "description": "",
+      "composition": "Ростбиф, соус Вителло тоннато, рукола, каперсы, масло оливковое",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%92%D0%B8%D1%82%D0%B5%D0%BB%D0%BB%D0%BE.jpg",
+      "image_key": "dishes/184419c5fea7.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 723,
+      "protein_g": 27.0,
+      "fat_g": 67.0,
+      "carbs_g": 3.0,
+      "portion_weight_g": 200,
+      "cuisine": "italian",
+      "category": "Закуски",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Карпаччо Денвер",
+      "description": "",
+      "composition": "Говядина, смесь перцев, уксус бальзамический, масло оливковое, сыр пармезан, рукола, каперсы",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D1%80%D0%BF%D0%B0%D1%87%D1%87%D0%BE-%D0%B4%D0%B5%D0%BD%D0%B2%D0%B5%D1%80.jpg",
+      "image_key": "dishes/b86f3b23d55b.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 371,
+      "protein_g": 20.0,
+      "fat_g": 32.0,
+      "carbs_g": 1.0,
+      "portion_weight_g": 140,
+      "cuisine": "italian",
+      "category": "Закуски",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Креветки в кляре",
+      "description": "",
+      "composition": "Маринованные креветки в кляре, соус медово-горчичный",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B8-%D0%B2-%D0%BA%D0%BB%D1%8F%D1%80%D0%B5-scaled-1-1.jpg",
+      "image_key": "dishes/d245aa30cd32.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 535,
+      "protein_g": 21.0,
+      "fat_g": 31.0,
+      "carbs_g": 43.0,
+      "portion_weight_g": 130,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "shellfish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Крылья куриные",
+      "description": "",
+      "composition": "В соусе сладкий чили, барбекю, соус 1000 островов",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D1%8B%D0%BB%D1%8C%D1%8F-%D0%BA%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B5-scaled-1-1.jpg",
+      "image_key": "dishes/9c10e254b488.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 1353,
+      "protein_g": 60.0,
+      "fat_g": 93.0,
+      "carbs_g": 69.0,
+      "portion_weight_g": 270,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "soy"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Куриные стрипсы",
+      "description": "",
+      "composition": "Филе куриное, панировочные сухари, соус чили, соус 1000 островов, кетчуп, молоко, яйцо",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B5-%D1%81%D1%82%D1%80%D0%B8%D0%BF%D1%81%D1%8B-scaled-1-1.jpg",
+      "image_key": "dishes/42a14c20faca.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 887,
+      "protein_g": 59.0,
+      "fat_g": 35.0,
+      "carbs_g": 84.0,
+      "portion_weight_g": 310,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "dairy",
+        "eggs",
+        "gluten",
+        "soy"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Мясное плато",
+      "description": "",
+      "composition": "Салями чоризо, пармская ветчина, пастрами, вяленые томаты, гриссини",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D1%8F%D1%81%D0%BD%D0%BE%D0%B5-%D0%9F%D0%BB%D0%B0%D1%82%D0%BE-scaled-1-1.jpg",
+      "image_key": "dishes/4d09010c3931.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 557,
+      "protein_g": 69.0,
+      "fat_g": 44.0,
+      "carbs_g": 13.0,
+      "portion_weight_g": 125,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Сырное плато",
+      "description": "",
+      "composition": "Сыр чеддер, сыр камамбер, сыр пармезан, сыр дор блю, соус вишневый, гриссини, орех грецкий",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D1%8B%D1%80%D0%BD%D0%BE%D0%B5-%D0%BF%D0%BB%D0%B0%D1%82%D0%BE-scaled-1-1.jpg",
+      "image_key": "dishes/80699619cf60.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 621,
+      "protein_g": 69.0,
+      "fat_g": 44.0,
+      "carbs_g": 30.0,
+      "portion_weight_g": 180,
+      "cuisine": "italian",
+      "category": "Закуски",
+      "allergens": [
+        "dairy",
+        "gluten",
+        "nuts"
+      ],
+      "dietary": [
+        "vegetarian"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Тартар из авокадо с креветками",
+      "description": "",
+      "composition": "Креветки, авокадо, лук красный, томаты вяленые, перец чили, лайм, чипсы из креветок",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%B0%D1%80-%D0%A2%D0%B0%D1%80-%D0%B8%D0%B7-%D0%B0%D0%B2%D0%BE%D0%BA%D0%B0%D0%B4%D0%BE-%D1%81-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/3436a3279836.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 349,
+      "protein_g": 17.0,
+      "fat_g": 25.0,
+      "carbs_g": 15.0,
+      "portion_weight_g": 165,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "shellfish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "light"
+      ],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Чесночные гренки",
+      "description": "",
+      "composition": "Подаются с соусом блю-чиз",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A7%D0%B5%D1%81%D0%BD%D0%BE%D1%87%D0%BD%D1%8B%D0%B5-%D0%B3%D1%80%D0%BD%D0%B5%D0%BD%D0%BA%D0%B8.jpg",
+      "image_key": "dishes/cd8cb5299cb7.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 789,
+      "protein_g": 19.0,
+      "fat_g": 25.0,
+      "carbs_g": 122.0,
+      "portion_weight_g": 270,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Витаминный салат",
+      "description": "",
+      "composition": "Клюква вяленая, зелень, масло оливковое, яблочный уксус, капуста белокочанная, морковь, перец болгарский, сельдерей",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%81%D0%B0%D0%BB%D0%B0%D1%82-%D0%B2%D0%B8%D1%82%D0%B0%D0%BC%D0%B8%D0%BD%D0%BD%D1%8B%D0%B9-scaled-1.jpg",
+      "image_key": "dishes/d68edce4d003.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 301,
+      "protein_g": 2.2,
+      "fat_g": 22.3,
+      "carbs_g": 22.7,
+      "portion_weight_g": 200,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "celery"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Греческий салат",
+      "description": "",
+      "composition": "Томаты, перец болгарский, маслины, сербская брынза, красный лук, орегано, морская соль, огурцы, оливковое масло",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%93%D1%80%D0%B5%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9-scaled-1-1.jpg",
+      "image_key": "dishes/be09a3efa1d4.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 257,
+      "protein_g": 9.0,
+      "fat_g": 21.0,
+      "carbs_g": 8.0,
+      "portion_weight_g": 250,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "hit",
+        "chef",
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Пастрами салат",
+      "description": "",
+      "composition": "Мраморная говядина, запеченные перцы, микс салатов, медово-горчичная заправка, хрустящий лук фри",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B0%D1%81%D1%82%D1%80%D0%B0%D0%BC%D0%B8-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-scaled-1-1.jpg",
+      "image_key": "dishes/20d6783f3d00.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 299,
+      "protein_g": 16.0,
+      "fat_g": 19.0,
+      "carbs_g": 16.0,
+      "portion_weight_g": 210,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат Буррата с баклажанами",
+      "description": "",
+      "composition": "Буррата, баклажан, соус терияки, томаты, рукола, орех кедровый, масло оливковое, имбирь, перец чили",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B0%D0%BA%D0%BB%D0%B0%D0%B6%D0%B0%D0%BD%D1%87%D0%B8%D0%BA-%D1%81-%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D0%B0%D0%BC%D0%B8-1.jpg",
+      "image_key": "dishes/fac6e1d9b179.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 366,
+      "protein_g": 16.0,
+      "fat_g": 22.0,
+      "carbs_g": 26.0,
+      "portion_weight_g": 290,
+      "cuisine": "asian",
+      "category": "Салаты",
+      "allergens": [
+        "dairy",
+        "nuts"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Салат Бык-тейсти",
+      "description": "",
+      "composition": "Фарш говяжий, сыр чеддер, салат айсберг, лук красный, томаты розовые, соус бургер, огурцы корнишоны, гренки бриошь",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D0%91%D0%AB%D0%9A-%D0%A2%D0%B5%D0%B9%D1%81%D1%82%D0%B8-scaled-1.jpg",
+      "image_key": "dishes/7043ce435c42.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 367,
+      "protein_g": 13.0,
+      "fat_g": 24.0,
+      "carbs_g": 25.0,
+      "portion_weight_g": 350,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат зелёный",
+      "description": "",
+      "composition": "Шпинат, брокколи, цукини, огурец, горошек, сок лайма, авокадо, кинза, сельдерей, микс салатов, семена амаранта, мед, чили, уксус рисовый",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%97%D0%B5%D0%BB%D0%B5%D0%BD%D1%8B%D0%B9-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-scaled-1-1.jpg",
+      "image_key": "dishes/a1b3d64794b1.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 386,
+      "protein_g": 16.0,
+      "fat_g": 22.0,
+      "carbs_g": 26.0,
+      "portion_weight_g": 210,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "celery"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат Капрезе",
+      "description": "",
+      "composition": "Томаты, рассольная моцарелла, микс салатов, соус песто, крем бальзамик",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D0%BF%D1%80%D0%B5%D0%B7%D0%B5-scaled-1-1.jpg",
+      "image_key": "dishes/27858ec6f92a.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 316,
+      "protein_g": 16.0,
+      "fat_g": 24.0,
+      "carbs_g": 9.0,
+      "portion_weight_g": 200,
+      "cuisine": "italian",
+      "category": "Салаты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат с говяжьим языком и ореховым соусом",
+      "description": "",
+      "composition": "Язык говяжий, огурцы маринованные, перец сладкий, микс салатов, соус ореховый, соус соевый",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B6%D1%8C%D0%B8%D0%BC-%D1%8F%D0%B7%D1%8B%D0%BA%D0%BE%D0%BC-%D0%B8-%D0%BE%D1%80%D0%B5%D1%85%D0%BE%D0%B2%D1%8B%D0%BC-scaled-1-1.jpg",
+      "image_key": "dishes/0e9baafc3d45.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 301,
+      "protein_g": 9.0,
+      "fat_g": 25.0,
+      "carbs_g": 10.0,
+      "portion_weight_g": 170,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "nuts",
+        "soy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат с креветками и соусом манго",
+      "description": "",
+      "composition": "Вяленые томаты, помидоры, соус чили-манго, апельсин, перец болгарский, креветки, рукола",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B0%D0%BC%D0%B8-%D0%B8-%D0%BC%D0%B0%D0%BD%D0%B3%D0%BE-scaled-1-1.jpg",
+      "image_key": "dishes/acdeb00ecff0.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 216,
+      "protein_g": 12.0,
+      "fat_g": 8.0,
+      "carbs_g": 24.0,
+      "portion_weight_g": 200,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "shellfish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат с печеной тыквой и фетой",
+      "description": "",
+      "composition": "Запечённая тыква, тыквенный мусс, микс салатов, фета, масло оливковое, вяленые томаты",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1-%D0%BF%D0%B5%D1%87%D0%B5%D0%BD%D0%BE%D0%B9-%D1%82%D1%8B%D0%BA%D0%B2%D0%BE%D0%B9-%D0%B8-%D1%84%D0%B5%D1%82%D0%BE%D0%B9-scaled-1-1.jpg",
+      "image_key": "dishes/c051c1ec849a.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 306,
+      "protein_g": 8.0,
+      "fat_g": 26.0,
+      "carbs_g": 10.0,
+      "portion_weight_g": 240,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат с ростбифом",
+      "description": "",
+      "composition": "Говядина поясничный отруб, микс салатов, томаты, масло оливковое, мед, соевый соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D0%A0%D0%BE%D1%81%D1%82%D1%8C%D0%B8%D1%84%D0%BE%D0%BC-scaled-1-1.jpg",
+      "image_key": "dishes/99712cd1d901.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 281,
+      "protein_g": 17.0,
+      "fat_g": 17.0,
+      "carbs_g": 15.0,
+      "portion_weight_g": 190,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "soy"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат томаты со страчателлой",
+      "description": "",
+      "composition": "Томаты, сыр страчателла, соус песто, соус бальзамик, масло оливковое, салат рукола",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%BE%D0%BC%D0%B0%D1%82%D1%8B-%D1%81%D0%BE-%D1%81%D1%82%D1%80%D0%B0%D1%87%D0%B0%D1%82%D0%B5%D0%BB%D0%BB%D0%BE%D0%B9-1-scaled-1.jpg",
+      "image_key": "dishes/6f54b6047500.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 259,
+      "protein_g": 9.0,
+      "fat_g": 19.0,
+      "carbs_g": 13.0,
+      "portion_weight_g": 240,
+      "cuisine": "italian",
+      "category": "Салаты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Салат Цезарь с креветками",
+      "description": "",
+      "composition": "Креветки, сыр пармезан, салат айсберг, салат романо, помидоры, соус цезарь, чесночное масло, бон багет",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A6%D0%B5%D0%B7%D0%B0%D1%80%D1%8C-%D1%81-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/6979f794160a.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 517,
+      "protein_g": 28.0,
+      "fat_g": 37.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": 230,
+      "cuisine": "italian",
+      "category": "Салаты",
+      "allergens": [
+        "dairy",
+        "shellfish",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Салат Цезарь с курицей",
+      "description": "",
+      "composition": "Куриная грудка, сыр пармезан, салат айсберг, салат романо, помидоры, соус цезарь, чесночное масло, бон багет",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A6%D0%B5%D0%B7%D0%B0%D1%80%D1%8C-%D1%81-%D0%BA%D1%83%D1%80%D0%B8%D1%86%D0%B5%D0%B9-scaled-1-1.jpg",
+      "image_key": "dishes/6a474f63160a.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 481,
+      "protein_g": 29.0,
+      "fat_g": 33.0,
+      "carbs_g": 17.0,
+      "portion_weight_g": 240,
+      "cuisine": "italian",
+      "category": "Салаты",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк-салат",
+      "description": "",
+      "composition": "Микс салатов, стриплойн су-вид, томаты, масло оливковое, бальзамик, мед, соевый соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D1%82%D0%B5%D0%B9%D0%BA-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-scaled-1-1.jpg",
+      "image_key": "dishes/8681e7d4e0dc.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 297,
+      "protein_g": 20.0,
+      "fat_g": 17.0,
+      "carbs_g": 16.0,
+      "portion_weight_g": 220,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [
+        "soy"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Теплый салат с цыпленком",
+      "description": "",
+      "composition": "Куриное филе, лук красный, томаты, цукини, кускус, микс салатов, соус ореховый, соус песто, чесночное масло, соус соевый",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%B5%D0%BF%D0%BB%D1%8B%D0%B9-%D1%81%D0%B0%D0%BB%D0%B0%D1%82-%D1%81-%D1%86%D1%8B%D0%BF%D0%BB%D0%B5%D0%BD%D0%BA%D0%BE%D0%BC-%D1%81%D0%BE%D1%83%D1%81%D0%BE%D0%BC-scaled-1-1.jpg",
+      "image_key": "dishes/f526825998ee.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 326,
+      "protein_g": 49.2,
+      "fat_g": 7.4,
+      "carbs_g": 13.1,
+      "portion_weight_g": 300,
+      "cuisine": "italian",
+      "category": "Салаты",
+      "allergens": [
+        "nuts",
+        "soy"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бульон куриный",
+      "description": "",
+      "composition": "С добавлением лапши, зелени, куриного филе, яиц и бон багета",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D1%83%D0%BB%D1%8C%D0%BE%D0%BD-%D0%BA%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B9-scaled-1-1.jpg",
+      "image_key": "dishes/7bfaef9e88d0.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 421,
+      "protein_g": 26.0,
+      "fat_g": 13.0,
+      "carbs_g": 50.0,
+      "portion_weight_g": 420,
+      "cuisine": "european",
+      "category": "Супы",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "big"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Классический борщ",
+      "description": "",
+      "composition": "Говядина поясничный отруб, сметана, укроп, петрушка, фокачча, сало свиное",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%BE%D1%80%D1%89-%D0%BD%D0%BE%D0%B2%D0%B0%D1%8F-%D0%BF%D0%BE%D0%B4%D0%B0%D1%87%D0%B0-scaled-1.jpg",
+      "image_key": "dishes/18a69647cd2e.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 978,
+      "protein_g": 17.0,
+      "fat_g": 78.0,
+      "carbs_g": 52.0,
+      "portion_weight_g": 330,
+      "cuisine": "russian",
+      "category": "Супы",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Крем-суп грибной",
+      "description": "",
+      "composition": "Грибы белые, шампиньоны, вешенки, картофель, лук репчатый, сливки, бон багет, трюфельное масло",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%BC-%D1%81%D1%83%D0%BF-%D0%B3%D1%80%D0%B8%D0%B1%D0%BD%D0%BE%D0%B9.jpg",
+      "image_key": "dishes/f66e95c1e767.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 371,
+      "protein_g": 12.0,
+      "fat_g": 10.0,
+      "carbs_g": 28.0,
+      "portion_weight_g": 330,
+      "cuisine": "european",
+      "category": "Супы",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Крем-суп сырный",
+      "description": "",
+      "composition": "Сливочный сыр, копченое куриное филе, картофель, морковь, бон багет, чипсы из бекона",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%BC-%D1%81%D1%83%D0%BF-%D1%81%D1%8B%D1%80%D0%BD%D1%8B%D0%B9-scaled-1-1.jpg",
+      "image_key": "dishes/e01243cb3259.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 690,
+      "protein_g": 26.0,
+      "fat_g": 46.0,
+      "carbs_g": 43.0,
+      "portion_weight_g": 310,
+      "cuisine": "european",
+      "category": "Супы",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Том-ям",
+      "description": "",
+      "composition": "Креветки, кальмар, рис, грибы шампиньоны, лайм, кинза, томаты черри, паста том ям, перец чили",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%82%D0%BE%D0%BC-%D1%8F%D0%BC-scaled-1.jpg",
+      "image_key": "dishes/18a0d7db22e0.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 419,
+      "protein_g": 27.0,
+      "fat_g": 16.2,
+      "carbs_g": 41.3,
+      "portion_weight_g": 370,
+      "cuisine": "asian",
+      "category": "Супы",
+      "allergens": [
+        "shellfish",
+        "gluten"
+      ],
+      "dietary": [
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Пицца Баварская",
+      "description": "",
+      "composition": "Пшеничное тесто, моцарелла, томатный соус, чоризо, бекон свиной, красный лук, колбаски, горчичный соус, шампиньоны, петрушка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%91%D0%B0%D0%B2%D0%B0%D1%80%D1%81%D0%BA%D0%B0%D1%8F-scaled-1-1.jpg",
+      "image_key": "dishes/a96cbbd442a8.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 1132,
+      "protein_g": 52.0,
+      "fat_g": 68.0,
+      "carbs_g": 92.0,
+      "portion_weight_g": 415,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "big"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Пицца Маргарита",
+      "description": "",
+      "composition": "Пшеничное тесто, моцарелла, томатный соус, орегано",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%9C%D0%B0%D1%80%D0%B3%D0%B0%D1%80%D0%B8%D1%82%D0%B0-scaled-1-1.jpg",
+      "image_key": "dishes/b0cd8f3874a6.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 705,
+      "protein_g": 34.0,
+      "fat_g": 29.0,
+      "carbs_g": 77.0,
+      "portion_weight_g": 300,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Пицца Сырная",
+      "description": "",
+      "composition": "Пшеничное тесто, моцарелла, чеддер, сыр пармезан, дор блю, томатный соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D1%81%D1%8B%D1%80%D0%BD%D0%B0%D1%8F-scaled-1-1.jpg",
+      "image_key": "dishes/52a1bb1a7b95.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 910,
+      "protein_g": 45.0,
+      "fat_g": 46.0,
+      "carbs_g": 79.0,
+      "portion_weight_g": 350,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Пицца Цезарь",
+      "description": "",
+      "composition": "Пшеничное тесто, моцарелла, сыр пармезан, салат романо, салат айсберг, куриное филе, томаты, соус цезарь, сливки",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%A6%D0%B5%D0%B7%D0%B0%D1%80%D1%8C-scaled-1-1.jpg",
+      "image_key": "dishes/5896bce80148.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 1038,
+      "protein_g": 55.0,
+      "fat_g": 58.0,
+      "carbs_g": 74.0,
+      "portion_weight_g": 420,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "big"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Пицца Чоризо",
+      "description": "",
+      "composition": "Пшеничное тесто, моцарелла, чоризо, томатный соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D1%86%D1%86%D0%B0-%D0%A7%D0%BE%D1%80%D0%B8%D0%B7%D0%BE-scaled-1-1.jpg",
+      "image_key": "dishes/07f156de96cd.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 802,
+      "protein_g": 40.0,
+      "fat_g": 36.0,
+      "carbs_g": 79.0,
+      "portion_weight_g": 320,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бифштекс 4 сыра",
+      "description": "",
+      "composition": "Бифштекс из говядины, моцарелла, сыр пармезан, чеддер, дор блю, сливки, лук фри, рукола, соус брусничный",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B8%D1%84%D1%88%D1%82%D0%B5%D0%BA%D1%81-4-%D1%81%D1%8B%D1%80%D0%B0-scaled-1-1.jpg",
+      "image_key": "dishes/57bdd93a74d8.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 950,
+      "protein_g": 39.0,
+      "fat_g": 78.0,
+      "carbs_g": 23.0,
+      "portion_weight_g": 270,
+      "cuisine": "italian",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Говяжьи колбаски",
+      "description": "",
+      "composition": "Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B6%D1%8C%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/f0b6f4afdf3d.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 1204,
+      "protein_g": 40.0,
+      "fat_g": 92.0,
+      "carbs_g": 54.0,
+      "portion_weight_g": 245,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "mustard"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Кесадилья с говядиной",
+      "description": "",
+      "composition": "Фарш говяжий, тортилья, майонез, соус терияки, соус сальса, кукуруза, перец болгарский, сыр чеддер, сыр моцарелла",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B5%D1%81%D0%B0%D0%B4%D0%B8%D0%BB%D1%8C%D1%8F-%D1%81-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D0%BE%D0%B9-scaled-1-1.jpg",
+      "image_key": "dishes/2e18e52ecc91.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 941,
+      "protein_g": 55.0,
+      "fat_g": 61.0,
+      "carbs_g": 43.0,
+      "portion_weight_g": 390,
+      "cuisine": "asian",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "dairy",
+        "eggs",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Колбаска из индейки",
+      "description": "",
+      "composition": "Колбаска, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-%D0%B8%D0%B7-%D0%B8%D0%BD%D0%B4%D0%B5%D0%B9%D0%BA%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/c056cc203370.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 803,
+      "protein_g": 41.0,
+      "fat_g": 47.0,
+      "carbs_g": 54.0,
+      "portion_weight_g": 245,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "mustard"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Куриные колбаски",
+      "description": "",
+      "composition": "Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%83%D1%80%D0%B8%D0%BD%D1%8B%D0%B5-%D0%BA%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/56a9f5f40322.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 954,
+      "protein_g": 45.0,
+      "fat_g": 62.0,
+      "carbs_g": 54.0,
+      "portion_weight_g": 245,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "mustard"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Люля-кебаб из говядины",
+      "description": "",
+      "composition": "Говядина, лук репчатый, чеснок, зира, кориандр, базилик, кинза, петрушка, томат, масло сливочное, лаваш, лук маринованный, соус сальса, перец острый маринованный",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9B%D1%8E%D0%BB%D1%8E-%D0%BA%D0%B5%D0%B1%D0%B0%D0%B1-%D0%B8%D0%B7-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D1%8B-scaled-1-1.jpg",
+      "image_key": "dishes/dbcf456591ed.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 941,
+      "protein_g": 55.0,
+      "fat_g": 61.0,
+      "carbs_g": 43.0,
+      "portion_weight_g": 180,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Люля-кебаб из индейки",
+      "description": "",
+      "composition": "Индейка, жир говяжий, лаваш, перец острый маринованный, кинза, лук маринованный, соус сальса, лук репчатый, масло сливочное, базилик, чеснок, зелень",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9B%D1%8E%D0%BB%D1%8F-%D0%B8%D0%B7-%D0%98%D0%BD%D0%B4%D0%B5%D0%B9%D0%BA%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/375fc85ac4b0.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 941,
+      "protein_g": 55.0,
+      "fat_g": 61.0,
+      "carbs_g": 43.0,
+      "portion_weight_g": 180,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Медальоны из свинины",
+      "description": "",
+      "composition": "Свиная вырезка, бекон, лаваш, лук маринованный, кинза, соус грибной",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%B5%D0%B4%D0%B0%D0%BB%D1%8C%D0%BE%D0%BD%D1%8B-%D0%B8%D0%B7-%D1%81%D0%B2%D0%B8%D0%BD%D0%B8%D0%BD%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/7fb3f1228d46.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 657,
+      "protein_g": 35.0,
+      "fat_g": 45.0,
+      "carbs_g": 28.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Свиные колбаски",
+      "description": "",
+      "composition": "Колбаски, квашеная капуста, картофель беби, огурцы корнишоны, горчица, помидоры черри",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D0%9A%D0%BE%D0%BB%D0%B1%D0%B0%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/1dc9c0df239c.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 1340,
+      "protein_g": 47.0,
+      "fat_g": 104.0,
+      "carbs_g": 54.0,
+      "portion_weight_g": 245,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "mustard"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк индейки",
+      "description": "",
+      "composition": "Филе индейки, жареная кукуруза, паприка, морская соль",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%98%D0%BD%D0%B4%D0%B5%D0%B9%D0%BA%D0%B0-scaled-1.jpg",
+      "image_key": "dishes/a36c0b136ecf.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 551,
+      "protein_g": 59.0,
+      "fat_g": 27.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": 185,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Шашлык из курицы",
+      "description": "",
+      "composition": "Фермерская курица, лаваш, кинза, маринованный лук",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%B0%D1%88%D0%BB%D1%8B%D0%BA-%D0%B8%D0%B7-%D0%BA%D1%83%D1%80%D0%B8%D1%86%D1%8B-scaled-1-1.jpg",
+      "image_key": "dishes/ae91428d8643.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 813,
+      "protein_g": 56.0,
+      "fat_g": 53.0,
+      "carbs_g": 28.0,
+      "portion_weight_g": 180,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Шашлык из свиной шеи",
+      "description": "",
+      "composition": "Свинина, лаваш, кинза, маринованный лук",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%B0%D1%88%D0%BB%D1%8B%D0%BA-%D0%B8%D0%B7-%D1%81%D0%B2%D0%B8%D0%BD%D0%B8%D0%BD%D1%8B-scaled-1-1.jpg",
+      "image_key": "dishes/103d9e3cc88c.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 1094,
+      "protein_g": 44.0,
+      "fat_g": 90.0,
+      "carbs_g": 27.0,
+      "portion_weight_g": 180,
+      "cuisine": "american",
+      "category": "Гриль (хоспер)",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бефстроганов",
+      "description": "",
+      "composition": "Говядина, шампиньоны, картофель беби, сливки, помидоры черри, репчатый лук, огурцы корнишоны, дижонская горчица",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B5%D1%84%D1%82%D1%80%D0%BE%D0%B3%D0%B0%D0%BD%D0%BE%D0%B2-scaled-2.jpg",
+      "image_key": "dishes/3198bc8ca31a.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 549,
+      "protein_g": 23.6,
+      "fat_g": 38.8,
+      "carbs_g": 26.4,
+      "portion_weight_g": 200,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "dairy",
+        "mustard"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Говядина по-тайски",
+      "description": "",
+      "composition": "Говядина, кунжутное масло, перец болгарский, шампиньоны, стебель сельдерея, лук красный, арахис, лук фри, соус тайский, чеснок, имбирь, перец чили, кинза, рис",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%93%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D0%B0-%D0%BF%D0%BE-%D1%82%D0%B0%D0%B9%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/da0b97dcbf16.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 621,
+      "protein_g": 20.0,
+      "fat_g": 33.0,
+      "carbs_g": 61.0,
+      "portion_weight_g": 390,
+      "cuisine": "asian",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "peanuts",
+        "sesame",
+        "celery"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Говяжьи котлеты с картофельным пюре",
+      "description": "",
+      "composition": "Фарш говяжий, картофельное пюре, соус брусничный, соус сливочно-горчичный",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%93%D0%BE%D0%B2%D1%8F%D0%B6%D1%8C%D0%B8-%D0%BA%D0%BE%D1%82%D0%BB%D0%B5%D1%82%D1%8B-%D1%81-%D0%BA%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%BC-%D0%BF%D1%8E%D1%80%D0%B5.jpg",
+      "image_key": "dishes/82ef797d92c0.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 667,
+      "protein_g": 36.0,
+      "fat_g": 34.0,
+      "carbs_g": 53.0,
+      "portion_weight_g": 350,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Рваная говядина на подушке из стрипсов",
+      "description": "",
+      "composition": "Томленая говядина, картофельные стрипсы, зелень, томаты черри, лук маринованный",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%80%D0%B2%D0%B0%D0%BD%D0%B0%D1%8F-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D0%B0-scaled-1.jpg",
+      "image_key": "dishes/c12aa1f4a5e5.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 653,
+      "protein_g": 17.9,
+      "fat_g": 40.3,
+      "carbs_g": 54.9,
+      "portion_weight_g": 300,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Свиные ребра «Барбекю»",
+      "description": "",
+      "composition": "Свиные ребра су-вид, лук фри, соус барбекю, соус блю чиз",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D1%80%D0%B5%D0%B1%D1%80%D0%B0-%D0%91%D0%B0%D1%80%D0%B1%D0%B5%D0%BA%D1%8E-scaled-1-1.jpg",
+      "image_key": "dishes/c14f3a610481.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 957,
+      "protein_g": 42.0,
+      "fat_g": 81.0,
+      "carbs_g": 15.0,
+      "portion_weight_g": 260,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Свиные ребра «Терияки»",
+      "description": "",
+      "composition": "Свиные ребра су-вид, семена кунжута, соус терияки, соус блю чиз",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D1%80%D0%B5%D0%B1%D1%80%D0%B0-%D0%A2%D0%B5%D1%80%D0%B8%D1%8F%D0%BA%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/5dbc7de8d4c6.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 956,
+      "protein_g": 42.0,
+      "fat_g": 80.0,
+      "carbs_g": 17.0,
+      "portion_weight_g": 260,
+      "cuisine": "asian",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "sesame"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Свиные ребра Jack Daniel’s",
+      "description": "",
+      "composition": "Свиные ребра су-вид, фисташка, соус Jack Daniel’s, соус блю чиз",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D1%8B%D0%B5-%D1%80%D0%B5%D0%B1%D1%80%D0%B0-%D0%94%D0%B6%D0%B5%D0%BA-%D0%B4%D1%8D%D0%BD%D0%B8%D0%B5%D0%BB%D1%81-scaled-1-1.jpg",
+      "image_key": "dishes/881fcb993103.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 956,
+      "protein_g": 42.0,
+      "fat_g": 84.0,
+      "carbs_g": 8.0,
+      "portion_weight_g": 260,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "nuts"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Фокачча с розмарином",
+      "description": "",
+      "composition": "Пшеничная основа, розмарин, чесночное масло",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%BE%D0%BA%D0%B0%D1%87%D1%87%D0%B0-%D1%81-%D1%80%D0%BE%D0%B7%D0%BC%D0%B0%D1%80%D0%B8%D0%BD%D0%BE%D0%BC-scaled-1-1.jpg",
+      "image_key": "dishes/b7e3a13b336b.jpg",
+      "price_minor": 15000,
+      "currency": "RUB",
+      "calories_kcal": 587,
+      "protein_g": 14.0,
+      "fat_g": 27.0,
+      "carbs_g": 72.0,
+      "portion_weight_g": 185,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Фокачча с томатами",
+      "description": "",
+      "composition": "Пшеничная основа, помидоры черри, чесночное масло",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%BE%D0%BA%D0%B0%D1%87%D1%87%D0%B0-%D1%81-%D1%82%D0%BE%D0%BC%D0%B0%D1%82%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/86c2d58c6714.jpg",
+      "price_minor": 15000,
+      "currency": "RUB",
+      "calories_kcal": 546,
+      "protein_g": 14.0,
+      "fat_g": 22.0,
+      "carbs_g": 73.0,
+      "portion_weight_g": 195,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Хлебная корзина",
+      "description": "",
+      "composition": "Фокачча, оливковое масло, крем бальзамик",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A5%D0%BB%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F-%D0%BA%D0%BE%D1%80%D0%B7%D0%B8%D0%BD%D0%B0-scaled-1-1.jpg",
+      "image_key": "dishes/da67b67a9373.jpg",
+      "price_minor": 15000,
+      "currency": "RUB",
+      "calories_kcal": 821,
+      "protein_g": 16.0,
+      "fat_g": 41.0,
+      "carbs_g": 97.0,
+      "portion_weight_g": 200,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Дорадо",
+      "description": "",
+      "composition": "Свежая охлажденная рыба дорадо, микс салатов, лайм, морская соль, крем бальзамик",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%94%D0%BE%D1%80%D0%B0%D0%B4%D0%BE-scaled-1-1.jpg",
+      "image_key": "dishes/07ec6bdfbf74.jpg",
+      "price_minor": 65000,
+      "currency": "RUB",
+      "calories_kcal": 397,
+      "protein_g": 56.0,
+      "fat_g": 13.0,
+      "carbs_g": 14.0,
+      "portion_weight_g": 45,
+      "cuisine": "european",
+      "category": "Горячее — рыба и морепродукты",
+      "allergens": [
+        "fish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Креветки Пиль-Пиль",
+      "description": "",
+      "composition": "Креветка тигровая, масло сливочное, паприка, перец чили, чеснок, томаты черри, петрушка, фокачча",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B8-%D0%BF%D0%B8%D0%BB%D1%8C-%D0%BF%D0%B8%D0%BB%D1%8C.jpg",
+      "image_key": "dishes/1b49dca71cc7.jpg",
+      "price_minor": 55000,
+      "currency": "RUB",
+      "calories_kcal": 665,
+      "protein_g": 42.0,
+      "fat_g": 42.0,
+      "carbs_g": 30.0,
+      "portion_weight_g": 300,
+      "cuisine": "european",
+      "category": "Горячее — рыба и морепродукты",
+      "allergens": [
+        "dairy",
+        "shellfish",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Паста болоньезе",
+      "description": "",
+      "composition": "Спагетти, фарш говяжий, томаты пилатти, сыр пармезан, бекон свиной",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B0%D1%81%D1%82%D0%B0-%D0%B1%D0%BE%D0%BB%D0%BE%D0%BD%D1%8C%D0%B5%D0%B7%D0%B5.jpg",
+      "image_key": "dishes/62df7382228a.jpg",
+      "price_minor": 50000,
+      "currency": "RUB",
+      "calories_kcal": 816,
+      "protein_g": 30.0,
+      "fat_g": 48.0,
+      "carbs_g": 67.0,
+      "portion_weight_g": 430,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "big"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Паста с томлёной щекой",
+      "description": "",
+      "composition": "Спагетти, щечки говяжьи, мясной соус, тимьян, чеснок, сливки, соус песто, сыр пармезан",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B0%D1%81%D1%82%D0%B0-%D1%81-%D1%82%D0%BE%D0%BC%D0%BB%D1%91%D0%BD%D0%BE%D0%B9-%D1%89%D0%B5%D0%BA%D0%BE%D0%B9.jpg",
+      "image_key": "dishes/ccdffe92b791.jpg",
+      "price_minor": 60000,
+      "currency": "RUB",
+      "calories_kcal": 1021,
+      "protein_g": 46.0,
+      "fat_g": 65.0,
+      "carbs_g": 64.0,
+      "portion_weight_g": 410,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian"
+      ],
+      "tag_slugs": [
+        "hit",
+        "chef",
+        "big"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Рибай Блэк Ангус",
+      "description": "",
+      "composition": "Премиальный стейк породы Блэк Ангус смешанного откорма. Томат, жареная кукуруза, соль морская, паприка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%A0%D0%B8%D0%B1%D0%B0%D0%B9-%D0%B7%D0%B5%D1%80%D0%BD%D0%BE-1.jpg",
+      "image_key": "dishes/f74ee62eb43d.jpg",
+      "price_minor": 150000,
+      "currency": "RUB",
+      "calories_kcal": 687,
+      "protein_g": 53.0,
+      "fat_g": 45.0,
+      "carbs_g": 15.0,
+      "portion_weight_g": 350,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "hit",
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Рябчик в глазури Джек Дениелс",
+      "description": "",
+      "composition": "Свиная голяшка томленая, картофельные стрипсы, лук зеленый, соус Джек Дениелс",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%80%D1%8F%D0%B1%D1%87%D0%B8%D0%BA-scaled-1.jpg",
+      "image_key": "dishes/2815ddd8b2c6.jpg",
+      "price_minor": 65000,
+      "currency": "RUB",
+      "calories_kcal": 979,
+      "protein_g": 45.0,
+      "fat_g": 54.0,
+      "carbs_g": 77.0,
+      "portion_weight_g": 370,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Свиная рулька",
+      "description": "",
+      "composition": "Большая рулька на кости, квашеная капуста, медово-горчичный соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/2025-10-16_11-15-10.png",
+      "image_key": "dishes/3472fa4f9e7f.jpg",
+      "price_minor": 65000,
+      "currency": "RUB",
+      "calories_kcal": 2591,
+      "protein_g": 138.0,
+      "fat_g": 215.0,
+      "carbs_g": 26.0,
+      "portion_weight_g": 100,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Свиной томагавк",
+      "description": "",
+      "composition": "Свиная корейка, маринованная капуста, томаты",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B2%D0%B8%D0%BD%D0%BE%D0%B9-%D0%A2%D0%BE%D0%BC%D0%B0%D0%B3%D0%B0%D0%B2%D0%BA-scaled-1-1.jpg",
+      "image_key": "dishes/88eedbd49626.jpg",
+      "price_minor": 65000,
+      "currency": "RUB",
+      "calories_kcal": 796,
+      "protein_g": 46.0,
+      "fat_g": 60.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": 360,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Сибас",
+      "description": "",
+      "composition": "Свежая охлажденная рыба сибас, микс салатов, лайм, морская соль, крем бальзамик",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%B8%D0%B1%D0%B0%D1%81-scaled-1-1.jpg",
+      "image_key": "dishes/eff437a88e36.jpg",
+      "price_minor": 65000,
+      "currency": "RUB",
+      "calories_kcal": 397,
+      "protein_g": 56.0,
+      "fat_g": 13.0,
+      "carbs_g": 14.0,
+      "portion_weight_g": 45,
+      "cuisine": "european",
+      "category": "Горячее — рыба и морепродукты",
+      "allergens": [
+        "fish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк NY травяной",
+      "description": "",
+      "composition": "Говядина травяного откорма, томат, жареная кукуруза, соль морская, паприка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9D%D1%8C%D1%8E-%D0%99%D0%BE%D1%80%D0%BA-%D0%BD%D0%BE%D0%B2%D1%8B%D0%B9-scaled-1.jpg",
+      "image_key": "dishes/9206a75c0196.jpg",
+      "price_minor": 50000,
+      "currency": "RUB",
+      "calories_kcal": 666,
+      "protein_g": 43.0,
+      "fat_g": 50.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк Бавет (зерно)",
+      "description": "",
+      "composition": "Стейк с мягким вкусом и волокнистой текстурой, томат, жареная кукуруза, соль морская, паприка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D0%B0%D0%B2%D0%B5%D1%82-1.jpg",
+      "image_key": "dishes/ec532e743583.jpg",
+      "price_minor": 95000,
+      "currency": "RUB",
+      "calories_kcal": 621,
+      "protein_g": 43.0,
+      "fat_g": 45.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк из форели",
+      "description": "",
+      "composition": "Филе форели, микс салатов, лайм, специи",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D1%81%D1%82%D0%B5%D0%B9%D0%BA-%D0%B8%D0%B7-%D1%84%D0%BE%D1%80%D0%B5%D0%BB%D0%B8-scaled-1.jpg",
+      "image_key": "dishes/88c5059f2ff8.jpg",
+      "price_minor": 80000,
+      "currency": "RUB",
+      "calories_kcal": 270,
+      "protein_g": 36.0,
+      "fat_g": 11.0,
+      "carbs_g": 0.0,
+      "portion_weight_g": 180,
+      "cuisine": "european",
+      "category": "Горячее — рыба и морепродукты",
+      "allergens": [
+        "fish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк Рибай (трава)",
+      "description": "",
+      "composition": "Премиальный стейк из спинной части, томат, жареная кукуруза, соль морская, паприка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A0%D0%B8%D0%B1%D0%B0%D0%B9-%D1%82%D1%80%D0%B0%D0%B2%D0%B0-1.jpg",
+      "image_key": "dishes/9a267984f913.jpg",
+      "price_minor": 80000,
+      "currency": "RUB",
+      "calories_kcal": 1005,
+      "protein_g": 60.0,
+      "fat_g": 54.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 300,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "hit",
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк Стриплойн (зерно)",
+      "description": "",
+      "composition": "Стейк с плотным волокном и мясным вкусом, томат, жареная кукуруза, соль морская, паприка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D1%82%D1%80%D0%B8%D0%BF%D0%BB%D0%BE%D0%B9%D0%BD-%D0%B7%D0%B5%D1%80%D0%BD%D0%BE-1.jpg",
+      "image_key": "dishes/ee7852bcc340.jpg",
+      "price_minor": 100000,
+      "currency": "RUB",
+      "calories_kcal": 621,
+      "protein_g": 43.0,
+      "fat_g": 45.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк Филе Миньон",
+      "description": "",
+      "composition": "Стейк из поясничной мышцы, томат, жареная кукуруза, соль морская, паприка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%B8%D0%BD%D1%8C%D0%BE%D0%BD-1.jpg",
+      "image_key": "dishes/73145b3e7dc5.jpg",
+      "price_minor": 150000,
+      "currency": "RUB",
+      "calories_kcal": 621,
+      "protein_g": 43.0,
+      "fat_g": 45.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "hit",
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк Шато Бриан",
+      "description": "",
+      "composition": "Стейк из поясничной мышцы, томат, жареная кукуруза, соль морская, паприка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%B0%D1%82%D0%BE-%D0%B1%D1%80%D0%B8%D0%B0%D0%BD-1.jpg",
+      "image_key": "dishes/241f30bc58f4.jpg",
+      "price_minor": 130000,
+      "currency": "RUB",
+      "calories_kcal": 621,
+      "protein_g": 43.0,
+      "fat_g": 45.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "hit",
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Тартар из говядины",
+      "description": "",
+      "composition": "Вырезка говяжья, каперсы, вяленые томаты, бон багет, рукола, пармезан, песто из вяленых томатов, масло оливковое",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D1%82%D0%B0%D1%80%D1%82%D0%B0%D1%80-scaled-1.jpg",
+      "image_key": "dishes/19e2e752ddd7.jpg",
+      "price_minor": 50000,
+      "currency": "RUB",
+      "calories_kcal": 436,
+      "protein_g": 19.0,
+      "fat_g": 29.0,
+      "carbs_g": 21.0,
+      "portion_weight_g": 110,
+      "cuisine": "italian",
+      "category": "Закуски",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "chef"
+      ],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Тартар из форели",
+      "description": "",
+      "composition": "Филе форели, огурец свежий, авокадо, томаты розовые, лайм, перец чили, соевый соус, кинза, масло кунжутное, имбирь",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A2%D0%B0%D1%80-%D1%82%D0%B0%D1%80-scaled-1.jpg",
+      "image_key": "dishes/a22b51d5661e.jpg",
+      "price_minor": 50000,
+      "currency": "RUB",
+      "calories_kcal": 280,
+      "protein_g": 40.0,
+      "fat_g": 12.0,
+      "carbs_g": 21.0,
+      "portion_weight_g": 200,
+      "cuisine": "european",
+      "category": "Горячее — рыба и морепродукты",
+      "allergens": [
+        "fish",
+        "soy",
+        "sesame"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "light"
+      ],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Утка конфи с печеными яблоками",
+      "description": "",
+      "composition": "Утиная ножка, яблоки, мед, брусника, салат рукола, орех кедровый, масло сливочное, уксус яблочный, сахар",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%A3%D1%82%D0%BA%D0%B0-%D0%BA%D0%BE%D0%BD%D1%84%D0%B8-scaled-1.jpg",
+      "image_key": "dishes/337297b73a50.jpg",
+      "price_minor": 65000,
+      "currency": "RUB",
+      "calories_kcal": 1276,
+      "protein_g": 35.2,
+      "fat_g": 101.0,
+      "carbs_g": 56.4,
+      "portion_weight_g": 300,
+      "cuisine": "french",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "dairy",
+        "nuts"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "hit",
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Шашлык из говядины",
+      "description": "",
+      "composition": "Говядина, лаваш, кинза, маринованный лук",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D1%88%D0%B0%D1%88%D0%BB%D1%8B%D0%BA-%D0%B8%D0%B7-%D0%B3%D0%BE%D0%B2%D1%8F%D0%B4%D0%B8%D0%BD%D1%8B-1.jpg",
+      "image_key": "dishes/e12b9365cc2d.jpg",
+      "price_minor": 65000,
+      "currency": "RUB",
+      "calories_kcal": 386,
+      "protein_g": 50.0,
+      "fat_g": 10.0,
+      "carbs_g": 24.0,
+      "portion_weight_g": 180,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Щёки с картофельным пюре",
+      "description": "",
+      "composition": "Картофельное пюре, щечки говяжьи, мясной соус, томаты черри, лук зеленый, масло сливочное, сливки",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A9%D1%91%D0%BA%D0%B8-%D1%81-%D0%BA%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%BC-.jpg",
+      "image_key": "dishes/8a77a9989ff8.jpg",
+      "price_minor": 60000,
+      "currency": "RUB",
+      "calories_kcal": 1050,
+      "protein_g": 47.0,
+      "fat_g": 83.0,
+      "carbs_g": 29.0,
+      "portion_weight_g": 390,
+      "cuisine": "european",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Брискет",
+      "description": "",
+      "composition": "Грудинка говяжья томленая, капуста маринованная, огурцы маринованные, соус сальса, горчица дижонская",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D1%80%D0%B8%D1%81%D0%BA%D0%B5%D1%82.jpg",
+      "image_key": "dishes/3e16517fa30e.jpg",
+      "price_minor": 100000,
+      "currency": "RUB",
+      "calories_kcal": 780,
+      "protein_g": 45.8,
+      "fat_g": 58.5,
+      "carbs_g": 17.7,
+      "portion_weight_g": 350,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [
+        "mustard"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Пиканья на пите",
+      "description": "",
+      "composition": "Мраморная говядина, лепешка пита, соус сальса, сметана, лайм, кинза",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D0%B8%D0%BA%D0%B0%D0%BD%D1%8C%D1%8F-%D0%BD%D0%B0-%D0%9F%D0%B8%D1%82%D1%82%D0%B5.jpg",
+      "image_key": "dishes/d3f2fedbaa71.jpg",
+      "price_minor": 75000,
+      "currency": "RUB",
+      "calories_kcal": 792,
+      "protein_g": 39.5,
+      "fat_g": 56.5,
+      "carbs_g": 31.3,
+      "portion_weight_g": 300,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Ребра Кальби",
+      "description": "",
+      "composition": "Ребро говяжье томленое, соус мясной, соус брусничный, зелень",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A0%D0%B5%D0%B1%D1%80%D0%B0%D0%BA%D0%B0%D0%BB%D1%8C%D0%B1%D0%B8.jpg",
+      "image_key": "dishes/fc3d0edd7653.jpg",
+      "price_minor": 120000,
+      "currency": "RUB",
+      "calories_kcal": 1062,
+      "protein_g": 31.0,
+      "fat_g": 73.6,
+      "carbs_g": 68.7,
+      "portion_weight_g": 420,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "chef",
+        "big"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Стейк Фланк",
+      "description": "",
+      "composition": "Отруб из пашины быка, томат, жареная кукуруза, специи",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%BB%D0%B0%D0%BD%D0%BA-1.jpg",
+      "image_key": "dishes/a12db4b14c12.jpg",
+      "price_minor": 70000,
+      "currency": "RUB",
+      "calories_kcal": 531,
+      "protein_g": 43.0,
+      "fat_g": 35.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Топ Сирлойн",
+      "description": "",
+      "composition": "Верхняя часть тазобедренного отруба, томат, жареная кукуруза, специи",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/04/%D1%82%D0%BE%D0%BF-%D1%81%D0%B8%D1%80%D0%BB%D0%BE%D0%B9%D0%BD-scaled.jpg",
+      "image_key": "dishes/faa45011fe5d.jpg",
+      "price_minor": 70000,
+      "currency": "RUB",
+      "calories_kcal": 621,
+      "protein_g": 43.0,
+      "fat_g": 45.0,
+      "carbs_g": 11.0,
+      "portion_weight_g": 250,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бургер Jack Daniel’s",
+      "description": "",
+      "composition": "Томленая говядина, карамелизированный лук, соус Jack Daniel’s, лук фри, соус блю чиз, сыр чеддер, булочка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%94%D0%B6%D0%B5%D0%BA-%D0%94%D0%B5%D0%BD%D0%B8%D0%B5%D0%BB%D0%B7.jpg",
+      "image_key": "dishes/4f9fe89489a8.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 280,
+      "cuisine": "american",
+      "category": "Бургеры",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бургер THE БЫК",
+      "description": "",
+      "composition": "Премиальная котлета Блэк Ангус, карамелизированный лук, соус бургер, сыр чеддер, перец халапеньо, булочка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/THE-%D0%91%D0%AB%D0%9A.jpg",
+      "image_key": "dishes/6c303b9785f7.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 901,
+      "protein_g": 38.0,
+      "fat_g": 61.0,
+      "carbs_g": 50.0,
+      "portion_weight_g": 270,
+      "cuisine": "american",
+      "category": "Бургеры",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "spicy",
+        "hit",
+        "chef"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бургер Вишневый бизон",
+      "description": "",
+      "composition": "Премиальная котлета Блэк Ангус, жареный бекон, жареный лук, сыр чеддер, вишня с прованскими травами, соус блю чиз, булочка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%92%D0%B8%D1%88%D0%BD%D1%91%D0%B2%D1%8B%D0%B9-%D0%B1%D0%B8%D0%B7%D0%BE%D0%BD.jpg",
+      "image_key": "dishes/526b709a07d9.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 280,
+      "cuisine": "american",
+      "category": "Бургеры",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бургер с креветками",
+      "description": "",
+      "composition": "Дальневосточные креветки, помидоры, луковые кольца, салат романо, салат айсберг, соус 1000 островов, булочка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1-%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%BE%D0%B9.jpg",
+      "image_key": "dishes/76209f6a1c21.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 210,
+      "cuisine": "american",
+      "category": "Бургеры",
+      "allergens": [
+        "shellfish",
+        "gluten",
+        "soy"
+      ],
+      "dietary": [
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Чизбургер",
+      "description": "",
+      "composition": "Премиальная котлета Блэк Ангус, огурцы корнишоны, сыр чеддер, помидоры, соус барбекю, салат романо, салат айсберг, булочка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A7%D0%B8%D0%B7%D0%B1%D1%83%D1%80%D0%B3%D0%B5%D1%80.jpg",
+      "image_key": "dishes/aea444216fb7.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 280,
+      "cuisine": "american",
+      "category": "Бургеры",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Брокколи",
+      "description": "",
+      "composition": "Микс салатов, смесь пяти перцев, морская соль, оливковое масло",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%91%D1%80%D0%BE%D0%BA%D0%BA%D0%BE%D0%BB%D0%B8-scaled-2.jpg",
+      "image_key": "dishes/7fd6b8274920.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 121,
+      "protein_g": 6.0,
+      "fat_g": 5.0,
+      "carbs_g": 13.0,
+      "portion_weight_g": 225,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Картофель батат фри",
+      "description": "",
+      "composition": "Батат фри, соус блю чиз",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%B1%D0%B0%D1%82%D0%B0%D1%82.jpg",
+      "image_key": "dishes/6d7406f9d83e.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 230,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Картофель Диппер",
+      "description": "",
+      "composition": "Картофель, майонез, соус Jack Daniel’s",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%B4%D0%B8%D0%BF%D1%8B-scaled-1.jpg",
+      "image_key": "dishes/237b97ac933e.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 270,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [
+        "eggs"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Картофель по-деревенски",
+      "description": "",
+      "composition": "Большая порция картофеля бейби, кетчуп",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C-%D0%BF%D0%BE-%D0%B4%D0%B5%D1%80%D0%B5%D0%B2%D0%B5%D0%BD%D1%81%D0%BA%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/f017ab1ee36e.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 300,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Картофель фри",
+      "description": "",
+      "composition": "Большая порция картофеля фри, кетчуп",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9A%D0%B0%D1%80%D1%82%D0%BE%D1%84%D0%B5%D0%BB%D1%8C-%D1%84%D1%80%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/875513a2bf83.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 300,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Картофель фри с пармезаном",
+      "description": "",
+      "composition": "Картофель фри, сыр пармезан, трюфельное масло, соус блю чиз",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D1%84%D1%80%D0%B8-%D1%81-%D0%BF%D0%B0%D1%80%D0%BC%D0%B5%D0%B7%D0%B0%D0%BD%D0%BE%D0%BC.jpg",
+      "image_key": "dishes/38b27d413b8b.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 200,
+      "cuisine": "italian",
+      "category": "Гарниры",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Картофельное пюре",
+      "description": "",
+      "composition": "Картофель, масло сливочное, молоко",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9F%D1%8E%D1%80%D0%B5-scaled-1.jpg",
+      "image_key": "dishes/e4a7730c0d1a.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 200,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Овощи гриль",
+      "description": "",
+      "composition": "Помидоры, грибы, цукини, баклажаны, лук красный, перец болгарский, микс салатов, крем бальзамик",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9E%D0%B2%D0%BE%D1%89%D0%B8-%D0%B3%D1%80%D0%B8%D0%BB%D1%8C-scaled-1-1.jpg",
+      "image_key": "dishes/6ff426015170.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 350,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Рис с овощами",
+      "description": "",
+      "composition": "Рис, баклажаны, кабачки, шампиньоны, перец болгарский, лук красный, соевый соус, кунжутное масло, кинза, чесночное масло",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A0%D0%B8%D1%81-%D1%81-%D0%BE%D0%B2%D0%BE%D1%89%D0%B0%D0%BC%D0%B8-scaled-1-1.jpg",
+      "image_key": "dishes/b4424d5ea984.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 250,
+      "cuisine": "european",
+      "category": "Гарниры",
+      "allergens": [
+        "soy",
+        "sesame"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "1000 островов",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/dce3a6711e8d.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 143,
+      "protein_g": 0.7,
+      "fat_g": 14.1,
+      "carbs_g": 3.3,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Jack Daniel’s",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/b5a60714b935.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Барбекю",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/f3fc9eba758e.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 51,
+      "protein_g": 0.4,
+      "fat_g": 0.1,
+      "carbs_g": 12.0,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Блю чиз",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/db64f42012bb.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 190,
+      "protein_g": 1.9,
+      "fat_g": 19.7,
+      "carbs_g": 1.2,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Грибной соус",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/bc29797ce730.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 68,
+      "protein_g": 1.8,
+      "fat_g": 5.9,
+      "carbs_g": 1.9,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Кетчуп",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/58e98c29a676.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 42,
+      "protein_g": 0.4,
+      "fat_g": 0.0,
+      "carbs_g": 10.0,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Медово-горчичный",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/5db04bede10d.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 251,
+      "protein_g": 0.6,
+      "fat_g": 24.6,
+      "carbs_g": 6.8,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Перечный",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/c5c319cce009.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 61,
+      "protein_g": 0.8,
+      "fat_g": 5.2,
+      "carbs_g": 2.9,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Сальса",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/761458efbc4a.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 28,
+      "protein_g": 0.6,
+      "fat_g": 0.1,
+      "carbs_g": 6.2,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Сладкий чили",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/ac6a49df32ac.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 90,
+      "protein_g": 0.0,
+      "fat_g": 0.4,
+      "carbs_g": 21.6,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Соус Black Pepper",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/1f6fba46393b.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Соус брусничный с розмарином",
+      "description": "",
+      "composition": "Соус",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A1%D0%BE%D1%83%D1%81%D1%8B-1-scaled-1-1.jpg",
+      "image_key": "dishes/f10b1348089b.jpg",
+      "price_minor": 7000,
+      "currency": "RUB",
+      "calories_kcal": 60,
+      "protein_g": 0.2,
+      "fat_g": 0.2,
+      "carbs_g": 14.5,
+      "portion_weight_g": 40,
+      "cuisine": "european",
+      "category": "Соусы",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Медовик",
+      "description": "",
+      "composition": "Медовые коржи, сметанный крем, шоколадная печать, мёд гречишный",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%B5%D0%B4%D0%BE%D0%B2%D0%B8%D0%BA-scaled-1-1.jpg",
+      "image_key": "dishes/90babc55a572.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 741,
+      "protein_g": 10.0,
+      "fat_g": 37.0,
+      "carbs_g": 92.0,
+      "portion_weight_g": 190,
+      "cuisine": "european",
+      "category": "Десерты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Мороженое",
+      "description": "",
+      "composition": "В ассортименте",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%9C%D0%BE%D1%80%D0%BE%D0%B6%D0%B5%D0%BD%D0%BE%D0%B5-scaled-1-1.jpg",
+      "image_key": "dishes/2db2bce936d7.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 312,
+      "protein_g": 5.0,
+      "fat_g": 16.0,
+      "carbs_g": 37.0,
+      "portion_weight_g": 150,
+      "cuisine": "european",
+      "category": "Десерты",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Панна-Котта с клубничным соусом",
+      "description": "",
+      "composition": "Сливки, кокосовое молоко, сахар ванильный, желатин, клубничный соус, мята, кокосовая стружка",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2026/03/%D0%9F%D0%B0%D0%BD%D0%BD%D0%B0-%D0%BA%D0%BE%D1%82%D1%82%D0%B0-%D0%B1%D1%8B%D0%BA-1-scaled-1.jpg",
+      "image_key": "dishes/eede81c486cb.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 391,
+      "protein_g": 4.9,
+      "fat_g": 27.7,
+      "carbs_g": 30.6,
+      "portion_weight_g": 180,
+      "cuisine": "european",
+      "category": "Десерты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Фисташковый рулет",
+      "description": "",
+      "composition": "Меренга, сливочный крем, фисташки, соус малиновый",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A4%D0%B8%D1%81%D1%82%D0%B0%D1%88%D0%BA%D0%BE%D0%B2%D1%8B%D0%B9-%D1%80%D1%83%D0%BB%D0%B5%D1%82-scaled-1-1.jpg",
+      "image_key": "dishes/261b77e86fca.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 418,
+      "protein_g": 7.0,
+      "fat_g": 22.0,
+      "carbs_g": 48.0,
+      "portion_weight_g": 110,
+      "cuisine": "european",
+      "category": "Десерты",
+      "allergens": [
+        "nuts"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Чизкейк баскский",
+      "description": "",
+      "composition": "Сырная основа, песочный корж, чипсы апельсина, соленая карамель",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A7%D0%B8%D0%B7%D0%BA%D0%B5%D0%B9%D0%BA-%D0%B1%D0%B0%D1%81%D0%BA%D1%81%D0%BA%D0%B8%D0%B9-scaled-1-1.jpg",
+      "image_key": "dishes/e32616a5b6ce.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 1098,
+      "protein_g": 13.0,
+      "fat_g": 94.0,
+      "carbs_g": 50.0,
+      "portion_weight_g": 210,
+      "cuisine": "european",
+      "category": "Десерты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Шоколадный Фондан",
+      "description": "",
+      "composition": "Подается с шариком мороженого и шоколадным топпингом",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%A8%D0%BE%D0%BA%D0%BE%D0%BB%D0%B0%D0%B4%D0%BD%D1%8B%D0%B9-%D1%84%D0%BE%D0%BD%D0%B4%D0%B0%D0%BD-2-scaled-1-1.jpg",
+      "image_key": "dishes/e2478422b292.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": 316,
+      "protein_g": 16.0,
+      "fat_g": 24.0,
+      "carbs_g": 9.0,
+      "portion_weight_g": 100,
+      "cuisine": "european",
+      "category": "Десерты",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light"
+      ],
+      "is_available": false,
+      "synthetic": false
+    },
+    {
+      "name": "Айс Латте Карамель-Бузина",
+      "description": "",
+      "composition": "Напиток кофе",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
+      "image_key": "dishes/b29ced089ecd.jpg",
+      "price_minor": 35000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Американо",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
+      "image_key": "dishes/cd9eb22064ae.jpg",
+      "price_minor": 20000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бамбл апельсин",
+      "description": "",
+      "composition": "Кофейный напиток",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
+      "image_key": "dishes/1de453dd68ea.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Бамбл гранат",
+      "description": "",
+      "composition": "Кофейный напиток",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
+      "image_key": "dishes/7df9197c521b.jpg",
+      "price_minor": 40000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Гляссе",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
+      "image_key": "dishes/b2e818273320.jpg",
+      "price_minor": 28000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Горячий шоколад",
+      "description": "",
+      "composition": "Горячий шоколад",
+      "image_url_external": "https://sherem.thebull.ru/wp-content/uploads/sites/22/2025/12/%D0%BF%D1%83%D1%81%D1%82%D0%BE-1024x684-1-1.png",
+      "image_key": "dishes/6df66eb8d6e5.jpg",
+      "price_minor": 35000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Двойной эспрессо",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 23000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Капучино",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 25000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Латте",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 28000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Раф",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 26000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Фильтр-Кофе",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 18000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Флэт Уайт",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 29000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Эспрессо",
+      "description": "",
+      "composition": "Кофе",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 20000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Какао с маршмелоу",
+      "description": "",
+      "composition": "Банановое / кокосовое молоко",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 33000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Капучино на альт. молоке",
+      "description": "",
+      "composition": "Банановое / кокосовое молоко",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 30000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Латте на альт. молоке",
+      "description": "",
+      "composition": "Банановое / кокосовое молоко",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 33000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "coffee"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Ассам",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Гречишный",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Жасминовый",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Манго & Имбирь & Кафирский лайм",
+      "description": "",
+      "composition": "Авторский чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": 110,
+      "protein_g": 28.0,
+      "fat_g": 0.0,
+      "carbs_g": 0.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Мандарин&Чёрная смородина",
+      "description": "",
+      "composition": "Авторский чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": 110,
+      "protein_g": 28.0,
+      "fat_g": 0.0,
+      "carbs_g": 0.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Молочный улун",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Облепиха&Груша",
+      "description": "",
+      "composition": "Авторский чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": 110,
+      "protein_g": 28.0,
+      "fat_g": 0.0,
+      "carbs_g": 0.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Ромашковый",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Сенча",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Таёжный",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Фруктовый пунш",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Цейлонский с чабрецом",
+      "description": "",
+      "composition": "Чай",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 24,
+      "protein_g": 1.0,
+      "fat_g": 0.0,
+      "carbs_g": 5.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "tea"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Б/А Number one / №1",
+      "description": "",
+      "composition": "Драгонфрукт, личи, кардамон, содовая, лёд",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 72,
+      "protein_g": 0.0,
+      "fat_g": 0.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Вишня & Миндаль",
+      "description": "",
+      "composition": "Лимонад",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [
+        "nuts"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Лимонад Кола по-русски",
+      "description": "",
+      "composition": "Только в Безлимите",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 30000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Лимонад Крем Сливки",
+      "description": "",
+      "composition": "Только в Безлимите",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 30000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Лимонад Малина&Маракуйя",
+      "description": "",
+      "composition": "Лимонад",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Лимонад Тархун",
+      "description": "",
+      "composition": "Только в Безлимите",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 30000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Лимонад Щавель Клубника",
+      "description": "",
+      "composition": "Только в Безлимите",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 30000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Лимонад Яблоко-киви",
+      "description": "",
+      "composition": "Лимонад",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Свежий Мандарин",
+      "description": "",
+      "composition": "Лимонад",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Б/А Number two / №2",
+      "description": "",
+      "composition": "Манго, маракуйя, кокос, содовая, лёд",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 72,
+      "protein_g": 0.0,
+      "fat_g": 0.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Б/А Number three / №3",
+      "description": "",
+      "composition": "Васильки, черёмуха, голубика, содовая, лёд",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 72,
+      "protein_g": 0.0,
+      "fat_g": 0.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Лимонад Лесная ягода",
+      "description": "",
+      "composition": "Лимонад",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "lemonade"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Глинтвейн б/а",
+      "description": "",
+      "composition": "Вишневый сок, яблоко, апельсин, корица, гвоздика, мёд",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 35000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Desalcoholized Red Albali Cabernet Tempranillo",
+      "description": "",
+      "composition": "Красное Б/А, Испания, Кастилия Ла Манча",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "wine"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Desalcoholized White Vina Albali Sparkling White, 2023",
+      "description": "",
+      "composition": "Белое Б/А, Испания, Кастилия Ла Манча",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 252000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "wine"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Hans Baer Riesling, Weinkellerei Hechtsheim",
+      "description": "",
+      "composition": "Рислинг безалкогольный",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 252000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "wine"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Б/А Pabst",
+      "description": "",
+      "composition": "Пиво Б/А",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "beer"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Вишневый Эль «The Бык»",
+      "description": "",
+      "composition": "Пиво",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "beer"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Нефильтрованное «THE БЫК»",
+      "description": "",
+      "composition": "Пиво",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "beer"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Сидр «THE БЫК»",
+      "description": "",
+      "composition": "Сидр",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "beer"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Темное «THE БЫК»",
+      "description": "",
+      "composition": "Пиво",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "beer"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Ячменный лагер «THE БЫК»",
+      "description": "",
+      "composition": "Пиво",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки алкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "beer"
+      ],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Апероль number one / №1",
+      "description": "",
+      "composition": "Минеральная вода, Апероль Б/А, апельсин",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 30000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Апероль number one / №2",
+      "description": "",
+      "composition": "Сидр яблочный, Апероль Б/А, апельсин, лёд",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 30000,
+      "currency": "RUB",
+      "calories_kcal": null,
+      "protein_g": null,
+      "fat_g": null,
+      "carbs_g": null,
+      "portion_weight_g": null,
+      "cuisine": "european",
+      "category": "Напитки безалкогольные",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [],
+      "is_available": true,
+      "synthetic": false
+    },
+    {
+      "name": "Том-ям с креветками",
+      "description": "Классический тайский острый суп с креветками, грибами шиитаке и кокосовым молоком.",
+      "composition": "Креветки тигровые, кокосовое молоко, грибы шиитаке, лимонная трава, галангал, листья каффир-лайма, лайм, чили, рыбный соус, кинза.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 69000,
+      "currency": "RUB",
+      "calories_kcal": 280,
+      "protein_g": 18.0,
+      "fat_g": 16.0,
+      "carbs_g": 12.0,
+      "portion_weight_g": 350,
+      "cuisine": "asian",
+      "category": "Супы",
+      "allergens": [
+        "dairy",
+        "shellfish"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "light",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Мисо-суп с тофу",
+      "description": "Лёгкий японский бульон даси с пастой мисо, кубиками тофу и нори.",
+      "composition": "Бульон даси, паста мисо, тофу, водоросли вакамэ, зелёный лук, нори.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 35000,
+      "currency": "RUB",
+      "calories_kcal": 95,
+      "protein_g": 7.0,
+      "fat_g": 4.0,
+      "carbs_g": 6.0,
+      "portion_weight_g": 300,
+      "cuisine": "japanese",
+      "category": "Супы",
+      "allergens": [
+        "gluten",
+        "soy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "light",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Рамен с курицей",
+      "description": "Японская лапша в курином бульоне с маринованным яйцом и побегами бамбука.",
+      "composition": "Куриный бульон, лапша рамен, филе курицы, маринованное яйцо, побеги бамбука менма, зелёный лук, нори, кунжут.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 59000,
+      "currency": "RUB",
+      "calories_kcal": 520,
+      "protein_g": 28.0,
+      "fat_g": 14.0,
+      "carbs_g": 65.0,
+      "portion_weight_g": 450,
+      "cuisine": "japanese",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "eggs",
+        "sesame"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "big",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Ролл Филадельфия",
+      "description": "Классический ролл с лососем и сливочным сыром.",
+      "composition": "Лосось слабосолёный, сливочный сыр Филадельфия, рис, нори, огурец, авокадо.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 69000,
+      "currency": "RUB",
+      "calories_kcal": 380,
+      "protein_g": 18.0,
+      "fat_g": 18.0,
+      "carbs_g": 36.0,
+      "portion_weight_g": 230,
+      "cuisine": "japanese",
+      "category": "Закуски",
+      "allergens": [
+        "dairy",
+        "fish"
+      ],
+      "dietary": [
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Ролл Калифорния",
+      "description": "Ролл с крабом, авокадо и икрой тобико.",
+      "composition": "Краб, авокадо, рис, нори, икра тобико, огурец, майонез.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 59000,
+      "currency": "RUB",
+      "calories_kcal": 320,
+      "protein_g": 12.0,
+      "fat_g": 14.0,
+      "carbs_g": 36.0,
+      "portion_weight_g": 220,
+      "cuisine": "japanese",
+      "category": "Закуски",
+      "allergens": [
+        "eggs",
+        "shellfish",
+        "fish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Пад-тай с курицей",
+      "description": "Тайская рисовая лапша вок с курицей, арахисом и яйцом.",
+      "composition": "Лапша рисовая, филе курицы, ростки сои, арахис, яйцо, лук репчатый, тамаринд, лайм, рыбный соус, чили.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 62000,
+      "currency": "RUB",
+      "calories_kcal": 580,
+      "protein_g": 24.0,
+      "fat_g": 22.0,
+      "carbs_g": 70.0,
+      "portion_weight_g": 380,
+      "cuisine": "asian",
+      "category": "Горячее — мясо",
+      "allergens": [
+        "eggs",
+        "peanuts"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Карбонара",
+      "description": "Спагетти в классическом соусе из желтка, гуанчале и пекорино.",
+      "composition": "Спагетти, гуанчале, желток куриный, сыр пекорино романо, чёрный перец.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 59000,
+      "currency": "RUB",
+      "calories_kcal": 560,
+      "protein_g": 24.0,
+      "fat_g": 28.0,
+      "carbs_g": 48.0,
+      "portion_weight_g": 320,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy",
+        "gluten"
+      ],
+      "dietary": [],
+      "tag_slugs": [
+        "chef",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Паста Аррабиата",
+      "description": "Пенне в остром томатном соусе с чесноком и чили.",
+      "composition": "Пенне, томаты в собственном соку, чеснок, чили, оливковое масло, петрушка.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 49000,
+      "currency": "RUB",
+      "calories_kcal": 420,
+      "protein_g": 12.0,
+      "fat_g": 14.0,
+      "carbs_g": 60.0,
+      "portion_weight_g": 350,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Ризотто с белыми грибами",
+      "description": "Кремовое ризотто с белыми грибами и пармезаном.",
+      "composition": "Рис арборио, белые грибы, лук репчатый, белое сухое вино, пармезан, сливочное масло, петрушка.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 69000,
+      "currency": "RUB",
+      "calories_kcal": 480,
+      "protein_g": 14.0,
+      "fat_g": 18.0,
+      "carbs_g": 60.0,
+      "portion_weight_g": 320,
+      "cuisine": "italian",
+      "category": "Пицца и паста",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Боул с киноа и авокадо",
+      "description": "Сытный веганский боул с киноа, авокадо, нутом и табуле.",
+      "composition": "Киноа, авокадо, нут, помидоры черри, огурец, петрушка, кинза, лимон, оливковое масло.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 52000,
+      "currency": "RUB",
+      "calories_kcal": 380,
+      "protein_g": 12.0,
+      "fat_g": 14.0,
+      "carbs_g": 50.0,
+      "portion_weight_g": 320,
+      "cuisine": "european",
+      "category": "Салаты",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Овощное рагу по-провански",
+      "description": "Рататуй из овощей, томлёный с прованскими травами.",
+      "composition": "Баклажаны, кабачки, болгарский перец, помидоры, лук, чеснок, оливковое масло, тимьян, базилик.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": 220,
+      "protein_g": 5.0,
+      "fat_g": 12.0,
+      "carbs_g": 26.0,
+      "portion_weight_g": 300,
+      "cuisine": "french",
+      "category": "Горячее — мясо",
+      "allergens": [],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "gluten_free",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "light",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Гранола с фруктами и кокосовым молоком",
+      "description": "Веганский десерт-завтрак: домашняя гранола, ягоды, кокосовое молоко.",
+      "composition": "Овсяные хлопья, мёд (опционально кленовый сироп), миндаль, кокосовая стружка, банан, клубника, голубика, кокосовое молоко.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 380,
+      "protein_g": 8.0,
+      "fat_g": 16.0,
+      "carbs_g": 50.0,
+      "portion_weight_g": 250,
+      "cuisine": "european",
+      "category": "Десерты",
+      "allergens": [
+        "dairy",
+        "nuts"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Хумус с овощами и питой",
+      "description": "Восточная закуска: классический хумус с оливковым маслом, овощи и тёплая пита.",
+      "composition": "Нут, тахини, чеснок, лимон, оливковое масло, паприка, морковь, огурец, болгарский перец, пита.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 360,
+      "protein_g": 12.0,
+      "fat_g": 18.0,
+      "carbs_g": 38.0,
+      "portion_weight_g": 280,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten",
+        "sesame"
+      ],
+      "dietary": [
+        "vegetarian",
+        "vegan",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Шашлык из ягнёнка халяль",
+      "description": "Маринованная баранина на шпажках, приготовленная на углях.",
+      "composition": "Мякоть ягнёнка, лук репчатый, кориандр, зира, перец чёрный, оливковое масло.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 75000,
+      "currency": "RUB",
+      "calories_kcal": 480,
+      "protein_g": 32.0,
+      "fat_g": 36.0,
+      "carbs_g": 4.0,
+      "portion_weight_g": 250,
+      "cuisine": "asian",
+      "category": "Гриль (хоспер)",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Куриный шашлык в маринаде sriracha",
+      "description": "Острые шпажки куриного бедра в маринаде sriracha и чесноке.",
+      "composition": "Бедро куриное, чеснок, sriracha, мёд, соевый соус, имбирь, лайм.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 49000,
+      "currency": "RUB",
+      "calories_kcal": 380,
+      "protein_g": 28.0,
+      "fat_g": 18.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": 230,
+      "cuisine": "asian",
+      "category": "Гриль (хоспер)",
+      "allergens": [
+        "soy"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free",
+        "halal"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Лосось на пару с овощами",
+      "description": "Лёгкий стейк лосося на пару с сезонными овощами.",
+      "composition": "Лосось, брокколи, морковь, цветная капуста, лимон, оливковое масло, морская соль.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 89000,
+      "currency": "RUB",
+      "calories_kcal": 320,
+      "protein_g": 30.0,
+      "fat_g": 18.0,
+      "carbs_g": 12.0,
+      "portion_weight_g": 280,
+      "cuisine": "european",
+      "category": "Горячее — рыба и морепродукты",
+      "allergens": [
+        "fish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "light",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Чизкейк Нью-Йорк",
+      "description": "Классический чизкейк на песочной основе с ягодным соусом.",
+      "composition": "Сливочный сыр, песочное тесто, яйца, сахар, ваниль, соус из ягод.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 39000,
+      "currency": "RUB",
+      "calories_kcal": 420,
+      "protein_g": 7.0,
+      "fat_g": 26.0,
+      "carbs_g": 38.0,
+      "portion_weight_g": 140,
+      "cuisine": "american",
+      "category": "Десерты",
+      "allergens": [
+        "dairy",
+        "eggs",
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Тирамису",
+      "description": "Воздушный итальянский десерт с маскарпоне и кофейным сиропом.",
+      "composition": "Маскарпоне, печенье савоярди, кофе эспрессо, какао, желток, сахар.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 42000,
+      "currency": "RUB",
+      "calories_kcal": 380,
+      "protein_g": 6.0,
+      "fat_g": 22.0,
+      "carbs_g": 38.0,
+      "portion_weight_g": 140,
+      "cuisine": "italian",
+      "category": "Десерты",
+      "allergens": [
+        "dairy"
+      ],
+      "dietary": [
+        "vegetarian",
+        "gluten_free"
+      ],
+      "tag_slugs": [
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Эклер с заварным кремом",
+      "description": "Французский эклер с классическим заварным кремом.",
+      "composition": "Заварное тесто, заварной крем, ванильный сахар, шоколадная глазурь, яйца, молоко.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 29000,
+      "currency": "RUB",
+      "calories_kcal": 320,
+      "protein_g": 5.0,
+      "fat_g": 14.0,
+      "carbs_g": 42.0,
+      "portion_weight_g": 100,
+      "cuisine": "french",
+      "category": "Десерты",
+      "allergens": [
+        "dairy",
+        "eggs",
+        "gluten"
+      ],
+      "dietary": [
+        "vegetarian",
+        "halal"
+      ],
+      "tag_slugs": [
+        "light",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Большое мясное плато для компании",
+      "description": "Ассорти мясных деликатесов на компанию из 4-6 человек.",
+      "composition": "Пармская ветчина, пастрами, салями чоризо, ростбиф, вяленые томаты, гриссини, оливки, корнишоны, дижонская горчица.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 220000,
+      "currency": "RUB",
+      "calories_kcal": 1450,
+      "protein_g": 95.0,
+      "fat_g": 105.0,
+      "carbs_g": 35.0,
+      "portion_weight_g": 700,
+      "cuisine": "european",
+      "category": "Закуски",
+      "allergens": [
+        "gluten",
+        "mustard"
+      ],
+      "dietary": [
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "big",
+        "share",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Сырная доска для компании",
+      "description": "Ассорти сыров с медом, орехами и виноградом для большой компании.",
+      "composition": "Пармезан, дор-блю, бри, чеддер, моцарелла, мёд, грецкий орех, миндаль, виноград, гриссини.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 190000,
+      "currency": "RUB",
+      "calories_kcal": 1620,
+      "protein_g": 80.0,
+      "fat_g": 130.0,
+      "carbs_g": 28.0,
+      "portion_weight_g": 600,
+      "cuisine": "french",
+      "category": "Закуски",
+      "allergens": [
+        "dairy",
+        "gluten",
+        "nuts"
+      ],
+      "dietary": [
+        "vegetarian"
+      ],
+      "tag_slugs": [
+        "big",
+        "share",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Морское плато",
+      "description": "Ассорти морепродуктов с лимоном и тремя соусами на 3-4 персоны.",
+      "composition": "Тигровые креветки, мидии в раковине, осьминог отварной, стейк лосося, лимон, соус айоли, соус коктейль, соус тартар.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 350000,
+      "currency": "RUB",
+      "calories_kcal": 1280,
+      "protein_g": 130.0,
+      "fat_g": 60.0,
+      "carbs_g": 18.0,
+      "portion_weight_g": 800,
+      "cuisine": "european",
+      "category": "Горячее — рыба и морепродукты",
+      "allergens": [
+        "shellfish",
+        "fish"
+      ],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "big",
+        "share",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Стейк-сет на двоих",
+      "description": "Два премиальных стейка (рибай и бавет) с тремя соусами для двоих.",
+      "composition": "Стейк рибай блэк ангус, стейк бавет, гарнир из картофеля бэби, соус демиглас, соус перечный, соус чимичурри, морская соль, розмарин.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 320000,
+      "currency": "RUB",
+      "calories_kcal": 2100,
+      "protein_g": 160.0,
+      "fat_g": 140.0,
+      "carbs_g": 30.0,
+      "portion_weight_g": 600,
+      "cuisine": "american",
+      "category": "Стейки",
+      "allergens": [],
+      "dietary": [
+        "gluten_free",
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "big",
+        "share",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    },
+    {
+      "name": "Закусочный сет на компанию",
+      "description": "Большой сет горячих закусок к пиву на 4 человек.",
+      "composition": "Куриные крылья BBQ, чесночные гренки, картофель фри, луковые кольца, кесадилья с курицей, соус 1000 островов, соус блю чиз, соус сладкий чили.",
+      "image_url_external": "",
+      "image_key": "",
+      "price_minor": 180000,
+      "currency": "RUB",
+      "calories_kcal": 2350,
+      "protein_g": 75.0,
+      "fat_g": 130.0,
+      "carbs_g": 145.0,
+      "portion_weight_g": 800,
+      "cuisine": "american",
+      "category": "Закуски",
+      "allergens": [
+        "gluten",
+        "soy"
+      ],
+      "dietary": [
+        "lactose_free"
+      ],
+      "tag_slugs": [
+        "spicy",
+        "big",
+        "share",
+        "new"
+      ],
+      "is_available": true,
+      "synthetic": true
+    }
+  ]
+}

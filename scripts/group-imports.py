@@ -6,7 +6,7 @@ assert len(sys.argv) == 2, "expected one argument"
 file_name = sys.argv[1]
 assert file_name.endswith(".go"), "expected go file"
 
-with open(file_name) as f:
+with open(file_name, encoding="utf-8") as f:
     content = [line for line in f]
 
 first_import_index = content.index("import (\n") if "import (\n" in content else -1
@@ -95,5 +95,5 @@ imports.reverse()
 for line in imports:
     content.insert(first_import_index + 1, line)
 
-with open(file_name, "w+") as f:
+with open(file_name, "w+", encoding="utf-8", newline="\n") as f:
     f.writelines(content)
