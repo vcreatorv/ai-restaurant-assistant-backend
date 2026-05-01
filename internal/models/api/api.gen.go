@@ -219,26 +219,36 @@ type AnalyticsOverview struct {
 
 // Cart defines model for Cart.
 type Cart struct {
-	Items    []CartItem    `json:"items"`
-	Total    string        `json:"total"`
-	Warnings []CartWarning `json:"warnings"`
+	Currency string     `json:"currency"`
+	Items    []CartItem `json:"items"`
+
+	// TotalMinor Сумма line_total_minor по доступным позициям
+	TotalMinor int           `json:"total_minor"`
+	Warnings   []CartWarning `json:"warnings"`
 }
 
 // CartItem defines model for CartItem.
 type CartItem struct {
-	AddedAt   *time.Time `json:"added_at,omitempty"`
-	Available bool       `json:"available"`
-	DishId    int        `json:"dish_id"`
-	LineTotal string     `json:"line_total"`
-	Name      string     `json:"name"`
-	Note      *string    `json:"note,omitempty"`
-	Price     string     `json:"price"`
-	Quantity  int        `json:"quantity"`
-	SortOrder int        `json:"sort_order"`
+	AddedAt *time.Time `json:"added_at,omitempty"`
+
+	// Available Доступно к заказу: блюдо ещё в меню и не на стоп-листе
+	Available bool `json:"available"`
+	DishId    int  `json:"dish_id"`
+
+	// LineTotalMinor price_minor * quantity
+	LineTotalMinor int     `json:"line_total_minor"`
+	Name           string  `json:"name"`
+	Note           *string `json:"note,omitempty"`
+
+	// PriceMinor Цена единицы в минимальных единицах валюты (копейки для RUB)
+	PriceMinor int `json:"price_minor"`
+	Quantity   int `json:"quantity"`
+	SortOrder  int `json:"sort_order"`
 }
 
 // CartWarning defines model for CartWarning.
 type CartWarning struct {
+	// Code Тип предупреждения: dish_unavailable | dish_removed
 	Code   string `json:"code"`
 	DishId int    `json:"dish_id"`
 }
@@ -452,6 +462,7 @@ type MessageRole string
 // Order defines model for Order.
 type Order struct {
 	CreatedAt         time.Time            `json:"created_at"`
+	Currency          string               `json:"currency"`
 	CustomerEmail     *openapi_types.Email `json:"customer_email,omitempty"`
 	CustomerFirstName string               `json:"customer_first_name"`
 	CustomerLastName  string               `json:"customer_last_name"`
@@ -464,19 +475,24 @@ type Order struct {
 	Notes             *string              `json:"notes,omitempty"`
 	PaymentMethod     PaymentMethod        `json:"payment_method"`
 	Status            OrderStatus          `json:"status"`
-	Total             string               `json:"total"`
+	TotalMinor        int                  `json:"total_minor"`
 	UpdatedAt         time.Time            `json:"updated_at"`
 	UserId            openapi_types.UUID   `json:"user_id"`
 }
 
 // OrderItem defines model for OrderItem.
 type OrderItem struct {
-	DishId    *int   `json:"dish_id"`
-	DishName  string `json:"dish_name"`
-	DishPrice string `json:"dish_price"`
-	LineTotal string `json:"line_total"`
-	Quantity  int    `json:"quantity"`
-	SortOrder int    `json:"sort_order"`
+	// DishId null если блюдо удалено из меню после оформления
+	DishId *int `json:"dish_id"`
+
+	// DishName Snapshot названия на момент заказа
+	DishName string `json:"dish_name"`
+
+	// DishPriceMinor Snapshot цены за единицу в копейках
+	DishPriceMinor int `json:"dish_price_minor"`
+	LineTotalMinor int `json:"line_total_minor"`
+	Quantity       int `json:"quantity"`
+	SortOrder      int `json:"sort_order"`
 }
 
 // OrderList defines model for OrderList.

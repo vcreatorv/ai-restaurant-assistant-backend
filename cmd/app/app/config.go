@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
+	"github.com/example/ai-restaurant-assistant-backend/internal/cart"
 	"github.com/example/ai-restaurant-assistant-backend/internal/chat"
 	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
+	"github.com/example/ai-restaurant-assistant-backend/internal/order"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/datasources"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/s3"
 	"github.com/example/ai-restaurant-assistant-backend/internal/rag"
@@ -43,6 +45,10 @@ type Config struct {
 	Menu menu.Config `yaml:"menu"`
 	// Chat параметры фичи chat
 	Chat chat.Config `yaml:"chat"`
+	// Cart параметры фичи cart
+	Cart cart.Config `yaml:"cart"`
+	// Order параметры фичи order
+	Order order.Config `yaml:"order"`
 	// RAG параметры RAG-pipeline (Cohere + Qdrant)
 	RAG rag.Config `yaml:"rag"`
 }

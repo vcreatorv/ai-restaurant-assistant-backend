@@ -13,6 +13,10 @@ import (
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
 	authhttp "github.com/example/ai-restaurant-assistant-backend/internal/auth/delivery/v1/http"
 	authusecase "github.com/example/ai-restaurant-assistant-backend/internal/auth/usecase"
+	"github.com/example/ai-restaurant-assistant-backend/internal/cart"
+	carthttp "github.com/example/ai-restaurant-assistant-backend/internal/cart/delivery/v1/http"
+	cartpostgres "github.com/example/ai-restaurant-assistant-backend/internal/cart/repository/postgres"
+	cartusecase "github.com/example/ai-restaurant-assistant-backend/internal/cart/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/chat"
 	chathttp "github.com/example/ai-restaurant-assistant-backend/internal/chat/delivery/v1/http"
 	chatpostgres "github.com/example/ai-restaurant-assistant-backend/internal/chat/repository/postgres"
@@ -21,6 +25,10 @@ import (
 	menuhttp "github.com/example/ai-restaurant-assistant-backend/internal/menu/delivery/v1/http"
 	menupostgres "github.com/example/ai-restaurant-assistant-backend/internal/menu/repository/postgres"
 	menuusecase "github.com/example/ai-restaurant-assistant-backend/internal/menu/usecase"
+	"github.com/example/ai-restaurant-assistant-backend/internal/order"
+	orderhttp "github.com/example/ai-restaurant-assistant-backend/internal/order/delivery/v1/http"
+	orderpostgres "github.com/example/ai-restaurant-assistant-backend/internal/order/repository/postgres"
+	orderusecase "github.com/example/ai-restaurant-assistant-backend/internal/order/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/apperrors"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/bcrypt"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/cohere"
@@ -148,6 +156,8 @@ func buildAPI(
 	userRepository := userpostgres.New(pgPool)
 	menuRepository := menupostgres.New(pgPool)
 	chatRepository := chatpostgres.New(pgPool)
+	cartRepository := cartpostgres.New(pgPool)
+	orderRepository := orderpostgres.New(pgPool)
 
 	cohereClient, err := cohere.New(cfg.RAG.Cohere)
 	if err != nil {
@@ -174,17 +184,32 @@ func buildAPI(
 		ChatCfg: cfg.Chat.Usecase,
 		RAGCfg:  cfg.RAG,
 	})
+	cartUsecase := cartusecase.New(cartusecase.Deps{
+		Repo: cartRepository,
+		Menu: menuUsecase,
+	})
+	orderUsecase := orderusecase.New(orderusecase.Deps{
+		Repo:     orderRepository,
+		CartRepo: cartRepository,
+		Menu:     menuUsecase,
+		Users:    userUsecase,
+		UUID:     uuidGen,
+	})
 
 	authHandler := authhttp.New(authUsecase, userUsecase)
 	userHandler := userhttp.New(userUsecase)
 	menuHandler := menuhttp.New(cfg.Menu.Delivery, menuUsecase, userUsecase)
 	chatHandler := chathttp.New(cfg.Chat.Delivery, chatUsecase)
+	cartHandler := carthttp.New(cfg.Cart.Delivery, cartUsecase)
+	orderHandler := orderhttp.New(cfg.Order.Delivery, orderUsecase, userUsecase)
 
 	handler := Handler{
-		AuthHandler: authHandler,
-		UserHandler: userHandler,
-		MenuHandler: menuHandler,
-		ChatHandler: chatHandler,
+		AuthHandler:  authHandler,
+		UserHandler:  userHandler,
+		MenuHandler:  menuHandler,
+		ChatHandler:  chatHandler,
+		CartHandler:  cartHandler,
+		OrderHandler: orderHandler,
 	}
 
 	swagger, err := v1.GetSwagger()
@@ -205,6 +230,10 @@ func buildAPI(
 			},
 			SilenceServersWarning: true,
 		}),
+		// SSEFlush — последний в цепочке (closest to handler): оборачивает ResponseWriter
+		// для SSE-роутов так, что Flush вызывается после каждого Write. Без этого
+		// http.Server буферизует чанки в bufio.Writer и клиент видит токены только в финале.
+		middleware.SSEFlush,
 	}
 
 	return handler, middlewares, nil
@@ -290,6 +319,38 @@ func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 	case errors.Is(err, chat.ErrEmptyMessage):
 		writeError(w, http.StatusBadRequest, "validation_failed", "Message content is empty")
 
+	case errors.Is(err, cart.ErrCartItemNotFound):
+		writeError(w, http.StatusNotFound, "cart_item_not_found", "Item not found in cart")
+	case errors.Is(err, cart.ErrDishNotFound):
+		writeError(w, http.StatusNotFound, "dish_not_found", "Dish not found")
+	case errors.Is(err, cart.ErrDishUnavailable):
+		writeError(w, http.StatusConflict, "dish_unavailable", "Dish is not available")
+	case errors.Is(err, cart.ErrInvalidQuantity):
+		writeError(w, http.StatusBadRequest, "validation_failed", "Quantity must be between 1 and 50")
+
+	case errors.Is(err, order.ErrOrderNotFound):
+		writeError(w, http.StatusNotFound, "order_not_found", "Order not found")
+	case errors.Is(err, order.ErrOrderForbidden):
+		writeError(w, http.StatusForbidden, "access_denied", "Order does not belong to this user")
+	case errors.Is(err, order.ErrCartEmpty):
+		writeError(w, http.StatusBadRequest, "cart_empty", "Cart is empty")
+	case errors.Is(err, order.ErrProfileIncomplete):
+		writeError(w, http.StatusBadRequest, "profile_incomplete",
+			"Profile is incomplete (first_name, last_name, phone are required)")
+	case errors.Is(err, order.ErrDeliveryAddressRequired):
+		writeError(w, http.StatusBadRequest, "delivery_address_required",
+			"delivery_address is required for fulfillment_type=delivery")
+	case errors.Is(err, order.ErrInvalidFulfillmentType):
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid fulfillment_type")
+	case errors.Is(err, order.ErrInvalidPaymentMethod):
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid payment_method")
+	case errors.Is(err, order.ErrCheckoutItemsUnavailable):
+		writeOrderUnavailableError(w, err)
+	case errors.Is(err, order.ErrInvalidStatus):
+		writeError(w, http.StatusBadRequest, "validation_failed", "Invalid order status")
+	case errors.Is(err, order.ErrInvalidStatusTransition):
+		writeError(w, http.StatusBadRequest, "invalid_status_transition", "Status transition is not allowed")
+
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "An unexpected error occurred")
 	}
@@ -318,6 +379,27 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 		"error": map[string]any{
 			"code":    code,
 			"message": message,
+		},
+	})
+}
+
+// writeOrderUnavailableError возвращает 409 со списком dish_id из ErrCheckoutItemsUnavailable.
+// Frontend использует details.dish_ids чтобы подсветить позиции в корзине, которые надо убрать.
+func writeOrderUnavailableError(w http.ResponseWriter, err error) {
+	dishIDs := []int{}
+	var uerr *order.CheckoutItemsUnavailableError
+	if errors.As(err, &uerr) {
+		dishIDs = uerr.DishIDs
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusConflict)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"error": map[string]any{
+			"code":    "checkout_items_unavailable",
+			"message": "Some items in cart are unavailable",
+			"details": map[string]any{
+				"dish_ids": dishIDs,
+			},
 		},
 	})
 }

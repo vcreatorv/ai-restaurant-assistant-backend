@@ -117,6 +117,12 @@ linters:
           - gocyclo
         path: internal/pkg/llm/llm\.go
         text: 'consumeStream'
+      # Order checkout: множество стадий валидации (fulfillment/payment/profile/cart/dishes/snapshot)
+      # перед TX. Дробление в pure-функции дало бы хуже читаемость
+      - linters:
+          - gocyclo
+        path: internal/order/usecase/order\.go
+        text: 'Create'
       - linters:
           - gosec
         path: cmd/app/app/config\.go

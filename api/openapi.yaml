@@ -1082,32 +1082,33 @@ components:
 
     CartItem:
       type: object
-      required: [dish_id, name, price, quantity, line_total, sort_order, available]
+      required: [dish_id, name, price_minor, quantity, line_total_minor, sort_order, available]
       properties:
-        dish_id:    { type: integer, minimum: 1 }
-        name:       { type: string }
-        price:      { type: string }
-        quantity:   { type: integer, minimum: 1 }
-        note:       { type: string, nullable: true }
-        sort_order: { type: integer }
-        added_at:   { type: string, format: date-time }
-        available:  { type: boolean }
-        line_total: { type: string }
+        dish_id:          { type: integer, minimum: 1 }
+        name:             { type: string }
+        price_minor:      { type: integer, minimum: 0, description: "Цена единицы в минимальных единицах валюты (копейки для RUB)" }
+        quantity:         { type: integer, minimum: 1 }
+        note:             { type: string, nullable: true }
+        sort_order:       { type: integer }
+        added_at:         { type: string, format: date-time }
+        available:        { type: boolean, description: "Доступно к заказу: блюдо ещё в меню и не на стоп-листе" }
+        line_total_minor: { type: integer, minimum: 0, description: "price_minor * quantity" }
 
     CartWarning:
       type: object
       required: [code, dish_id]
       properties:
-        code:    { type: string, example: "dish_unavailable" }
+        code:    { type: string, example: "dish_unavailable", description: "Тип предупреждения: dish_unavailable | dish_removed" }
         dish_id: { type: integer, minimum: 1 }
 
     Cart:
       type: object
-      required: [items, total, warnings]
+      required: [items, total_minor, currency, warnings]
       properties:
-        items:    { type: array, items: { $ref: '#/components/schemas/CartItem' } }
-        total:    { type: string }
-        warnings: { type: array, items: { $ref: '#/components/schemas/CartWarning' } }
+        items:       { type: array, items: { $ref: '#/components/schemas/CartItem' } }
+        total_minor: { type: integer, minimum: 0, description: "Сумма line_total_minor по доступным позициям" }
+        currency:    { type: string, example: "RUB" }
+        warnings:    { type: array, items: { $ref: '#/components/schemas/CartWarning' } }
 
     AddCartItemRequest:
       type: object
@@ -1128,19 +1129,19 @@ components:
 
     OrderItem:
       type: object
-      required: [dish_id, dish_name, dish_price, quantity, line_total, sort_order]
+      required: [dish_id, dish_name, dish_price_minor, quantity, line_total_minor, sort_order]
       properties:
-        dish_id:    { type: integer, minimum: 1, nullable: true }
-        dish_name:  { type: string }
-        dish_price: { type: string }
-        quantity:   { type: integer, minimum: 1 }
-        line_total: { type: string }
-        sort_order: { type: integer }
+        dish_id:          { type: integer, minimum: 1, nullable: true, description: "null если блюдо удалено из меню после оформления" }
+        dish_name:        { type: string, description: "Snapshot названия на момент заказа" }
+        dish_price_minor: { type: integer, minimum: 0, description: "Snapshot цены за единицу в копейках" }
+        quantity:         { type: integer, minimum: 1 }
+        line_total_minor: { type: integer, minimum: 0 }
+        sort_order:       { type: integer }
 
     Order:
       type: object
       required:
-        [id, user_id, status, fulfillment_type, total, payment_method,
+        [id, user_id, status, fulfillment_type, total_minor, currency, payment_method,
          customer_first_name, customer_last_name, customer_phone,
          items, created_at, updated_at]
       properties:
@@ -1148,7 +1149,8 @@ components:
         user_id:            { type: string, format: uuid }
         status:             { $ref: '#/components/schemas/OrderStatus' }
         fulfillment_type:   { $ref: '#/components/schemas/FulfillmentType' }
-        total:              { type: string }
+        total_minor:        { type: integer, minimum: 0 }
+        currency:           { type: string, example: "RUB" }
         payment_method:     { $ref: '#/components/schemas/PaymentMethod' }
         customer_first_name: { type: string }
         customer_last_name: { type: string }

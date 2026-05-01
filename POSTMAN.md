@@ -881,6 +881,202 @@ docker compose exec postgres psql -U restaurant -d restaurant -c \
 
 Эффект: даже после 10+ ходов ассистент видит изначальный запрос гостя в начале сообщений и не теряет рамку.
 
+# Cart (корзина)
+
+Корзина пользователя: один cart на user_id (UNIQUE), позиции ключуются (cart_id, dish_id) с quantity 1..50.
+
+## Подготовка
+
+1. Auth → шаги 1–2 (Bootstrap + Register/Login).
+2. `make seed` (нужны блюда в PG).
+3. Применить миграции: `make migrate-up` (или они применятся автоматически при `make docker-up` через сервис `migrate`).
+4. Открой папку **Cart** в Postman; шаг **0. Pick test dish ids** берёт первые два доступных блюда из `/menu` и кладёт их id в `cartDishId` / `cartDishId2`.
+
+## Эндпойнты
+
+| # | Метод   | URL                              | Что валидируется |
+|---|---------|----------------------------------|-------------------|
+| 1 | GET     | `/cart`                          | Auto-create пустой корзины: items=[], total_minor=0, currency='RUB' |
+| 2 | POST    | `/cart/items`                    | Add: возвращает `CartItem` (qty, price_minor, line_total_minor=price*qty, available, note, sort_order) |
+| 3 | POST    | `/cart/items` (тот же dish_id)   | **Quantity суммируется** (был 2, добавили 3 → стало 5) |
+| 4 | POST    | `/cart/items` (другой dish_id)   | Вторая позиция отдельной строкой |
+| 5 | GET     | `/cart`                          | total_minor = Σ(line_total_minor по `available=true`) |
+| 6 | PATCH   | `/cart/items/{dish_id}`          | Жёсткое выставление quantity (не суммирует) |
+| 7 | PATCH   | `/cart/items/{dish_id}`          | Обновление note и sort_order (без quantity) |
+| 8 | POST    | `/cart/items` (qty=51)           | 400: quantity вне диапазона 1..50 |
+| 9 | POST    | `/cart/items` (dish_id=999999)   | 404 `dish_not_found` |
+| 10 | PATCH  | `/cart/items/999999`             | 404 `cart_item_not_found` |
+| 11 | DELETE | `/cart/items/{dish_id}`          | 204 |
+| 12 | DELETE | `/cart/items/{dish_id}` (повтор) | 404 `cart_item_not_found` |
+| 13 | DELETE | `/cart`                          | 204, корзина очищена |
+| 14 | GET    | `/cart`                          | items=[] |
+
+## Семантика
+
+- **`available`** в `CartItem`: `true` если блюдо ещё в меню и не на стоп-листе. Если admin переведёт блюдо в стоп-лист — следующий `GET /cart` покажет `available=false` и в `warnings` появится `{code: "dish_unavailable", dish_id: <X>}`.
+- **`total_minor`**: считает только по позициям с `available=true`. Недоступные не уходят в total, но остаются в items до явного удаления (UI показывает их с warning'ом).
+- **`price_minor` snapshot vs live**: на B1 цена в `CartItem.price_minor` — **актуальная** из меню (не snapshot). Snapshot цен делается при checkout (B2 → `OrderItem.dish_price_minor`).
+- **Single cart per user**: `carts.user_id UNIQUE`. Получить чужую корзину нельзя.
+- **Лимит quantity**: 1..50 на позицию. quantity=0 не поддерживается — для удаления есть DELETE.
+
+## Если что-то не так
+
+```sh
+# Глянуть корзину и позиции в БД
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT c.id, c.user_id, c.updated_at FROM carts c;"
+
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT ci.cart_id, ci.dish_id, d.name, ci.quantity, ci.note, ci.sort_order
+     FROM cart_items ci JOIN dishes d ON d.id = ci.dish_id
+     ORDER BY ci.cart_id, ci.sort_order, ci.added_at;"
+```
+
+# Orders (заказы)
+
+Customer оформляет заказ из своей корзины. Workflow:
+`accepted` → `cooking` → `ready` → `in_delivery` → `closed` (admin'ом). `cancelled` — терминал из любого не-final.
+
+Customer-cancel в B2 нет — только admin меняет статус (его endpoint появится в B3).
+
+## Подготовка
+
+1. Auth → 1–2 (Bootstrap + Register/Login).
+2. Profile → 5 (PATCH профиля): нужны заполненные `first_name`, `last_name`, `phone`. Без них чекаут даст `400 profile_incomplete`.
+3. Cart → 0–4 (положить в корзину 1–2 блюда).
+4. Применены миграции до `000005_orders` (`make migrate-up` или автоматически через `make docker-up`).
+
+## Эндпойнты
+
+| # | Метод | URL | Что валидируется |
+|---|-------|-----|-------------------|
+| 1 | POST   | `/orders` (с пустыми контактами в профиле) | 400 `profile_incomplete` |
+| 2 | PATCH  | `/profile`                                  | заполнить first_name/last_name/phone |
+| 3 | POST   | `/orders` (delivery без `delivery_address`) | 400 `delivery_address_required` |
+| 4 | POST   | `/orders` (пустая корзина)                  | 400 `cart_empty` |
+| 5 | POST   | `/cart/items` x 2                           | положить позиции для checkout |
+| 6 | POST   | `/orders` (pickup, on_delivery, +notes)     | 201, status=accepted, snapshot контактов из профиля, snapshot цен и имён в `items`, корзина очищается |
+| 7 | GET    | `/cart`                                     | items=[] (после checkout) |
+| 8 | GET    | `/orders/{id}`                              | детали заказа |
+| 9 | GET    | `/orders/00000000-…`                        | 404 `order_not_found` |
+| 10 | GET   | `/orders?limit&offset`                       | список заказов customer'а DESC by created_at |
+| 11 | GET   | `/orders?status=accepted`                    | фильтр по статусу |
+| 12 | POST  | `/orders` (delivery + address + delivery_notes + payment=online_stub) | 201 со всеми delivery-полями |
+
+## Семантика
+
+### Snapshot
+
+В момент `POST /orders`:
+- `customer_first_name`, `customer_last_name`, `customer_phone`, `customer_email` — копируются из профиля.
+- `items[].dish_name`, `items[].dish_price_minor` — snapshot из dishes на момент чекаута. Если меню изменится позже — заказ не пересчитывается.
+- `total_minor` = Σ(price_minor_snapshot × quantity), сохраняется в БД.
+- `currency` — пока всегда `RUB`.
+
+### Stop-list при чекауте
+
+Если хотя бы одно блюдо в корзине стало `is_available=false` к моменту POST /orders — отказ:
+```json
+{
+  "error": {
+    "code": "checkout_items_unavailable",
+    "message": "Some items in cart are unavailable",
+    "details": { "dish_ids": [42, 17] }
+  }
+}
+```
+Status 409. Клиент должен убрать перечисленные позиции из корзины и повторить.
+
+### Очистка корзины
+
+После успешного `POST /orders` корзина очищается. Если очистка упала после успешной вставки order'а — клиент получит 500, но заказ виден через `GET /orders` (не блокер для проверки в Postman, разнесём при проблемах).
+
+### Fulfillment / Payment
+
+- `fulfillment_type`: `delivery` (требует `delivery_address`), `pickup` (самовывоз), `dine_in` (в зале).
+- `payment_method`: `on_delivery` (оплата при получении), `online_stub` (заглушка под будущую онлайн-оплату — записывается, но никаких внешних вызовов не делает).
+- Для не-delivery `delivery_address`/`delivery_notes` игнорируются даже если пришли.
+
+### Customer не может отменить
+
+Customer не может перевести `accepted → cancelled` через API. Эта возможность появится либо в B3 (admin endpoint), либо отдельной задачей (customer self-cancel). Пока — обращайся в ресторан.
+
+## Проверки в БД
+
+```sh
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT id, user_id, status, fulfillment_type, payment_method, total_minor, currency,
+          customer_first_name, customer_phone, delivery_address, created_at
+     FROM orders ORDER BY created_at DESC LIMIT 5;"
+
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT order_id, dish_id, name_snapshot, price_minor_snapshot, quantity, sort_order
+     FROM order_items ORDER BY order_id, sort_order;"
+```
+
+# Admin — orders (B3)
+
+Admin-эндпойнты для управления заказами: список с фильтрами + смена статуса с проверкой state-machine.
+
+## State-machine
+
+```
+accepted   → cooking | cancelled
+cooking    → ready   | cancelled
+ready      → in_delivery | closed | cancelled
+in_delivery → closed | cancelled
+closed     → ∅ (terminal)
+cancelled  → ∅ (terminal)
+```
+
+`ready → closed` разрешено для pickup/dine_in (без курьера). Для delivery естественный путь `ready → in_delivery → closed`. Backwards-переходы (`cooking → accepted`) и переходы из терминалов запрещены — `400 invalid_status_transition`.
+
+## Подготовка
+
+1. Залогинься admin'ом через папку **Admin — login**.
+2. В БД должен быть хотя бы 1 заказ (создай через папку **Orders** под обычным customer'ом).
+
+## Эндпойнты
+
+| # | Метод | URL                                    | Что валидируется |
+|---|-------|----------------------------------------|-------------------|
+| 1 | GET    | `/admin/orders?limit=5`               | Список всех заказов; кладёт первый id в `orderId` |
+| 2 | GET    | `/admin/orders?status=accepted`       | Фильтр по статусу |
+| 3 | GET    | `/admin/orders/{id}`                  | Детали без проверки владельца |
+| 4 | PATCH  | `/admin/orders/{id}/status` accepted→cooking | 200 |
+| 5 | PATCH  | `/admin/orders/{id}/status` cooking→ready    | 200 |
+| 6 | PATCH  | `/admin/orders/{id}/status` ready→cooking    | 400 `invalid_status_transition` (backward) |
+| 7 | PATCH  | `/admin/orders/{id}/status` ready→in_delivery | 200 (для delivery-заказов) |
+| 8 | PATCH  | `/admin/orders/{id}/status` in_delivery→closed | 200 |
+| 9 | PATCH  | `/admin/orders/{id}/status` closed→cancelled  | 400 (terminal) |
+| 10 | GET   | `/admin/orders` под customer'ом              | 403 |
+
+## Фильтры в `GET /admin/orders`
+
+| Параметр   | Тип     | Что делает |
+|------------|---------|------------|
+| `status`   | enum    | Фильтр по статусу |
+| `from`     | RFC3339 | created_at >= from |
+| `to`       | RFC3339 | created_at <= to |
+| `user_id`  | uuid    | Только заказы конкретного пользователя |
+| `limit`    | int     | пагинация (default 20, max 100) |
+| `offset`   | int     | пагинация |
+
+## PATCH /admin/orders/{id}/status — тело запроса
+
+```json
+{ "status": "cooking", "note": "по согласованию с гостем" }
+```
+
+`note` сейчас игнорируется (не сохраняется в БД). Если нужно — добавим миграцией `order_status_log` с историей переходов отдельным шагом.
+
+## Семантика
+
+- **Customer-cancel пока нет.** Customer не может перевести `accepted → cancelled` через API. Нужно — пусть пишет в ресторан, admin переведёт через `/admin/orders/{id}/status`.
+- **Note игнорируется.** Поле есть в OpenAPI для будущей фичи (audit log переходов), пока на бэке не сохраняется. Дополнительная миграция, если понадобится.
+- **Атомарность:** обновление status — один SQL UPDATE с `RETURNING`, без транзакции. Параллельные admin-запросы могут «затереть» друг друга (last write wins) — для MVP норм.
+- **403 без admin-роли:** `requireAdmin` через `users.GetByID(session.UserID).IsAdmin()`.
+
 # Filters & profiles (теги, аллергены, диеты, hard-фильтры RAG)
 
 Эта секция собирает в одно место способы проверить, что **фильтры каталога**

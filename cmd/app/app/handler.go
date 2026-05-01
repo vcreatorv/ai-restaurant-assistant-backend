@@ -2,8 +2,10 @@ package app
 
 import (
 	authdelivery "github.com/example/ai-restaurant-assistant-backend/internal/auth/delivery/v1/http"
+	cartdelivery "github.com/example/ai-restaurant-assistant-backend/internal/cart/delivery/v1/http"
 	chatdelivery "github.com/example/ai-restaurant-assistant-backend/internal/chat/delivery/v1/http"
 	menudelivery "github.com/example/ai-restaurant-assistant-backend/internal/menu/delivery/v1/http"
+	orderdelivery "github.com/example/ai-restaurant-assistant-backend/internal/order/delivery/v1/http"
 	userdelivery "github.com/example/ai-restaurant-assistant-backend/internal/user/delivery/v1/http"
 )
 
@@ -13,5 +15,7 @@ type Handler struct {
 	userdelivery.UserHandler
 	menudelivery.MenuHandler
 	chatdelivery.ChatHandler
+	cartdelivery.CartHandler
+	orderdelivery.OrderHandler
 	Unimplemented
 }

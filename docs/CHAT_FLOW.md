@@ -13,6 +13,9 @@
 - `internal/pkg/openrouter/openrouter.go` — фабрика llm.Client для OpenRouter
 - `internal/pkg/nvidia/nvidia.go` — фабрика llm.Client для NVIDIA NIM (build.nvidia.com)
 - `internal/chat/delivery/v1/http/chat.go` — SSE на клиента (через io.Pipe)
+- `internal/pkg/middleware/sseflush.go` — оборачивает ResponseWriter для SSE-роутов
+  и вызывает Flush после каждого Write (без него токены буферизуются и клиент видит
+  ответ только в финале стрима)
 
 ## Высокоуровневая схема
 
@@ -440,3 +443,34 @@ docker compose logs app | grep -F '"request_id":"f064ac7e-…"'
 6. **Дубликаты user-msg при ретрае LLM.** Если LLM упал по таймауту,
    user-msg уже в БД (намеренно — не теряем ввод). Пользователь
    нажимает «отправить» снова → второй user-msg. Сейчас не схлопывается.
+
+## Стриминг в реальном времени (A4)
+
+Цепочка отправки одного токена клиенту:
+
+1. LLM-клиент (`internal/pkg/llm`) парсит SSE-чанк OpenAI-провайдера, вызывает
+   `onDelta(content)`.
+2. `chatUsecase.SendMessage` колбэк → `cb.OnDelta(delta)` (delivery-уровень).
+3. Delivery-handler пишет SSE-фрейм `event: token\ndata: {"delta":"..."}\n\n`
+   в `io.PipeWriter`.
+4. `io.Pipe` блокирующий — `Read` на pipe-reader возвращается сразу с этими
+   байтами.
+5. oapi-codegen runtime внутри `VisitSendMessageResponse` делает `io.Copy(w, body)`
+   — копирует chunk из pipe в `http.ResponseWriter`.
+6. **`middleware.SSEFlush`** обёртывает `w`: после каждого `Write` зовёт
+   `Flusher.Flush()`. Без этого `bufio.Writer` стандартного `http.Server`
+   удерживает чанки до 4KB или до закрытия соединения.
+7. Клиент моментально получает SSE-event.
+
+Активация SSEFlush — только для путей `*/messages` с методом POST
+(единственный SSE-эндпоинт сейчас). Для остальных запросов — passthrough.
+
+Проверка вживую:
+```sh
+curl -N -b cookies.txt -H "X-CSRF-Token: $CSRF" \
+  -X POST http://localhost:8081/api/v1/chats/$CHAT/messages \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"что взять на ужин?"}'
+```
+Флаг `-N` (no-buffering) обязателен — без него уже curl сам буферизует stdout.
+Должны видеть SSE-события поштучно по мере генерации (а не вспышкой в финале).

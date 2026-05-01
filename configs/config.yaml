@@ -47,6 +47,13 @@ chat:
     list_default_limit: 20
     list_max_limit: 100
 
+cart: {}
+
+order:
+  delivery:
+    list_default_limit: 20
+    list_max_limit: 100
+
 rag:
   cohere:
     base_url: "https://api.cohere.com"

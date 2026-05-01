@@ -18,7 +18,10 @@
     { "key": "dishId",        "value": "",                              "type": "string" },
     { "key": "chatId",        "value": "",                              "type": "string" },
     { "key": "spicyTagId",    "value": "",                              "type": "string" },
-    { "key": "menuTotal",     "value": "",                              "type": "string" }
+    { "key": "menuTotal",     "value": "",                              "type": "string" },
+    { "key": "cartDishId",    "value": "",                              "type": "string" },
+    { "key": "cartDishId2",   "value": "",                              "type": "string" },
+    { "key": "orderId",       "value": "",                              "type": "string" }
   ],
   "event": [
     {
@@ -473,6 +476,453 @@
             "pm.test('204 No Content', () => pm.response.to.have.status(204));",
             "pm.collectionVariables.set('chatId', '');"
           ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "description": "Корзина пользователя. Один cart на user_id (UNIQUE), позиции в (cart_id, dish_id) с quantity 1..50.\n\nПредусловия: Auth → шаги 1–2 (Bootstrap + Register/Login). И в БД должны быть блюда (make seed). Шаг 1 этой папки берёт первые два доступных блюда из /menu и кладёт их id в коллекционные переменные cartDishId / cartDishId2.\n\nКлюч точки контроля — поле `available` у каждой позиции (false если is_available стало false после добавления) и массив `warnings` с code=dish_unavailable. total_minor — целое в копейках, считается по `available=true` позициям.",
+      "item": [
+        {
+          "name": "0. Pick test dish ids (GET /menu?limit=2)",
+          "description": "Берём первые 2 доступных блюда из меню и кладём их id в переменные cartDishId, cartDishId2.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?limit=2", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [{ "key": "limit", "value": "2" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const items = pm.response.json().items || [];",
+            "pm.test('have at least 2 dishes', () => pm.expect(items.length).to.be.at.least(2));",
+            "pm.collectionVariables.set('cartDishId',  String(items[0].id));",
+            "pm.collectionVariables.set('cartDishId2', String(items[1].id));",
+            "console.log('cartDishId =', items[0].id, '(' + items[0].name + ')');",
+            "console.log('cartDishId2 =', items[1].id, '(' + items[1].name + ')');"
+          ] } }]
+        },
+        {
+          "name": "1. Get empty cart (GET /cart)",
+          "description": "Корзина auto-create если её нет. Ожидание: items=[], total_minor=0, currency='RUB', warnings=[].",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('empty items', () => pm.expect(body.items).to.be.an('array'));",
+            "pm.test('total_minor = 0', () => pm.expect(body.total_minor).to.eql(0));",
+            "pm.test('currency = RUB', () => pm.expect(body.currency).to.eql('RUB'));",
+            "pm.test('no warnings', () => pm.expect(body.warnings).to.be.an('array').with.lengthOf(0));"
+          ] } }]
+        },
+        {
+          "name": "2. Add first dish (POST /cart/items, qty=2)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] },
+            "body": { "mode": "raw", "raw": "{\n  \"dish_id\": {{cartDishId}},\n  \"quantity\": 2,\n  \"note\": \"без лука\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "const item = pm.response.json();",
+            "pm.test('quantity = 2', () => pm.expect(item.quantity).to.eql(2));",
+            "pm.test('note = без лука', () => pm.expect(item.note).to.eql('без лука'));",
+            "pm.test('available', () => pm.expect(item.available).to.eql(true));",
+            "pm.test('line_total = price * 2', () => pm.expect(item.line_total_minor).to.eql(item.price_minor * 2));"
+          ] } }]
+        },
+        {
+          "name": "3. Add same dish again (qty=3) — quantity суммируется",
+          "description": "Добавляем то же блюдо. Ожидание: quantity = 2+3 = 5, не два разных item.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] },
+            "body": { "mode": "raw", "raw": "{\n  \"dish_id\": {{cartDishId}},\n  \"quantity\": 3\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.response.to.have.status(201));",
+            "pm.test('quantity = 5', () => pm.expect(pm.response.json().quantity).to.eql(5));"
+          ] } }]
+        },
+        {
+          "name": "4. Add second dish (qty=1)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] },
+            "body": { "mode": "raw", "raw": "{\n  \"dish_id\": {{cartDishId2}},\n  \"quantity\": 1\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.response.to.have.status(201));"
+          ] } }]
+        },
+        {
+          "name": "5. Get cart with 2 items",
+          "description": "Ожидание: 2 позиции, total_minor = sum(line_total_minor) для available, warnings пуст.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('2 items', () => pm.expect(body.items).to.have.lengthOf(2));",
+            "const expectedTotal = body.items.filter(i => i.available).reduce((s, i) => s + i.line_total_minor, 0);",
+            "pm.test('total_minor = sum of line totals', () => pm.expect(body.total_minor).to.eql(expectedTotal));",
+            "console.log('total_minor =', body.total_minor, 'копеек =', body.total_minor / 100, '₽');"
+          ] } }]
+        },
+        {
+          "name": "6. Patch quantity (PATCH /cart/items/{dish_id}) — set 7",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items/{{cartDishId}}", "host": ["{{baseUrl}}"], "path": ["cart", "items", "{{cartDishId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 7\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('quantity = 7', () => pm.expect(pm.response.json().quantity).to.eql(7));"
+          ] } }]
+        },
+        {
+          "name": "7. Patch note + sort_order",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items/{{cartDishId}}", "host": ["{{baseUrl}}"], "path": ["cart", "items", "{{cartDishId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"note\": \"больше остроты\",\n  \"sort_order\": 5\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const item = pm.response.json();",
+            "pm.test('note updated', () => pm.expect(item.note).to.eql('больше остроты'));",
+            "pm.test('sort_order = 5', () => pm.expect(item.sort_order).to.eql(5));"
+          ] } }]
+        },
+        {
+          "name": "8. Add quantity > 50 → 400 validation_failed",
+          "description": "Лимит quantity 1..50 на позицию.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] },
+            "body": { "mode": "raw", "raw": "{\n  \"dish_id\": {{cartDishId}},\n  \"quantity\": 51\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
+          ] } }]
+        },
+        {
+          "name": "9. Add nonexistent dish (id=999999) → 404 dish_not_found",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] },
+            "body": { "mode": "raw", "raw": "{\n  \"dish_id\": 999999,\n  \"quantity\": 1\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404', () => pm.response.to.have.status(404));",
+            "pm.test('code = dish_not_found', () => pm.expect(pm.response.json().error.code).to.eql('dish_not_found'));"
+          ] } }]
+        },
+        {
+          "name": "10. Patch nonexistent item → 404 cart_item_not_found",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items/999999", "host": ["{{baseUrl}}"], "path": ["cart", "items", "999999"] },
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 1\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404', () => pm.response.to.have.status(404));",
+            "pm.test('code = cart_item_not_found', () => pm.expect(pm.response.json().error.code).to.eql('cart_item_not_found'));"
+          ] } }]
+        },
+        {
+          "name": "11. Delete second item (DELETE /cart/items/{dish_id})",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cart/items/{{cartDishId2}}", "host": ["{{baseUrl}}"], "path": ["cart", "items", "{{cartDishId2}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('204', () => pm.response.to.have.status(204));"
+          ] } }]
+        },
+        {
+          "name": "12. Delete nonexistent item → 404",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cart/items/{{cartDishId2}}", "host": ["{{baseUrl}}"], "path": ["cart", "items", "{{cartDishId2}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404', () => pm.response.to.have.status(404));"
+          ] } }]
+        },
+        {
+          "name": "13. Clear cart (DELETE /cart)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('204', () => pm.response.to.have.status(204));"
+          ] } }]
+        },
+        {
+          "name": "14. Get empty cart again",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('empty', () => pm.expect(pm.response.json().items).to.have.lengthOf(0));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "description": "Заказы пользователя. Workflow: customer оформляет → status='accepted'; admin переводит дальше cooking → ready → in_delivery → closed; cancel — admin'ом.\n\nПредусловия:\n- Auth → шаги 1–2 (Bootstrap + Register/Login)\n- Profile → 5 (PATCH профиля): first_name, last_name, phone должны быть заполнены, иначе 400 profile_incomplete\n- Cart → шаги 0–5 (закинуть в корзину пару блюд)\n- В .env заполнен POSTGRES (миграции применены, есть таблицы orders/order_items)",
+      "item": [
+        {
+          "name": "1. Create order without filled profile → 400 profile_incomplete",
+          "description": "Перед оформлением профиль должен иметь first_name, last_name, phone. Этот шаг проверяет, что без них checkout валится с правильной ошибкой. Сначала чистим профиль.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
+            "body": { "mode": "raw", "raw": "{\n  \"fulfillment_type\": \"pickup\",\n  \"payment_method\": \"on_delivery\"\n}" }
+          },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "const baseUrl = pm.collectionVariables.get('baseUrl');",
+              "const csrf = pm.collectionVariables.get('csrf');",
+              "// Чистим контакты в профиле, чтобы checkout получил profile_incomplete",
+              "pm.sendRequest({",
+              "  url: baseUrl + '/profile',",
+              "  method: 'PATCH',",
+              "  header: { 'X-CSRF-Token': csrf || '', 'Content-Type': 'application/json' },",
+              "  body: { mode: 'raw', raw: JSON.stringify({ first_name: null, last_name: null, phone: null }) }",
+              "}, () => {});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('400', () => pm.response.to.have.status(400));",
+              "pm.test('code = profile_incomplete', () => pm.expect(pm.response.json().error.code).to.eql('profile_incomplete'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "2. Fill profile contacts (PATCH /profile)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"first_name\": \"Иван\",\n  \"last_name\": \"Петров\",\n  \"phone\": \"+79001234567\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "3. Create order with delivery but no address → 400 delivery_address_required",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
+            "body": { "mode": "raw", "raw": "{\n  \"fulfillment_type\": \"delivery\",\n  \"payment_method\": \"on_delivery\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));",
+            "pm.test('code = delivery_address_required', () => pm.expect(pm.response.json().error.code).to.eql('delivery_address_required'));"
+          ] } }]
+        },
+        {
+          "name": "4. Create order from empty cart → 400 cart_empty",
+          "description": "Сначала очистим корзину (на случай если что-то осталось). Потом checkout с пустой корзиной даёт 400.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
+            "body": { "mode": "raw", "raw": "{\n  \"fulfillment_type\": \"pickup\",\n  \"payment_method\": \"on_delivery\"\n}" }
+          },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "const baseUrl = pm.collectionVariables.get('baseUrl');",
+              "const csrf = pm.collectionVariables.get('csrf');",
+              "pm.sendRequest({",
+              "  url: baseUrl + '/cart',",
+              "  method: 'DELETE',",
+              "  header: { 'X-CSRF-Token': csrf || '' }",
+              "}, () => {});"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('400', () => pm.response.to.have.status(400));",
+              "pm.test('code = cart_empty', () => pm.expect(pm.response.json().error.code).to.eql('cart_empty'));"
+            ] } }
+          ]
+        },
+        {
+          "name": "5. Fill cart with 2 dishes",
+          "description": "Добавляем 2 позиции для последующего checkout. Использует cartDishId из папки Cart (если её ещё не запускал — сделай Cart → 0).",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] },
+            "body": { "mode": "raw", "raw": "{\n  \"dish_id\": {{cartDishId}},\n  \"quantity\": 2\n}" }
+          },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "if (!pm.collectionVariables.get('cartDishId')) { console.warn('cartDishId не задан, прогон Cart → 0 сначала'); }"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201', () => pm.response.to.have.status(201));",
+              "// Сразу добавим вторую позицию",
+              "const baseUrl = pm.collectionVariables.get('baseUrl');",
+              "const csrf = pm.collectionVariables.get('csrf');",
+              "const dishId2 = pm.collectionVariables.get('cartDishId2');",
+              "pm.sendRequest({",
+              "  url: baseUrl + '/cart/items',",
+              "  method: 'POST',",
+              "  header: { 'X-CSRF-Token': csrf || '', 'Content-Type': 'application/json' },",
+              "  body: { mode: 'raw', raw: JSON.stringify({ dish_id: Number(dishId2), quantity: 1 }) }",
+              "}, () => {});"
+            ] } }
+          ]
+        },
+        {
+          "name": "6. Create pickup order (happy path)",
+          "description": "Чек-аут: pickup + on_delivery, без delivery_address. Ожидание: 201 + Order со status=accepted, snapshot имени/цены, корзина очищена.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
+            "body": { "mode": "raw", "raw": "{\n  \"fulfillment_type\": \"pickup\",\n  \"payment_method\": \"on_delivery\",\n  \"notes\": \"Заберу через 30 мин\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201', () => pm.response.to.have.status(201));",
+            "const o = pm.response.json();",
+            "pm.test('status = accepted', () => pm.expect(o.status).to.eql('accepted'));",
+            "pm.test('fulfillment = pickup', () => pm.expect(o.fulfillment_type).to.eql('pickup'));",
+            "pm.test('items present', () => pm.expect(o.items).to.have.lengthOf.at.least(1));",
+            "pm.test('total_minor > 0', () => pm.expect(o.total_minor).to.be.above(0));",
+            "pm.test('total = sum of line_total_minor', () => {",
+            "  const sum = o.items.reduce((s, it) => s + it.line_total_minor, 0);",
+            "  pm.expect(o.total_minor).to.eql(sum);",
+            "});",
+            "pm.test('customer snapshot from profile', () => {",
+            "  pm.expect(o.customer_first_name).to.eql('Иван');",
+            "  pm.expect(o.customer_phone).to.eql('+79001234567');",
+            "});",
+            "pm.collectionVariables.set('orderId', o.id);",
+            "console.log('orderId =', o.id, 'total =', o.total_minor / 100, '₽');"
+          ] } }]
+        },
+        {
+          "name": "7. Cart is empty after checkout (GET /cart)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('cart cleared', () => pm.expect(pm.response.json().items).to.have.lengthOf(0));"
+          ] } }]
+        },
+        {
+          "name": "8. Get order by id (GET /orders/{id})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderId}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const o = pm.response.json();",
+            "pm.test('id matches', () => pm.expect(o.id).to.eql(pm.collectionVariables.get('orderId')));"
+          ] } }]
+        },
+        {
+          "name": "9. Get nonexistent order → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/orders/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["orders", "00000000-0000-0000-0000-000000000000"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404', () => pm.response.to.have.status(404));",
+            "pm.test('code = order_not_found', () => pm.expect(pm.response.json().error.code).to.eql('order_not_found'));"
+          ] } }]
+        },
+        {
+          "name": "10. List orders (GET /orders)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders?limit=20&offset=0",
+              "host": ["{{baseUrl}}"], "path": ["orders"],
+              "query": [{ "key": "limit", "value": "20" }, { "key": "offset", "value": "0" }]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('shape', () => pm.expect(body).to.have.all.keys('items','total','limit','offset'));",
+            "pm.test('has at least 1 order', () => pm.expect(body.total).to.be.at.least(1));",
+            "pm.test('first order has items', () => pm.expect(body.items[0].items).to.be.an('array').with.lengthOf.at.least(1));"
+          ] } }]
+        },
+        {
+          "name": "11. List orders filtered by status=accepted",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders?status=accepted",
+              "host": ["{{baseUrl}}"], "path": ["orders"],
+              "query": [{ "key": "status", "value": "accepted" }]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.response.json().items.forEach(o => pm.expect(o.status).to.eql('accepted'));"
+          ] } }]
+        },
+        {
+          "name": "12. Create delivery order with address (happy path)",
+          "description": "Перед запуском убедись, что в корзине лежит то, что хочешь видеть в заказе (Cart → 2/4). Запрос /orders НЕ трогает состав — он только оформляет текущую корзину.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
+            "body": { "mode": "raw", "raw": "{\n  \"fulfillment_type\": \"delivery\",\n  \"payment_method\": \"online_stub\",\n  \"delivery_address\": \"ул. Тверская, 12, кв. 5\",\n  \"delivery_notes\": \"домофон 1234\",\n  \"notes\": \"без перца\"\n}" }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 400 && (pm.response.json().error || {}).code === 'cart_empty') {",
+              "  console.warn('Корзина пуста — наполни через папку Cart перед запуском этого шага');",
+              "}",
+              "pm.test('201', () => pm.response.to.have.status(201));",
+              "const o = pm.response.json();",
+              "pm.test('fulfillment = delivery', () => pm.expect(o.fulfillment_type).to.eql('delivery'));",
+              "pm.test('payment = online_stub', () => pm.expect(o.payment_method).to.eql('online_stub'));",
+              "pm.test('delivery_address present', () => pm.expect(o.delivery_address).to.eql('ул. Тверская, 12, кв. 5'));",
+              "pm.test('delivery_notes present', () => pm.expect(o.delivery_notes).to.eql('домофон 1234'));"
+            ] } }
+          ]
         }
       ]
     },
@@ -1030,6 +1480,152 @@
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — orders",
+      "description": "Admin endpoints для заказов: список с фильтрами + смена статуса с проверкой state-machine.\n\nState-machine:\n  accepted   → cooking | cancelled\n  cooking    → ready   | cancelled\n  ready      → in_delivery | closed | cancelled\n  in_delivery → closed | cancelled\n  closed/cancelled — терминалы\n\nПредусловия:\n- Залогинься admin'ом через папку «Admin — login»\n- В БД есть хотя бы 1 заказ (можно создать через папку Orders под обычным customer'ом)",
+      "item": [
+        {
+          "name": "1. Capture orderId from list (GET /admin/orders)",
+          "description": "Берём первый заказ из списка и кладём его id в orderId.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/orders?limit=5", "host": ["{{baseUrl}}"], "path": ["admin", "orders"], "query": [{ "key": "limit", "value": "5" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('shape', () => pm.expect(body).to.have.all.keys('items','total','limit','offset'));",
+            "if (body.items.length > 0) {",
+            "  pm.collectionVariables.set('orderId', body.items[0].id);",
+            "  console.log('orderId =', body.items[0].id, 'status =', body.items[0].status);",
+            "} else {",
+            "  console.warn('Нет заказов в БД — создай через папку Orders сначала');",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "2. Filter by status=accepted",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/orders?status=accepted&limit=5", "host": ["{{baseUrl}}"], "path": ["admin", "orders"], "query": [
+              { "key": "status", "value": "accepted" },
+              { "key": "limit",  "value": "5" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.response.json().items.forEach(o => pm.expect(o.status).to.eql('accepted'));"
+          ] } }]
+        },
+        {
+          "name": "3. Get order by id (admin) — без проверки владельца",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const o = pm.response.json();",
+            "pm.test('id matches', () => pm.expect(o.id).to.eql(pm.collectionVariables.get('orderId')));"
+          ] } }]
+        },
+        {
+          "name": "4. Move accepted → cooking",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "status"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"cooking\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('status = cooking', () => pm.expect(pm.response.json().status).to.eql('cooking'));"
+          ] } }]
+        },
+        {
+          "name": "5. Move cooking → ready",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "status"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"ready\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('status = ready', () => pm.expect(pm.response.json().status).to.eql('ready'));"
+          ] } }]
+        },
+        {
+          "name": "6. Invalid backward: ready → cooking → 400",
+          "description": "Шаг назад запрещён state-machine'ом.",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "status"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"cooking\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));",
+            "pm.test('code = invalid_status_transition', () => pm.expect(pm.response.json().error.code).to.eql('invalid_status_transition'));"
+          ] } }]
+        },
+        {
+          "name": "7. Move ready → in_delivery (для delivery)",
+          "description": "Если у заказа fulfillment_type=delivery, его естественный путь ready → in_delivery → closed. Для pickup можно сразу ready → closed.",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "status"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"in_delivery\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('status = in_delivery', () => pm.expect(pm.response.json().status).to.eql('in_delivery'));"
+          ] } }]
+        },
+        {
+          "name": "8. Close: in_delivery → closed",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "status"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"closed\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('status = closed', () => pm.expect(pm.response.json().status).to.eql('closed'));"
+          ] } }]
+        },
+        {
+          "name": "9. Terminal: closed → anything → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/status", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "status"] },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"cancelled\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));",
+            "pm.test('code = invalid_status_transition', () => pm.expect(pm.response.json().error.code).to.eql('invalid_status_transition'));"
+          ] } }]
+        },
+        {
+          "name": "10. Customer не имеет доступа к /admin/orders → 403",
+          "description": "Прежде логаут admin'а, потом залогинься обычным test@example.com. Запрос должен вернуть 403.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/orders", "host": ["{{baseUrl}}"], "path": ["admin", "orders"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('403', () => pm.response.to.have.status(403));"
           ] } }]
         }
       ]
