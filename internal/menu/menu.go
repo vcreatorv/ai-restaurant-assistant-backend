@@ -54,6 +54,8 @@ type Usecase interface {
 	ListDishes(ctx context.Context, f usecasemodels.DishFilter) ([]usecasemodels.Dish, int, error)
 	// GetDish возвращает блюдо по идентификатору
 	GetDish(ctx context.Context, id int) (*usecasemodels.Dish, error)
+	// GetDishesByIDs batch-возврат блюд (порядок результатов не гарантирован)
+	GetDishesByIDs(ctx context.Context, ids []int) ([]usecasemodels.Dish, error)
 	// CreateDish создаёт блюдо
 	CreateDish(ctx context.Context, d usecasemodels.DishCreate) (*usecasemodels.Dish, error)
 	// UpdateDish обновляет блюдо
@@ -113,6 +115,8 @@ type Repository interface {
 	ListDishes(ctx context.Context, f repositorymodels.DishFilter) ([]repositorymodels.Dish, int, error)
 	// FindDishByID возвращает блюдо вместе с тегами
 	FindDishByID(ctx context.Context, id int) (*repositorymodels.Dish, error)
+	// FindDishesByIDs batch-возврат блюд по списку идентификаторов
+	FindDishesByIDs(ctx context.Context, ids []int) ([]repositorymodels.Dish, error)
 	// CreateDish вставляет блюдо с тегами в транзакции
 	CreateDish(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error
 	// UpdateDish обновляет блюдо и (если tagIDs != nil) перепривязывает теги

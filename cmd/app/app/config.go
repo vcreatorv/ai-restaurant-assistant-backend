@@ -11,6 +11,7 @@ import (
 	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/datasources"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/s3"
+	"github.com/example/ai-restaurant-assistant-backend/internal/rag"
 	"github.com/example/ai-restaurant-assistant-backend/internal/session"
 	"github.com/example/ai-restaurant-assistant-backend/internal/user"
 
@@ -42,6 +43,8 @@ type Config struct {
 	Menu menu.Config `yaml:"menu"`
 	// Chat параметры фичи chat
 	Chat chat.Config `yaml:"chat"`
+	// RAG параметры RAG-pipeline (Cohere + Qdrant)
+	RAG rag.Config `yaml:"rag"`
 }
 
 // HTTPConfig параметры HTTP-сервера и cookie
@@ -100,6 +103,24 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if v := os.Getenv("S3_PUBLIC_BASE_URL"); v != "" {
 		c.S3.PublicBaseURL = v
+	}
+	if v := os.Getenv("COHERE_API_KEY"); v != "" {
+		c.RAG.Cohere.APIKey = v
+	}
+	if v := os.Getenv("QDRANT_URL"); v != "" {
+		c.RAG.Qdrant.URL = v
+	}
+	if v := os.Getenv("QDRANT_API_KEY"); v != "" {
+		c.RAG.Qdrant.APIKey = v
+	}
+	if v := os.Getenv("OPENROUTER_API_KEY"); v != "" {
+		c.RAG.LLM.OpenRouter.APIKey = v
+	}
+	if v := os.Getenv("NVIDIA_API_KEY"); v != "" {
+		c.RAG.LLM.Nvidia.APIKey = v
+	}
+	if v := os.Getenv("LLM_PROVIDER"); v != "" {
+		c.RAG.LLM.Provider = v
 	}
 
 	if c.Postgres.DSN == "" {

@@ -113,9 +113,9 @@ func run() int {
 
 	switch *mode {
 	case modeUpdateDescriptions:
-		updated, err := updateDescriptions(ctx, pool, data.Dishes)
-		if err != nil {
-			slog.Error("update descriptions", "err", err)
+		updated, uerr := updateDescriptions(ctx, pool, data.Dishes)
+		if uerr != nil {
+			slog.Error("update descriptions", "err", uerr)
 			return 1
 		}
 		slog.Info("descriptions updated", "count", updated)

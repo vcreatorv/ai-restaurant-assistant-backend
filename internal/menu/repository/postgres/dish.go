@@ -156,6 +156,41 @@ func (r *Repository) FindDishByID(ctx context.Context, id int) (*repositorymodel
 	return d, nil
 }
 
+// FindDishesByIDs возвращает блюда по массиву идентификаторов
+func (r *Repository) FindDishesByIDs(
+	ctx context.Context,
+	ids []int,
+) ([]repositorymodels.Dish, error) {
+	if len(ids) == 0 {
+		return []repositorymodels.Dish{}, nil
+	}
+	query := `SELECT ` + dishColumns + ` FROM dishes WHERE id = ANY($1)`
+	rows, err := r.pool.Query(ctx, query, ids)
+	if err != nil {
+		return nil, fmt.Errorf("query dishes by ids: %w", err)
+	}
+	defer rows.Close()
+
+	dishes := make([]repositorymodels.Dish, 0, len(ids))
+	dishIDs := make([]int, 0, len(ids))
+	for rows.Next() {
+		d, err := scanDish(rows)
+		if err != nil {
+			return nil, err
+		}
+		dishes = append(dishes, *d)
+		dishIDs = append(dishIDs, d.ID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows dishes: %w", err)
+	}
+
+	if err := r.attachTags(ctx, dishes, dishIDs); err != nil {
+		return nil, err
+	}
+	return dishes, nil
+}
+
 // CreateDish вставляет блюдо и его связи с тегами
 func (r *Repository) CreateDish(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error {
 	tx, err := r.pool.Begin(ctx)

@@ -1,17 +1,18 @@
 package http
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
+	"io"
 
 	v1 "github.com/example/ai-restaurant-assistant-backend/cmd/app/app/v1"
+	"github.com/example/ai-restaurant-assistant-backend/internal/chat"
 	apimodels "github.com/example/ai-restaurant-assistant-backend/internal/models/api"
-	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/apperrors"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/logger"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/middleware"
+
 	"github.com/google/uuid"
 )
 
@@ -106,8 +107,8 @@ func (h ChatHandler) DeleteChat(
 }
 
 // SendMessage реализует POST /chats/{id}/messages.
-// На A1 ассистент отвечает эхо-заглушкой; стрим SSE собирается синхронно в буфер и
-// отдаётся клиенту целиком через io.Reader-механику strict-сервера.
+// io.Pipe позволяет стримить SSE через strict-server: usecase в горутине пишет
+// события в pw, io.Copy из стрикта читает из pr и отдаёт клиенту чанками.
 func (h ChatHandler) SendMessage(
 	ctx context.Context,
 	request v1.SendMessageRequestObject,
@@ -119,17 +120,39 @@ func (h ChatHandler) SendMessage(
 	if request.Body == nil || request.Body.Content == "" {
 		return nil, apperrors.ErrBadRequest
 	}
-	start := time.Now()
-	_, assistantMsg, err := h.usecase.SendMessage(ctx, userID, request.Id, request.Body.Content)
-	if err != nil {
-		return nil, err
-	}
 
-	body := buildSSEStream(assistantMsg, time.Since(start))
-	return v1.SendMessage200TexteventStreamResponse{
-		Body:          body,
-		ContentLength: int64(body.Len()),
-	}, nil
+	pr, pw := io.Pipe()
+	go func() {
+		defer func() { _ = pw.Close() }()
+		runErr := h.usecase.SendMessage(ctx, userID, request.Id, request.Body.Content, chat.SendCallbacks{
+			OnMeta: func(m chat.MetaEvent) error {
+				return writeSSEEvent(pw, "meta", map[string]any{
+					"message_id":           m.MessageID,
+					"recommended_dish_ids": coalesceInts(m.RecommendedDishIDs),
+				})
+			},
+			OnDelta: func(delta string) error {
+				return writeSSEEvent(pw, "token", map[string]any{"delta": delta})
+			},
+			OnDone: func(d chat.DoneEvent) error {
+				return writeSSEEvent(pw, "done", map[string]any{
+					"latency_ms": d.LatencyMS,
+					"tokens_in":  d.TokensIn,
+					"tokens_out": d.TokensOut,
+					"model":      d.Model,
+				})
+			},
+		})
+		if runErr != nil {
+			logger.ForCtx(ctx).Error("send message", "err", runErr)
+			_ = writeSSEEvent(pw, "error", map[string]any{
+				"code":    "upstream_failure",
+				"message": "Failed to generate assistant response",
+			})
+		}
+	}()
+
+	return v1.SendMessage200TexteventStreamResponse{Body: pr}, nil
 }
 
 // requireUserID возвращает userID из контекстной сессии или ErrUnauthenticated
@@ -172,33 +195,19 @@ func (h ChatHandler) resolveMessagesLimit(limit *int) int {
 	return l
 }
 
-// buildSSEStream собирает SSE-стрим (meta → token → done) в буфер.
-// На A1 token отдаётся одним событием с полным echo-ответом; на A3 будет настоящий
-// токен-стрим из LLM, который потребует обходить strict-сервер.
-func buildSSEStream(assistantMsg *usecasemodels.Message, elapsed time.Duration) *bytes.Buffer {
-	buf := &bytes.Buffer{}
-	writeSSEEvent(buf, "meta", map[string]any{
-		"message_id":           assistantMsg.ID,
-		"recommended_dish_ids": coalesceInts(assistantMsg.RecommendedDishIDs),
-	})
-	writeSSEEvent(buf, "token", map[string]any{
-		"delta": assistantMsg.Content,
-	})
-	writeSSEEvent(buf, "done", map[string]any{
-		"tokens_in":  0,
-		"tokens_out": 0,
-		"latency_ms": elapsed.Milliseconds(),
-	})
-	return buf
-}
-
-func writeSSEEvent(buf *bytes.Buffer, event string, payload any) {
+// writeSSEEvent сериализует payload в JSON и пишет SSE-event в writer
+func writeSSEEvent(w io.Writer, event string, payload any) error {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		raw = []byte(`{}`)
 	}
-	fmt.Fprintf(buf, "event: %s\n", event)
-	fmt.Fprintf(buf, "data: %s\n\n", raw)
+	if _, err := fmt.Fprintf(w, "event: %s\n", event); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "data: %s\n\n", raw); err != nil {
+		return err
+	}
+	return nil
 }
 
 func coalesceInts(s []int) []int {

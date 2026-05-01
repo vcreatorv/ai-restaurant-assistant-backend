@@ -17,6 +17,7 @@ type mockRepo struct {
 	deleteChatFn           func(ctx context.Context, id uuid.UUID) error
 	appendMessageFn        func(ctx context.Context, m *repositorymodels.Message) error
 	listMessagesFn         func(ctx context.Context, chatID uuid.UUID, limit int, before *uuid.UUID) ([]repositorymodels.Message, bool, error)
+	findFirstUserMessageFn func(ctx context.Context, chatID, excludeID uuid.UUID) (*repositorymodels.Message, error)
 }
 
 func (m *mockRepo) CreateChat(ctx context.Context, c *repositorymodels.Chat) error {
@@ -49,6 +50,15 @@ func (m *mockRepo) ListMessages(
 	ctx context.Context, chatID uuid.UUID, limit int, before *uuid.UUID,
 ) ([]repositorymodels.Message, bool, error) {
 	return m.listMessagesFn(ctx, chatID, limit, before)
+}
+
+func (m *mockRepo) FindFirstUserMessage(
+	ctx context.Context, chatID, excludeID uuid.UUID,
+) (*repositorymodels.Message, error) {
+	if m.findFirstUserMessageFn == nil {
+		return nil, nil
+	}
+	return m.findFirstUserMessageFn(ctx, chatID, excludeID)
 }
 
 // mockUUID детерминированный генератор UUID; next выдаётся первым, потом nextN[0..]

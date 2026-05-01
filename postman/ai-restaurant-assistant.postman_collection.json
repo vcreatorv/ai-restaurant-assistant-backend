@@ -16,7 +16,9 @@
     { "key": "categoryId",    "value": "",                              "type": "string" },
     { "key": "tagId",         "value": "",                              "type": "string" },
     { "key": "dishId",        "value": "",                              "type": "string" },
-    { "key": "chatId",        "value": "",                              "type": "string" }
+    { "key": "chatId",        "value": "",                              "type": "string" },
+    { "key": "spicyTagId",    "value": "",                              "type": "string" },
+    { "key": "menuTotal",     "value": "",                              "type": "string" }
   ],
   "event": [
     {
@@ -393,7 +395,7 @@
         },
         {
           "name": "4. Send message (POST /chats/{id}/messages, SSE)",
-          "description": "Отвечает SSE-стримом: event: meta → event: token → event: done. На A1 ассистент эхо-отвечает; реальный LLM появится в шаге A3.",
+          "description": "Отвечает SSE-стримом: event: meta → event: token → event: done. С шага A3 ассистент отвечает реальным LLM через RAG. Полный набор сценариев — в папке «RAG + LLM (A3)».",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -406,8 +408,7 @@
             "const text = pm.response.text();",
             "pm.test('contains meta event',  () => pm.expect(text).to.include('event: meta'));",
             "pm.test('contains token event', () => pm.expect(text).to.include('event: token'));",
-            "pm.test('contains done event',  () => pm.expect(text).to.include('event: done'));",
-            "pm.test('echo includes prompt', () => pm.expect(text).to.include('echo: Что у вас острого без молочки?'));"
+            "pm.test('contains done event',  () => pm.expect(text).to.include('event: done'));"
           ] } }]
         },
         {
@@ -471,6 +472,564 @@
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('204 No Content', () => pm.response.to.have.status(204));",
             "pm.collectionVariables.set('chatId', '');"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "RAG + LLM (A3)",
+      "description": "Полный флоу проверки RAG-pipeline и LLM-ответа.\n\nПредусловия:\n1) Auth → шаги 1–2 (Bootstrap session + Register), чтобы быть customer'ом.\n2) make seed (193 блюда в PG) и make embed-menu (193 точки в Qdrant).\n3) В .env заполнены COHERE_API_KEY и OPENROUTER_API_KEY.\n\nКаждый шаг выводит в консоль Postman фрагмент SSE (token-события и meta), чтобы ты мог глазами проверить ответ модели.\n\nВажно: SSE-ответы LLM приходят 3–8 секунд (free-tier OpenRouter может тормозить). Postman показывает поток в Body и в Test Results.",
+      "item": [
+        {
+          "name": "1. Set profile (allergens=dairy) — для проверки hard-фильтра",
+          "description": "Задаём аллерген, чтобы pre-filter Qdrant физически отрезал блюда с молочкой ещё до LLM.",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"allergens\": [\"dairy\"],\n  \"dietary\": []\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('allergens contains dairy', () => pm.expect(body.allergens).to.include('dairy'));"
+          ] } }]
+        },
+        {
+          "name": "2. Active chat (получить chatId)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/chats/active", "host": ["{{baseUrl}}"], "path": ["chats", "active"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.collectionVariables.set('chatId', body.id);",
+            "console.log('chatId =', body.id);"
+          ] } }]
+        },
+        {
+          "name": "3. Happy path — «что у вас острого без молочки?»",
+          "description": "Ожидание: ассистент рекомендует 1–3 острых блюда без dairy. Шаги pipeline:\nembed → Qdrant.search (must_not allergens=dairy) → Cohere.rerank → top-5 в LLM → SSE стрим.\n\nВ консоли Postman будут события: meta(recommended_dish_ids), серия token(delta), done(usage).",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"что у вас острого без молочки?\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('content-type SSE', () => pm.expect(pm.response.headers.get('Content-Type') || '').to.include('text/event-stream'));",
+            "const text = pm.response.text();",
+            "pm.test('meta present',  () => pm.expect(text).to.include('event: meta'));",
+            "pm.test('token present', () => pm.expect(text).to.include('event: token'));",
+            "pm.test('done present',  () => pm.expect(text).to.include('event: done'));",
+            "pm.test('no error event', () => pm.expect(text).to.not.include('event: error'));",
+            "// Достаём текст ответа ассистента: склеиваем все delta из token-событий.",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => {",
+            "  try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }",
+            "});",
+            "const reply = tokens.join('');",
+            "console.log('=== ASSISTANT REPLY ===\\n' + reply);",
+            "// Достаём recommended_dish_ids из meta.",
+            "const metaMatch = text.match(/event: meta\\ndata: ({.*})/);",
+            "if (metaMatch) {",
+            "  try {",
+            "    const meta = JSON.parse(metaMatch[1]);",
+            "    console.log('recommended_dish_ids =', JSON.stringify(meta.recommended_dish_ids));",
+            "    pm.test('recommended_dish_ids array', () => pm.expect(meta.recommended_dish_ids).to.be.an('array'));",
+            "  } catch (e) { console.warn('meta parse fail:', e); }",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "4. Hard-allergen test — «хочу пиццу с сыром»",
+          "description": "С аллергеном dairy в профиле сырная пицца не должна попасть в выдачу: Qdrant pre-filter физически её отрежет до LLM. Ожидание: ассистент честно говорит «такого без молочки нет» и предлагает близкое.\n\nПосле — глянь в БД chat_messages.meta.retrieved_ids: блюда с dairy в составе там быть не должны.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"хочу пиццу с сыром\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "pm.test('done present', () => pm.expect(text).to.include('event: done'));",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => {",
+            "  try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }",
+            "});",
+            "console.log('=== ASSISTANT REPLY ===\\n' + tokens.join(''));",
+            "const metaMatch = text.match(/event: meta\\ndata: ({.*})/);",
+            "if (metaMatch) {",
+            "  const meta = JSON.parse(metaMatch[1]);",
+            "  console.log('recommended_dish_ids =', JSON.stringify(meta.recommended_dish_ids));",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "5. Контекст диалога — «расскажи про Том-ям подробнее»",
+          "description": "Ассистент должен описать конкретно Том-ям, не выдать новый список. Работает за счёт contextualQuery + chat history + prior_recommended.\n\nЕсли в шаге 3 ассистент не упомянул Том-ям, замени имя в content (например — «расскажи про крылья куриные подробнее»).",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"расскажи про Том-ям подробнее\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => {",
+            "  try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }",
+            "});",
+            "const reply = tokens.join('');",
+            "console.log('=== ASSISTANT REPLY ===\\n' + reply);",
+            "pm.test('mentions Том-ям or Том ям', () => pm.expect(reply.toLowerCase()).to.match(/том[-\\s]?ям/));"
+          ] } }]
+        },
+        {
+          "name": "6. Off-topic — «расскажи как решить квадратное уравнение»",
+          "description": "Ассистент должен вежливо переключить на меню (правило 5 из system prompt). recommended_dish_ids — пустой массив.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"расскажи как решить квадратное уравнение\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => {",
+            "  try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }",
+            "});",
+            "console.log('=== ASSISTANT REPLY ===\\n' + tokens.join(''));"
+          ] } }]
+        },
+        {
+          "name": "7. Прощание — «спасибо, понятно»",
+          "description": "Короткий ответ без рекомендаций.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"спасибо, понятно\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => {",
+            "  try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }",
+            "});",
+            "console.log('=== ASSISTANT REPLY ===\\n' + tokens.join(''));"
+          ] } }]
+        },
+        {
+          "name": "8. Get chat — вся история диалога",
+          "description": "Должно быть 14 сообщений: по паре user/assistant на каждый из шагов 3–7. Сортировка ASC по created_at.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chats/{{chatId}}?messages_limit=50",
+              "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}"],
+              "query": [{ "key": "messages_limit", "value": "50" }]
+            }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('messages array', () => pm.expect(body.messages).to.be.an('array').and.have.lengthOf.at.least(2));",
+            "pm.test('ASC by created_at', () => {",
+            "  for (let i = 1; i < body.messages.length; i++) {",
+            "    pm.expect(new Date(body.messages[i].created_at).getTime())",
+            "      .to.be.at.least(new Date(body.messages[i-1].created_at).getTime());",
+            "  }",
+            "});",
+            "console.log('=== MESSAGES ===');",
+            "body.messages.forEach((m, i) => {",
+            "  const preview = (m.content || '').slice(0, 80).replace(/\\n/g, ' ');",
+            "  const ids = m.recommended_dish_ids ? JSON.stringify(m.recommended_dish_ids) : '[]';",
+            "  console.log(`#${i} [${m.role}] ${preview}  recommended=${ids}`);",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "9. Empty content — должно быть 400",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+            "const code = (pm.response.json().error || {}).code;",
+            "pm.test('code = validation_failed', () => pm.expect(code).to.eql('validation_failed'));"
+          ] } }]
+        },
+        {
+          "name": "9.1. Сборка ужина — проверка companion-блока",
+          "description": "Запрос «соберите мне ужин» должен поднять разнотипный набор: основное (мясо/рыба/закуска) + соус + гарнир + хлеб + десерт + напиток. В meta.companion_ids в БД должно быть несколько id из категорий Соусы/Гарниры/Закуски/Десерты/Напитки безалкогольные.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"соберите мне ужин из чего-то мясного\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => { try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }});",
+            "console.log('=== ASSISTANT REPLY ===\\n' + tokens.join(''));",
+            "// Проверь в БД: meta.companion_ids должен содержать несколько id из Соусов/Гарниров/Закусок/Десертов/Напитков"
+          ] } }]
+        },
+        {
+          "name": "9.2. Anchor — сохранение рамки диалога",
+          "description": "После 3+ ходов ассистент должен помнить «изначальный запрос». Здесь шлём уточнение про какую-то деталь — ассистент не должен сбрасывать рамку «мясного ужина».",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"а что-нибудь поплотнее можешь?\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => { try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }});",
+            "const reply = tokens.join('').toLowerCase();",
+            "console.log('=== ASSISTANT REPLY ===\\n' + tokens.join(''));",
+            "pm.test('тема — мясо/гриль/стейк (а не салаты/десерты)', () => {",
+            "  const meatish = /мяс|стейк|гриль|говяд|свин|ягнят|шашлык|рёбр|реб|кесадиль|пиканья|колбаск|щёк|щек/.test(reply);",
+            "  pm.expect(meatish, 'ответ должен оставаться в рамке мясного ужина').to.be.true;",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "10. Cleanup — снять аллергены из профиля",
+          "description": "Возвращаем пустой allergens, чтобы не мешало последующим тестам в других папках.",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"allergens\": [],\n  \"dietary\": []\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Filters & profiles",
+      "description": "Готовые сценарии для проверки фильтров каталога (allergens / dietary / tag_ids / cuisine / q) и hard-фильтров RAG-чата (профиль гостя — allergens/dietary).\n\nКак пользоваться:\n- Запросы 1–9 щупают /menu публично (можно как guest).\n- Запросы 10–14 проверяют, что профиль пользователя влияет на выдачу LLM (Qdrant pre-filter).\n- Запросы 15–17 — частые комбинации тегов (Острое / Лёгкое / Шеф рекомендует) через поиск по slug.\n\nПередтест: пройди Auth → 1.Bootstrap + 2.Register или 9.Login. Для запроса /menu cookies не обязательны, для /chats и /profile — обязательны.\n\nДанные seed-меню (важно для понимания, что ожидать в выдаче):\n- Аллергены в меню: gluten(41), dairy(52), soy(12), nuts(11), shellfish(10), fish(8), eggs(8), sesame(7), mustard(7), celery(3), peanuts(2).\n- Диеты в меню: vegetarian(113), vegan(87), lactose_free(141), gluten_free(152), halal(10).\n- Кухни: european(122), american(31), italian(22), asian(9), japanese(4), french(4), russian(1).\n- Tag slugs: hit, new, spicy, chef, big, share, light, coffee, tea, lemonade, wine, beer.\n",
+      "item": [
+        {
+          "name": "1. Menu без фильтров (baseline)",
+          "description": "Просто получаем общий total — точка отсчёта для последующих фильтров.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?limit=5&offset=0", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "limit",  "value": "5" },
+              { "key": "offset", "value": "0" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('total dishes (available=true):', body.total);",
+            "pm.collectionVariables.set('menuTotal', String(body.total));"
+          ] } }]
+        },
+        {
+          "name": "2. exclude_allergens=dairy (один аллерген)",
+          "description": "Должно вернуться меньше блюд, чем в шаге 1: dairy исключает ~52 блюда из 192.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?exclude_allergens=dairy&limit=5", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "exclude_allergens", "value": "dairy" },
+              { "key": "limit", "value": "5" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('without dairy:', body.total);",
+            "pm.test('меньше baseline', () => pm.expect(body.total).to.be.below(Number(pm.collectionVariables.get('menuTotal'))));",
+            "pm.test('ни в одном блюде нет dairy', () => body.items.forEach(d => pm.expect(d.allergens || []).to.not.include('dairy')));"
+          ] } }]
+        },
+        {
+          "name": "3. exclude_allergens=dairy&exclude_allergens=gluten (несколько — OR)",
+          "description": "Семантика: блюдо исключается, если хотя бы один из перечисленных аллергенов в составе (PG-оператор &&). Total ещё ниже.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?exclude_allergens=dairy&exclude_allergens=gluten&limit=5", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "exclude_allergens", "value": "dairy" },
+              { "key": "exclude_allergens", "value": "gluten" },
+              { "key": "limit", "value": "5" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('without dairy & gluten:', body.total);",
+            "pm.test('нет dairy и gluten', () => body.items.forEach(d => {",
+            "  pm.expect(d.allergens || []).to.not.include('dairy');",
+            "  pm.expect(d.allergens || []).to.not.include('gluten');",
+            "}));"
+          ] } }]
+        },
+        {
+          "name": "4. dietary=vegan",
+          "description": "Семантика: блюдо включается, если все запрошенные диеты есть в массиве dietary блюда (PG-оператор @>). В меню ~87 веганских блюд.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?dietary=vegan&limit=10", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "dietary", "value": "vegan" },
+              { "key": "limit",   "value": "10" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('vegan total:', body.total);",
+            "pm.test('все веганские', () => body.items.forEach(d => pm.expect(d.dietary || []).to.include('vegan')));"
+          ] } }]
+        },
+        {
+          "name": "5. dietary=vegan&dietary=gluten_free (AND)",
+          "description": "Блюдо должно быть и веганским, и без глютена одновременно.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?dietary=vegan&dietary=gluten_free&limit=10", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "dietary", "value": "vegan" },
+              { "key": "dietary", "value": "gluten_free" },
+              { "key": "limit",   "value": "10" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('vegan & gluten_free total:', body.total);",
+            "pm.test('покрывают обе диеты', () => body.items.forEach(d => {",
+            "  pm.expect(d.dietary || []).to.include('vegan');",
+            "  pm.expect(d.dietary || []).to.include('gluten_free');",
+            "}));"
+          ] } }]
+        },
+        {
+          "name": "6. dietary=halal",
+          "description": "В меню ровно 10 халяльных блюд — удобный edge-case на маленькую выдачу.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?dietary=halal&limit=20", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "dietary", "value": "halal" },
+              { "key": "limit",   "value": "20" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('halal total:', body.total);",
+            "pm.test('10 халяльных в seed', () => pm.expect(body.total).to.eql(10));"
+          ] } }]
+        },
+        {
+          "name": "7. q=стейк (поиск по названию)",
+          "description": "ILIKE %стейк% по полю name. Должны вернуться все стейки и стейк-салаты.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?q=стейк&limit=20", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "q",     "value": "стейк" },
+              { "key": "limit", "value": "20" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('q=стейк total:', body.total);",
+            "pm.test('в названии есть стейк', () => body.items.forEach(d => pm.expect(d.name.toLowerCase()).to.include('стейк')));"
+          ] } }]
+        },
+        {
+          "name": "8. q=том-ям (точечный)",
+          "description": "Должно вернуться 1–2 блюда (Том-ям и Том-ям с креветками).",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?q=том-ям", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "q", "value": "том-ям" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('q=том-ям items:', body.items.map(d => d.name));",
+            "pm.test('1–2 блюда', () => pm.expect(body.total).to.be.within(1, 3));"
+          ] } }]
+        },
+        {
+          "name": "9. Комбо: vegan + без глютена + поиск 'салат'",
+          "description": "Должны остаться только веганские безглютеновые салаты.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?dietary=vegan&dietary=gluten_free&q=салат&limit=20", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "dietary", "value": "vegan" },
+              { "key": "dietary", "value": "gluten_free" },
+              { "key": "q",       "value": "салат" },
+              { "key": "limit",   "value": "20" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('vegan + gluten_free + salad:', body.items.map(d => d.name));"
+          ] } }]
+        },
+        {
+          "name": "10. Профиль: allergens=[dairy] → чат не должен рекомендовать сырную пиццу",
+          "description": "Готовим стенд для шага 11. Сначала задаём профиль, потом отправляем сообщение в чат и смотрим, что Qdrant pre-filter отрезал блюда с dairy.",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"allergens\": [\"dairy\"],\n  \"dietary\": []\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "11. Чат с allergens=[dairy] — «хочу пиццу с сыром»",
+          "description": "Ассистент должен честно сказать «без молочки нет» или предложить безмолочную альтернативу. В meta.reranked_ids не должно быть блюд с dairy.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"хочу пиццу с сыром\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => { try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }});",
+            "console.log('=== REPLY ===\\n' + tokens.join(''));"
+          ] } }]
+        },
+        {
+          "name": "12. Профиль: dietary=[vegan] — «что у вас есть на ужин?»",
+          "description": "Ставим веганскую диету. После — чат должен предлагать только веганские блюда (Qdrant must содержит vegan).",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"allergens\": [],\n  \"dietary\": [\"vegan\"]\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "13. Чат с dietary=[vegan] — «что взять на ужин?»",
+          "description": "Ассистент должен предложить только веганские блюда. Проверь meta.reranked_ids: каждое блюдо должно содержать `vegan` в dietary.",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"что взять на ужин?\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => { try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }});",
+            "console.log('=== REPLY ===\\n' + tokens.join(''));"
+          ] } }]
+        },
+        {
+          "name": "14. Профиль: allergens=[shellfish,fish] — «что-нибудь морское»",
+          "description": "Edge: запрашиваем именно морское, но всё морское отрезано pre-filter'ом. Ассистент должен честно сказать «нет подходящих» и предложить близкое (мясное/курицу/овощное).",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/chats/{{chatId}}/messages", "host": ["{{baseUrl}}"], "path": ["chats", "{{chatId}}", "messages"] },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"что-нибудь морское\"\n}" }
+          },
+          "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+            "const baseUrl = pm.collectionVariables.get('baseUrl');",
+            "const csrf = pm.collectionVariables.get('csrf');",
+            "pm.sendRequest({",
+            "  url: baseUrl + '/profile',",
+            "  method: 'PATCH',",
+            "  header: { 'X-CSRF-Token': csrf || '', 'Content-Type': 'application/json' },",
+            "  body: { mode: 'raw', raw: JSON.stringify({ allergens: ['shellfish','fish'], dietary: [] }) }",
+            "}, () => {});"
+          ] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const text = pm.response.text();",
+            "const tokens = [...text.matchAll(/event: token\\ndata: ({.*})/g)].map(m => { try { return JSON.parse(m[1]).delta || ''; } catch (e) { return ''; }});",
+            "console.log('=== REPLY ===\\n' + tokens.join(''));"
+          ] } }]
+        },
+        {
+          "name": "15. Меню по тегу 'Острое' (slug=spicy)",
+          "description": "Сначала достаём id тега spicy, потом фильтруем меню по нему. В seed ~20 блюд с этим тегом.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/tags", "host": ["{{baseUrl}}"], "path": ["admin", "tags"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const items = pm.response.json().items || [];",
+            "const spicy = items.find(t => t.slug === 'spicy');",
+            "if (spicy) {",
+            "  pm.collectionVariables.set('spicyTagId', String(spicy.id));",
+            "  console.log('spicy tag id =', spicy.id);",
+            "} else {",
+            "  console.warn('тег spicy не найден — возможно ты не залогинен под admin'ом, попробуй вручную через GET /menu?tag_ids=...');",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "16. Меню по tag_ids=spicy",
+          "description": "Использует spicyTagId из шага 15. Все блюда должны содержать тег `spicy` в массиве tags.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/menu?tag_ids={{spicyTagId}}&limit=25", "host": ["{{baseUrl}}"], "path": ["menu"], "query": [
+              { "key": "tag_ids", "value": "{{spicyTagId}}" },
+              { "key": "limit",   "value": "25" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "console.log('spicy total:', body.total);",
+            "pm.test('у каждого блюда есть тег spicy', () => body.items.forEach(d => {",
+            "  const slugs = (d.tags || []).map(t => t.slug);",
+            "  pm.expect(slugs).to.include('spicy');",
+            "}));"
+          ] } }]
+        },
+        {
+          "name": "17. Cleanup — снять профиль",
+          "description": "Возвращаем пустой профиль, чтобы не мешать другим тестам.",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"] },
+            "body": { "mode": "raw", "raw": "{\n  \"allergens\": [],\n  \"dietary\": []\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));"
           ] } }]
         }
       ]

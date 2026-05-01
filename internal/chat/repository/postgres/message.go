@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
@@ -38,6 +39,15 @@ const (
 		  AND created_at < (SELECT created_at FROM chat_messages WHERE id = $2)
 		ORDER BY created_at DESC, id DESC
 		LIMIT $3`
+
+	firstUserMessageQuery = `
+		SELECT ` + messageColumns + `
+		FROM chat_messages
+		WHERE chat_id = $1
+		  AND role = 'user'
+		  AND id <> $2
+		ORDER BY created_at ASC, id ASC
+		LIMIT 1`
 )
 
 // AppendMessage сохраняет сообщение и обновляет last_message_at чата в одной транзакции
@@ -117,6 +127,23 @@ func (r *Repository) ListMessages(
 		out = out[:limit]
 	}
 	return out, hasMore, nil
+}
+
+// FindFirstUserMessage возвращает хронологически первое user-сообщение чата (без excludeID)
+func (r *Repository) FindFirstUserMessage(
+	ctx context.Context,
+	chatID uuid.UUID,
+	excludeID uuid.UUID,
+) (*repositorymodels.Message, error) {
+	row := r.pool.QueryRow(ctx, firstUserMessageQuery, chatID, excludeID)
+	m, err := scanMessage(row)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query first user message: %w", err)
+	}
+	return m, nil
 }
 
 func scanMessage(row pgx.Row) (*repositorymodels.Message, error) {

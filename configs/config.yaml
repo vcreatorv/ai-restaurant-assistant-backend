@@ -3,7 +3,7 @@ http:
   cookie_secure: false
 
 log:
-  level: info
+  level: debug   # info|debug|warn|error; в dev держим debug, чтобы видеть тайминги RAG-stages и тексты промптов
 
 postgres:
   dsn: ""
@@ -46,3 +46,69 @@ chat:
     messages_max_limit: 200
     list_default_limit: 20
     list_max_limit: 100
+
+rag:
+  cohere:
+    base_url: "https://api.cohere.com"
+    embed_model: "embed-multilingual-v3.0"
+    embed_dim: 1024
+    rerank_model: "rerank-multilingual-v3.0"
+    request_timeout: 60s   # из РФ до Cohere ходить долго; разовые TLS-handshake-таймауты бывают
+    embed_batch_size: 96   # лимит Cohere embed v2
+    retry_attempts: 2      # 1 повтор при сетевой ошибке (TLS handshake timeout, dial timeout)
+    retry_delay: 500ms
+
+  qdrant:
+    url: "http://localhost:6333"
+    api_key: ""             # переопределяется QDRANT_API_KEY env
+    request_timeout: 10s
+    collection: "dishes"
+    distance: "Cosine"      # одна из: Cosine, Dot, Euclid
+    hnsw:
+      m: 16
+      ef_construct: 100
+    upsert_batch_size: 96   # сколько точек заливать одной операцией
+
+  llm:
+    provider: openrouter                           # openrouter | nvidia — переопределяется LLM_PROVIDER env
+    common:
+      temperature: 0.4
+      max_tokens: 1500                             # free-tier модели часто тратят токены на reasoning/повторы; без запаса упираемся в length и теряем JSON-блок
+      request_timeout: 90s                         # на весь HTTP-запрос целиком
+      first_token_timeout: 30s                     # на холодном старте openrouter/free и некоторые модели NVIDIA отвечают до 20s — даём запас
+    openrouter:
+      base_url: "https://openrouter.ai/api/v1"
+      api_key: ""                                  # переопределяется OPENROUTER_API_KEY env
+      model: "openrouter/free"
+      referer: "http://localhost:8081"             # для аналитики OpenRouter (HTTP-Referer)
+      title: "AI Restaurant Assistant"             # для аналитики OpenRouter (X-Title)
+    nvidia:
+      base_url: "https://integrate.api.nvidia.com/v1"
+      api_key: ""                                                  # переопределяется NVIDIA_API_KEY env (nvapi-... с build.nvidia.com)
+      model: "meta/llama-4-maverick-17b-128e-instruct"             # MoE (17B активных, 128 экспертов), multilingual, non-reasoning, быстрый. Альтернативы: mistralai/mistral-nemotron, mistralai/mistral-large-3-675b-instruct-2512. ИЗБЕГАТЬ reasoning-модели (gpt-oss-*, deepseek-r1, kimi-thinking, nemotron-super) — съедают max_tokens на <think>, теряем JSON-блок recommended_dish_ids. ИЗБЕГАТЬ помеченные «Deprecation in N days» (kimi-k2-instruct, deepseek-v3.x, gemma-3-27b-it и т.п.).
+
+  search:
+    top_k: 20                                      # сколько кандидатов берём из Qdrant до рерэнкера
+    rerank_top_n: 5                                # сколько остаётся после рерэнкера
+    rerank_min_score: 0.01                         # cohere rerank-multilingual-v3 на нашем домене даёт 0.05-0.3; 0.2 был слишком жёстким
+
+  chat:
+    history_recent_pairs: 2                        # последних пар (user+assistant) подаём в LLM, поверх anchor-сообщения
+    companions:                                    # категории-сопровождение (соус/гарнир/хлеб/десерт/напиток).
+      - "Соусы"                                    # Companion для категории НЕ запускается, если main уже содержит блюдо оттуда —
+      - "Гарниры"                                  # это убирает «два хлеба» / «два соуса» в ответе.
+      - "Закуски"
+      - "Десерты"
+      - "Напитки безалкогольные"
+    main_categories:                               # «основные» категории блюд для диверсификации main-выдачи.
+      - "Супы"                                     # На широком запросе («что покушать на обед?») семантический поиск
+      - "Горячее — мясо"                           # концентрируется в одной нише (например, все top-5 в Салатах).
+      - "Горячее — рыба и морепродукты"            # Тогда в main добавляем top-1 из непокрытых категорий, чтобы LLM
+      - "Стейки"                                   # мог собрать «суп→горячее→десерт» из разнообразного контекста.
+      - "Гриль (хоспер)"
+      - "Бургеры"
+      - "Пицца и паста"
+      - "Салаты"
+    main_min_categories: 3                         # если в reranked top-N покрыто < 3 main-категорий → диверсифицируем
+    main_max_added: 3                              # сколько максимум блюд добавлять при диверсификации
+    main_diversify_min_score: 0.4                  # cosine-порог: ниже — категория не релевантна (на «хочу пиццу» суп с score 0.32 не подсосётся)

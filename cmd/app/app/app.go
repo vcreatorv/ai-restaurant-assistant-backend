@@ -23,13 +23,19 @@ import (
 	menuusecase "github.com/example/ai-restaurant-assistant-backend/internal/menu/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/apperrors"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/bcrypt"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/cohere"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/csrf"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/datasources"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/llm"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/logger"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/middleware"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/nvidia"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/openrouter"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/qdrant"
 	pkgredis "github.com/example/ai-restaurant-assistant-backend/internal/pkg/redis"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/s3"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/uuid"
+	"github.com/example/ai-restaurant-assistant-backend/internal/rag"
 	sessionredis "github.com/example/ai-restaurant-assistant-backend/internal/session/repository/redis"
 	sessionusecase "github.com/example/ai-restaurant-assistant-backend/internal/session/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/user"
@@ -143,11 +149,31 @@ func buildAPI(
 	menuRepository := menupostgres.New(pgPool)
 	chatRepository := chatpostgres.New(pgPool)
 
+	cohereClient, err := cohere.New(cfg.RAG.Cohere)
+	if err != nil {
+		return Handler{}, nil, fmt.Errorf("cohere: %w", err)
+	}
+	qdrantClient := qdrant.New(cfg.RAG.Qdrant)
+	llmClient, err := buildLLMClient(cfg.RAG.LLM)
+	if err != nil {
+		return Handler{}, nil, fmt.Errorf("llm provider %q: %w", cfg.RAG.LLM.Provider, err)
+	}
+
 	sessionUsecase := sessionusecase.New(sessionRepository, uuidGen, csrfGen)
 	userUsecase := userusecase.New(userRepository)
 	authUsecase := authusecase.New(userRepository, sessionUsecase, bcryptHasher, uuidGen)
 	menuUsecase := menuusecase.New(menuRepository, s3Storage)
-	chatUsecase := chatusecase.New(chatRepository, uuidGen, cfg.Chat.Usecase)
+	chatUsecase := chatusecase.New(chatusecase.Deps{
+		Repo:    chatRepository,
+		UUID:    uuidGen,
+		Users:   userUsecase,
+		Menu:    menuUsecase,
+		Cohere:  cohereClient,
+		Qdrant:  qdrantClient,
+		LLM:     llmClient,
+		ChatCfg: cfg.Chat.Usecase,
+		RAGCfg:  cfg.RAG,
+	})
 
 	authHandler := authhttp.New(authUsecase, userUsecase)
 	userHandler := userhttp.New(userUsecase)
@@ -266,6 +292,22 @@ func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 
 	default:
 		writeError(w, http.StatusInternalServerError, "internal_error", "An unexpected error occurred")
+	}
+}
+
+// buildLLMClient выбирает LLM-провайдера по rag.llm.provider и собирает llm.Client
+// через подходящую фабрику (internal/pkg/openrouter или internal/pkg/nvidia).
+// Общие параметры (temperature, max_tokens, timeouts) берутся из rag.llm.common.
+func buildLLMClient(cfg rag.LLMConfig) (*llm.Client, error) {
+	switch cfg.Provider {
+	case "openrouter":
+		return openrouter.New(cfg.OpenRouter, cfg.Common)
+	case "nvidia":
+		return nvidia.New(cfg.Nvidia, cfg.Common)
+	case "":
+		return nil, fmt.Errorf("rag.llm.provider is required (openrouter | nvidia)")
+	default:
+		return nil, fmt.Errorf("rag.llm.provider %q is not supported (use openrouter | nvidia)", cfg.Provider)
 	}
 }
 

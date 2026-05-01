@@ -17,7 +17,39 @@ var (
 	ErrChatForbidden = errors.New("chat does not belong to user")
 	// ErrEmptyMessage сообщение пустое
 	ErrEmptyMessage = errors.New("message content is empty")
+	// ErrUpstreamFailure сбой внешнего сервиса в RAG/LLM-пайплайне
+	ErrUpstreamFailure = errors.New("upstream rag/llm failure")
 )
+
+// MetaEvent данные, отправляемые клиенту до начала стрима ответа ассистента
+type MetaEvent struct {
+	// MessageID идентификатор assistant-сообщения, под которым будут писаться токены
+	MessageID uuid.UUID
+	// RecommendedDishIDs id рекомендованных блюд (top-N после рерэнкера)
+	RecommendedDishIDs []int
+}
+
+// DoneEvent телеметрия в финале стрима ответа
+type DoneEvent struct {
+	// LatencyMS общее время обработки запроса
+	LatencyMS int64
+	// TokensIn потребление входных токенов LLM
+	TokensIn int
+	// TokensOut сгенерированные токены LLM
+	TokensOut int
+	// Model фактическая модель, которой ответил OpenRouter
+	Model string
+}
+
+// SendCallbacks набор колбэков для streaming ответа ассистента
+type SendCallbacks struct {
+	// OnMeta вызывается один раз перед первым токеном
+	OnMeta func(MetaEvent) error
+	// OnDelta вызывается на каждый токен ассистента
+	OnDelta func(delta string) error
+	// OnDone вызывается один раз в финале успешного стрима
+	OnDone func(DoneEvent) error
+}
 
 // Usecase сценарии работы с чатами
 type Usecase interface {
@@ -36,12 +68,13 @@ type Usecase interface {
 	) (*usecasemodels.Chat, []usecasemodels.Message, bool, error)
 	// Delete удаляет чат пользователя
 	Delete(ctx context.Context, userID, chatID uuid.UUID) error
-	// SendMessage сохраняет user-message и возвращает ответ ассистента (на A1 — echo-заглушка)
+	// SendMessage прогоняет RAG-pipeline и стримит ответ ассистента через callbacks
 	SendMessage(
 		ctx context.Context,
 		userID, chatID uuid.UUID,
 		content string,
-	) (userMsg, assistantMsg *usecasemodels.Message, err error)
+		cb SendCallbacks,
+	) error
 }
 
 // Repository хранилище чатов и сообщений
@@ -66,6 +99,14 @@ type Repository interface {
 		limit int,
 		before *uuid.UUID,
 	) (msgs []repositorymodels.Message, hasMore bool, err error)
+	// FindFirstUserMessage возвращает хронологически первое user-сообщение чата
+	// (excludeID игнорируется — нужен, чтобы не подхватить только что добавленное current-msg).
+	// Возвращает chat.ErrChatNotFound (через nil + ErrNoRows-обёртку), если user-msg в чате нет.
+	FindFirstUserMessage(
+		ctx context.Context,
+		chatID uuid.UUID,
+		excludeID uuid.UUID,
+	) (*repositorymodels.Message, error)
 }
 
 // UUIDGen генератор UUID

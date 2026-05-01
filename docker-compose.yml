@@ -35,6 +35,9 @@ services:
       QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
     volumes:
       - qdrant_data:/qdrant/storage
+    ports:
+      - "${QDRANT_HTTP_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_PORT:-6334}:6334"
     networks: [internal]
 
   minio:
@@ -103,7 +106,9 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       QDRANT_URL: http://qdrant:6333
       QDRANT_API_KEY: ${QDRANT_API_KEY}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openrouter}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY}
       COHERE_API_KEY: ${COHERE_API_KEY}
       S3_ENDPOINT: minio:9000
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}

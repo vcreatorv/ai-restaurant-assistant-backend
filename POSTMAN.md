@@ -2,6 +2,20 @@
 
 Минимальный runbook для прогона `auth + profile` end-to-end через Postman / curl.
 
+> **Поддержка коллекции — обязательное правило проекта.**
+> При добавлении или изменении любого HTTP-эндпоинта или поведения, которое
+> можно увидеть «снаружи» (новый фильтр в каталоге, новое поле в профиле,
+> новое правило в LLM-prompt'е, новые валидации и т.д.) **в этом же PR**:
+>
+> 1. добавить или обновить запрос в `postman/ai-restaurant-assistant.postman_collection.json`
+>    (новый item в подходящей папке, с тестами в `event.test`),
+> 2. добавить или обновить шаг в `POSTMAN.md` с ожидаемыми кодами/телами и пояснением «что валидируется»,
+> 3. при изменении seed-данных меню — пометить, что нужно перезапустить `make seed && make embed-menu`.
+>
+> Цель: всегда иметь готовый набор ручек, на которых можно за 5 минут
+> вручную убедиться, что новая функциональность работает и не сломала
+> старое.
+
 ## Подготовка
 
 1. Файлы конфига уже готовы:
@@ -424,6 +438,140 @@ POST /api/v1/admin/categories
 | 29 | DeleteCategory блокируется при наличии блюд |
 | 30 | requireAdmin() в delivery → 403 для customer |
 
+# RAG (Qdrant)
+
+Векторное хранилище для семантического поиска по меню. Используется в шаге A3
+(Cohere embed запроса → Qdrant search с pre-filter → Cohere rerank → LLM).
+Сейчас (A2) только подготовка: индексируем все блюда, проверяем коллекцию.
+
+## Подготовка
+
+1. `make docker-up` — поднимает qdrant на `:6333` (HTTP) и `:6334` (gRPC).
+2. В `.env` должен быть `COHERE_API_KEY` (получить — https://dashboard.cohere.com).
+3. После накатки меню (`make seed`) запустить индексацию:
+
+```sh
+make embed-menu
+```
+
+Идемпотентно: повторный запуск перезапишет векторы. Создаёт коллекцию и
+payload-индексы при первом запуске.
+
+В логе ожидается:
+```
+INFO dishes loaded count=193
+INFO indexed batch from=0 to=96 size=96
+INFO indexed batch from=96 to=192 size=96
+INFO indexed batch from=192 to=193 size=1
+INFO embed-menu done dishes=193 qdrant_points=193 collection=dishes
+```
+
+## Веб-UI Qdrant
+
+http://localhost:6333/dashboard — браузер для коллекций.
+
+В верхнем правом углу — поле «API Key». Подставить значение `QDRANT_API_KEY` из `.env`.
+
+После авторизации:
+- слева вкладка **Collections → dishes** — конфиг коллекции (size: 1024, distance: Cosine);
+- вкладка **Points** — список точек с payload, можно листать;
+- вкладка **Visualize** — UMAP-проекция векторов (видно кластеры по «острому» / «десерты» / т.д.).
+
+## Debug через REST API
+
+Для всех запросов нужен заголовок `api-key: <QDRANT_API_KEY>`.
+
+### Список коллекций
+```sh
+curl -s http://localhost:6333/collections \
+  -H "api-key: $(grep QDRANT_API_KEY .env | cut -d= -f2)"
+```
+
+### Конфиг коллекции
+```sh
+curl -s http://localhost:6333/collections/dishes \
+  -H "api-key: $(grep QDRANT_API_KEY .env | cut -d= -f2)" | jq .
+```
+
+### Количество точек
+```sh
+curl -s http://localhost:6333/collections/dishes/points/count \
+  -H "api-key: $(grep QDRANT_API_KEY .env | cut -d= -f2)" \
+  -H "Content-Type: application/json" \
+  -d '{"exact":true}' | jq .
+```
+Ожидание: `result.count = 193`.
+
+### Прочитать точку по dish_id
+```sh
+curl -s http://localhost:6333/collections/dishes/points/32 \
+  -H "api-key: $(grep QDRANT_API_KEY .env | cut -d= -f2)" | jq .result.payload
+```
+Ожидание: payload с полями `dish_id`, `category_id`, `cuisine`, `allergens`, `dietary`, `tag_ids`, `price_minor`, `is_available`, опц. `calories_kcal`, `portion_weight_g`. **НЕ должно быть** `name`/`description`/`composition` — они живут в PG.
+
+### Найти точки по фильтру (без vector search)
+```sh
+# Все блюда с аллергеном "dairy"
+curl -s http://localhost:6333/collections/dishes/points/scroll \
+  -H "api-key: $(grep QDRANT_API_KEY .env | cut -d= -f2)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "limit": 5,
+    "filter": { "must": [ { "key": "allergens", "match": { "value": "dairy" } } ] },
+    "with_payload": ["dish_id", "cuisine", "allergens"]
+  }' | jq .
+```
+
+### Удалить коллекцию (если хочется переиндексировать с нуля)
+```sh
+curl -s -X DELETE http://localhost:6333/collections/dishes \
+  -H "api-key: $(grep QDRANT_API_KEY .env | cut -d= -f2)" | jq .
+make embed-menu
+```
+
+## Полная перезаливка меню
+
+Когда меняешь `seed/menu.json` целиком (или хочешь перезагрузить из чистого состояния), **простой `make seed` не поможет**: в `cmd/seed` блюда вставляются insert-only — если блюдо с таким `name` уже есть в PG, оно не обновится. Картинки в MinIO и точки в Qdrant тоже останутся старыми (по `image_key` / `dish_id`).
+
+Для полной перезаливки есть два таргета:
+
+```sh
+make wipe-menu     # дроп: PG menu-таблицы, MinIO dishes/*, Qdrant collection
+make reset-menu    # wipe-menu + seed + embed-menu (всё за раз)
+```
+
+Что делает `wipe-menu`:
+
+| Хранилище | Действие |
+|---|---|
+| PG | `TRUNCATE dish_tags, dishes, tags, categories RESTART IDENTITY CASCADE` (id-шники сбрасываются на 1; users/chats/sessions **не трогаются**) |
+| MinIO | `mc rm -r local/$MINIO_BUCKET/dishes` (картинки блюд; admin-аватарки/прочее не затрагивается) |
+| Qdrant | `DELETE /collections/dishes` |
+
+Идемпотентно: если что-то уже отсутствует, таргет не падает.
+
+**Когда использовать:**
+
+- сменился `seed/menu.json` (новые блюда, изменённые описания/цены/состав),
+- хочешь начать «с чистого» состояния перед демо,
+- ловишь рассинхрон между PG и Qdrant (id блюда в Qdrant нет, в PG есть — или наоборот).
+
+**Не использовать**, если нужно поменять только description у уже залитых блюд — для этого есть `make seed-descriptions`. Он работает по `name`, ничего не дропает.
+
+После `make reset-menu`:
+- `categories.id`, `tags.id`, `dishes.id` начинаются с 1 (это важно, если у тебя есть какие-то фронт-id-шники в коллекционных переменных Postman — обновить);
+- активные сессии customer'ов не сбрасываются (они в Redis), но их `chat_messages.recommended_dish_ids`/`meta.reranked_ids` могут указывать на несуществующие id (старые чаты лучше удалить руками).
+
+## Что проверяет `make embed-menu`
+
+| Проверка | Как |
+|---|---|
+| Коллекция создаётся с правильной размерностью | UI: `dishes.config.params.vectors.size == 1024` |
+| Создались payload-индексы | UI: `dishes.config.params.payload_schema` — должны быть allergens/dietary/cuisine/category_id/tag_ids/price_minor/is_available/calories_kcal/portion_weight_g |
+| Залились все блюда | `points/count` == количеству блюд в PG |
+| Payload корректен (без текстовых полей) | curl одной точки: `{dish_id, category_id, cuisine, allergens, dietary, tag_ids, price_minor, is_available, ...}` |
+| Идемпотентность | повторный `make embed-menu` не падает, count тот же |
+
 # Chats
 
 Чат с ассистентом (на A1 — эхо-заглушка). Перед прогоном пройди шаги 1–2 из секции Auth, чтобы появился customer.
@@ -551,6 +699,327 @@ DELETE /api/v1/chats/{{chatId}}
 | 38 | Проверка владельца чата → 403 |
 | 39 | Требуется session.UserID (на A1 — без lazy-guest) |
 | 40 | Cascade delete сообщений |
+
+# RAG + LLM (A3)
+
+С шага A3 ассистент отвечает реальным текстом, не эхо. Pipeline:
+
+```
+embed (Cohere search_query)
+  → Qdrant.search с pre-filter (is_available=true, must_not allergens, must dietary)
+  → Cohere.rerank → top-5
+  → menu.GetDishesByIDs из PG
+  → OpenRouter chat-completions (LLM stream)
+  → SSE: meta(recommended_dish_ids) → token* → done(usage, model, latency)
+```
+
+## Что нужно перед запуском
+
+1. **Ключи в `.env`** — без них приложение не стартует:
+   ```
+   COHERE_API_KEY=<твой ключ>
+   OPENROUTER_API_KEY=<твой ключ>
+   QDRANT_API_KEY=<любая строка>
+   ```
+2. **Стек поднят**: `make docker-up` (поднимет qdrant в т.ч.).
+3. **Меню в PG**: `make seed`.
+4. **Меню в Qdrant**: `make embed-menu`. После — в Qdrant UI (http://localhost:6333/dashboard) на вкладке `dishes` должно быть 193 точки.
+
+## 41. Чат с реальным LLM
+
+Последовательность в Postman:
+1. Auth → шаг 1 (Bootstrap session) → шаг 2 (Register) или Login.
+2. Chats → шаг 1 (Active chat). В коллекционной переменной `chatId` — id активного чата.
+3. Чтобы pre-filter мог что-то фильтровать — заполни профиль (это не обязательно для базового теста, но позволит увидеть hard-фильтры в действии):
+   ```
+   PATCH /api/v1/profile
+   { "allergens": ["dairy"], "dietary": [] }
+   ```
+4. Chats → шаг 4 (Send message) с осмысленным `content`, например:
+   ```json
+   { "content": "что у вас острого без молочки?" }
+   ```
+
+В Postman вкладка **Body** покажет SSE-ленту:
+```
+17:55:10.716  meta   {"message_id":"...","recommended_dish_ids":[6,32,76,40,79]}
+17:55:11.121  token  {"delta":"Реко"}
+17:55:11.183  token  {"delta":"мендую"}
+...
+17:55:12.890  token  {"delta":"."}
+17:55:13.012  done   {"latency_ms":2300,"tokens_in":1247,"tokens_out":156,"model":"meta-llama/llama-3.3-70b-instruct:free"}
+```
+
+После закрытия соединения:
+- В БД появится новый `chat_messages` с `role='assistant'`, `content` — чистый текст ответа (JSON-блок с `recommended_dish_ids` уже вырезан), `recommended_dish_ids = массив id`, `meta` — JSONB с полной телеметрией.
+- В Postman → шаг 5 (Get chat with messages) — увидишь и user-, и assistant-сообщение с `recommended_dish_ids`.
+
+## 42. Проверка hard-фильтра аллергенов
+
+Цель — убедиться, что Qdrant pre-filter режет по `allergens`, и блюда с `dairy` физически не попадают в выдачу при запросе типа «сырную пиццу».
+
+1. В профиле выставь `"allergens": ["dairy"]`.
+2. Send message: `{"content":"хочу пиццу с сыром"}`.
+
+Ожидание: ассистент честно говорит «такого без молочки нет» (или предложит безлактозную альтернативу), потому что **пицца сырная** в Qdrant отфильтрована pre-filter'ом и в context LLM она не приходит. Если бы аллергены проверялись только промптом, можно было бы получить рекомендацию пиццы — у нас этого не произойдёт.
+
+В `chat_messages.meta.retrieved_ids` для этого сообщения **не должно** быть `dish_id` блюд с `dairy` в составе.
+
+## 43. Контекст диалога
+
+1. Send message: `{"content":"что у вас острого?"}`. Ассистент рекомендует, например, Том-ям.
+2. Send message: `{"content":"расскажи про Том-ям подробнее"}`.
+
+Ожидание: ассистент описывает именно Том-ям, не предлагает кучу новых блюд. Это работает за счёт:
+- `contextualQuery` = последние 2 user-сообщения + текущий → лучший retrieval;
+- last 6 messages истории передаются в LLM как `messages: [system, user, assistant, user, ...]`;
+- `prior_recommended` (id из прошлых assistant-ответов) идёт в prompt как «ранее рекомендовано».
+
+В `meta.reranked_ids` второго сообщения должен быть `dish_id` Том-яма.
+
+## 44. Off-topic
+
+Send message: `{"content":"расскажи как решить квадратное уравнение"}`.
+
+Ожидание: короткий вежливый отказ типа «я могу помочь только с выбором блюд». Это поведение задано в system prompt'е (правило 5).
+
+В `meta.reranked_ids` может быть пусто или содержать рандомные блюда (Qdrant что-то вернёт по semantic-сходству), но LLM по инструкции **не рекомендует** их и в `recommended_dish_ids` будет `[]`.
+
+## 45. Прощание
+
+Send message: `{"content":"спасибо, понятно"}`.
+
+Ожидание: короткий ответ «приятного аппетита» / «обращайтесь» без рекомендаций. `recommended_dish_ids` — пустой массив.
+
+## 46. SSE через `curl`
+
+В Postman SSE парсится в виде ленты, но если хочешь увидеть raw-формат:
+
+```sh
+# Сначала залогинься, чтобы появились cookies.txt
+curl -i -c cookies.txt -X POST http://localhost:8081/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"test@example.com","password":"newsecret456"}'
+
+# Активный чат
+CHAT=$(curl -s -b cookies.txt http://localhost:8081/api/v1/chats/active | jq -r .id)
+
+# CSRF из cookie
+CSRF=$(awk '/csrf/{print $7}' cookies.txt)
+
+# Отправить с -N (no-buffering), чтобы видеть стрим
+curl -N -b cookies.txt \
+  -H "X-CSRF-Token: $CSRF" \
+  -H 'Content-Type: application/json' \
+  -X POST "http://localhost:8081/api/v1/chats/$CHAT/messages" \
+  -d '{"content":"что у вас острого без молочки?"}'
+```
+
+## Дебаг через логи и БД
+
+**Логи приложения** (включая ошибки Cohere/Qdrant/OpenRouter):
+```sh
+docker compose logs -f app | grep -i "cohere\|qdrant\|openrouter\|send message"
+```
+
+**Полная телеметрия в `meta`** — JSONB по последнему ответу:
+```sh
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT id, LEFT(content, 60) AS preview, recommended_dish_ids, meta
+   FROM chat_messages
+   WHERE role='assistant'
+   ORDER BY created_at DESC
+   LIMIT 3;"
+```
+
+В `meta` увидишь:
+- `latency_ms` — время от записи user-msg до записи assistant-msg
+- `tokens_in` / `tokens_out` — учёт OpenRouter
+- `finish_reason` — `stop` (нормально) / `length` (упёрлось в `max_tokens`) / `content_filter`
+- `model` — фактическая модель, которой ответил OpenRouter (если включён фолбек, может отличаться от запрошенной)
+- `retrieved_ids` — top-K (~20) от Qdrant ДО рерэнкинга
+- `reranked_ids` — top-N (~5) ПОСЛЕ рерэнкинга, именно эти блюда были в промпте LLM
+- `llm_recommended` — id блюд, которые сама LLM явно упомянула в JSON-блоке в финале ответа
+
+## Что проверяет каждый шаг (RAG + LLM)
+
+| Шаг | Что валидируется |
+|---|---|
+| 41 | Полный pipeline: embed → search → rerank → LLM stream |
+| 42 | Hard-фильтр аллергенов через Qdrant pre-filter (must_not) |
+| 43 | Учёт истории диалога: anchor (первый user-msg) + последние HistoryRecentPairs пар в prompt |
+| 44 | Off-topic не приводит к рекомендациям (поведение из system prompt) |
+| 45 | Прощание не триггерит RAG-выдачу |
+| 46 | Raw SSE через curl: формат meta/token/done корректный |
+| 9.1 | Companion retrieval: к мясному ужину поднимаются соус/гарнир/хлеб/десерт/напиток (см. `meta.companion_ids` в БД) |
+| 9.2 | Anchor: после уточнения ассистент остаётся в рамке изначального запроса |
+
+## Companion retrieval (как это устроено)
+
+В `runRAG` после основного `embed → search → rerank → top-N` запускается дополнительный проход:
+
+1. Грузим список категорий из PG (там уже был, теперь используется ещё и для маппинга «имя → id»).
+2. Для каждой companion-категории из конфига `rag.chat.companions` (по умолчанию: Соусы, Гарниры, Закуски, Десерты, Напитки безалкогольные) делаем `Qdrant.Search`:
+   - тот же эмбеддинг текущего сообщения,
+   - тот же базовый pre-filter (allergens/dietary/is_available),
+   - **дополнительно** `must: { key: "category_id", match: <id> }`,
+   - top_k=5, без rerank, берём top-1.
+3. Дедуплицируем с уже выбранными в primary-выдаче.
+4. Загружаем подобранные companion-блюда из PG одной транзакцией.
+5. В prompt LLM добавляется отдельный блок **«=== Сопровождение (на выбор, если уместно к запросу) ===»**.
+
+Алкоголь в companion НЕ включён — система-промпт явно запрещает предлагать его без явной просьбы гостя.
+
+## Anchor + history pairs (как это устроено)
+
+В `loadHistory`:
+
+1. **Anchor**: новый запрос `FindFirstUserMessage(chatID)` — единственный SELECT с ORDER BY created_at ASC LIMIT 1. Возвращает хронологически первое user-сообщение чата (исключая current).
+2. **Recent pairs**: последние `HistoryRecentPairs * 2` сообщений (по умолчанию 4 = 2 пары). 
+3. **Дедуп**: если anchor совпадает с первым в recent (короткий чат) — anchor сбрасывается.
+4. В `messages` LLM итог: `[system, anchor?, ...recent (chronological), current_with_RAG_context]`.
+
+Эффект: даже после 10+ ходов ассистент видит изначальный запрос гостя в начале сообщений и не теряет рамку.
+
+# Filters & profiles (теги, аллергены, диеты, hard-фильтры RAG)
+
+Эта секция собирает в одно место способы проверить, что **фильтры каталога**
+(`/menu?...`) и **hard-фильтры профиля в чате** (Qdrant pre-filter по
+`allergens` / `dietary`) работают как договорено. Соответствует папке
+**Filters & profiles** в Postman-коллекции.
+
+## Что в seed-меню
+
+Это нужно держать в голове, когда смотришь на total и items:
+
+- **Аллергены**: `gluten` (41 блюдо), `dairy` (52), `soy` (12), `nuts` (11),
+  `shellfish` (10), `fish` (8), `eggs` (8), `sesame` (7), `mustard` (7),
+  `celery` (3), `peanuts` (2).
+- **Диеты**: `vegetarian` (113), `vegan` (87), `lactose_free` (141),
+  `gluten_free` (152), `halal` (10).
+- **Кухни**: `european` (122), `american` (31), `italian` (22), `asian` (9),
+  `japanese` (4), `french` (4), `russian` (1).
+- **Tag slugs**: `hit`, `new`, `spicy`, `chef`, `big`, `share`, `light`,
+  `coffee`, `tea`, `lemonade`, `wine`, `beer`.
+
+## 47. Каталог: исключение одного аллергена
+
+```
+GET /api/v1/menu?exclude_allergens=dairy&limit=5
+```
+Ожидание: `200`, `total` строго меньше, чем без фильтра. Ни в одном `items[].allergens` нет `dairy`.
+
+## 48. Каталог: исключение нескольких аллергенов (OR)
+
+```
+GET /api/v1/menu?exclude_allergens=dairy&exclude_allergens=gluten&limit=5
+```
+Семантика: блюдо исключается, если **хотя бы один** из перечисленных аллергенов в составе (PG `allergens && excluded`). `total` ещё ниже.
+
+## 49. Каталог: одна диета
+
+```
+GET /api/v1/menu?dietary=vegan&limit=10
+```
+Ожидание: `total ≈ 87`, у всех блюд в `dietary` есть `vegan`.
+
+## 50. Каталог: пересечение диет (AND)
+
+```
+GET /api/v1/menu?dietary=vegan&dietary=gluten_free
+```
+Семантика: блюдо включается, если **все** запрошенные диеты есть в `dietary` (PG `@>`). Это пересечение двух множеств.
+
+## 51. Каталог: халяль (edge — маленькая выдача)
+
+```
+GET /api/v1/menu?dietary=halal
+```
+Ожидание: `total = 10`. Удобно для проверки, что фильтр не падает на маленьких множествах.
+
+## 52. Каталог: поиск по q
+
+```
+GET /api/v1/menu?q=стейк&limit=20
+GET /api/v1/menu?q=том-ям
+```
+Ожидание: `ILIKE %q%` по `name`. Для `том-ям` должно прийти 1–2 блюда.
+
+## 53. Каталог: tag_ids
+
+```
+# 1) GET /admin/tags  (под admin'ом) → находим id тега 'spicy'
+# 2) GET /api/v1/menu?tag_ids=<id>&limit=25
+```
+Ожидание: у всех блюд в `tags[].slug` есть `spicy`. В seed таких ~20.
+
+В Postman-коллекции это автоматизировано: шаг 15 берёт id, шаг 16 фильтрует.
+
+## 54. Чат: hard-фильтр по аллергену в профиле
+
+```
+PATCH /profile  { "allergens": ["dairy"], "dietary": [] }
+POST  /chats/{id}/messages  { "content": "хочу пиццу с сыром" }
+```
+Ожидание: ассистент честно отвечает «без молочки нет такого» или предлагает безлактозную альтернативу. В `chat_messages.meta.reranked_ids` **не должно быть** блюд с `dairy` в составе — Qdrant pre-filter их физически отрезал (`must_not allergens=dairy`).
+
+## 55. Чат: hard-фильтр по диете в профиле
+
+```
+PATCH /profile  { "allergens": [], "dietary": ["vegan"] }
+POST  /chats/{id}/messages  { "content": "что взять на ужин?" }
+```
+Ожидание: рекомендации только из веганских блюд. Проверить можно так:
+
+```sh
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT id, name, dietary FROM dishes WHERE id = ANY(
+     (SELECT (meta->'reranked_ids')::jsonb FROM chat_messages
+       WHERE role='assistant' ORDER BY created_at DESC LIMIT 1)::int[]
+   );"
+```
+В каждой строке поле `dietary` должно содержать `vegan`.
+
+## 56. Чат: edge — все запрошенное отрезано фильтром
+
+```
+PATCH /profile  { "allergens": ["shellfish","fish"], "dietary": [] }
+POST  /chats/{id}/messages  { "content": "что-нибудь морское" }
+```
+Ожидание: ассистент не выдумывает, а честно говорит, что подходящего нет, и предлагает мясное / куриное / овощное альтернативное (правило 2 из system prompt).
+
+## 57. Cleanup профиля
+
+```
+PATCH /profile  { "allergens": [], "dietary": [] }
+```
+Чтобы профиль не мешал другим тестам. В Postman-коллекции это шаг 17 в папке Filters & profiles.
+
+## Что валидирует каждый шаг (filters & profiles)
+
+| Шаг | Что валидируется |
+|---|---|
+| 47 | Один `exclude_allergens` режет правильное подмножество |
+| 48 | Несколько `exclude_allergens` работают как OR (PG `&&`) |
+| 49 | Один `dietary` фильтр |
+| 50 | Несколько `dietary` работают как AND (PG `@>`) |
+| 51 | Маленькое множество (halal) — на нём проще проверить вручную |
+| 52 | `q` (ILIKE по name) |
+| 53 | `tag_ids` (HAS-ANY) |
+| 54 | Qdrant pre-filter по аллергенам режет до LLM |
+| 55 | Qdrant pre-filter по диетам |
+| 56 | Поведение «нет подходящего» — LLM не выдумывает |
+| 57 | Cleanup |
+
+## Если что-то не работает
+
+| Симптом | Проверь |
+|---|---|
+| Сразу `event: error` после `meta` | Логи приложения. Скорее всего Cohere или OpenRouter rate-limit / неверный ключ. |
+| LLM отвечает «не нашёл подходящих блюд» на простой запрос | `meta.retrieved_ids` в БД пустой → проверь что `make embed-menu` отработал и в Qdrant 193 точки. |
+| LLM рекомендует блюдо с аллергеном | `meta.reranked_ids` — есть ли там запрещённый id? Если да — проверь, что `allergens` в БД-блюде корректные (`SELECT allergens FROM dishes WHERE id=...`) и pre-filter в Qdrant payload-индексе настроен. |
+| Стрим приходит с большой задержкой (5+ сек до первого token) | OpenRouter free-tier бывает медленный, либо `first_token_timeout` в yaml нужно увеличить. |
+| `done` приходит с `tokens_in=0, tokens_out=0` | OpenRouter не вернул блок `usage` в стриме (бывает на free-tier). Не страшно — телеметрия неполная, ответ нормальный. |
 
 ## Если что-то не так
 

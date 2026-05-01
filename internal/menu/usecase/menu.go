@@ -136,6 +136,21 @@ func (uc *menuUsecase) GetDish(ctx context.Context, id int) (*usecasemodels.Dish
 	return usecasemodels.DishFromRepository(raw), nil
 }
 
+// GetDishesByIDs возвращает блюда по списку идентификаторов
+func (uc *menuUsecase) GetDishesByIDs(
+	ctx context.Context,
+	ids []int,
+) ([]usecasemodels.Dish, error) {
+	if len(ids) == 0 {
+		return []usecasemodels.Dish{}, nil
+	}
+	raws, err := uc.repo.FindDishesByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("find dishes by ids: %w", err)
+	}
+	return usecasemodels.DishesFromRepository(raws), nil
+}
+
 // CreateDish создаёт блюдо
 func (uc *menuUsecase) CreateDish(ctx context.Context, d usecasemodels.DishCreate) (*usecasemodels.Dish, error) {
 	if !d.Cuisine.IsValid() {

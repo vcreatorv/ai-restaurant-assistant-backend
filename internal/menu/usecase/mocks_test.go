@@ -24,6 +24,7 @@ type mockRepo struct {
 	deleteTagFn           func(ctx context.Context, id int) error
 	listDishesFn          func(ctx context.Context, f repositorymodels.DishFilter) ([]repositorymodels.Dish, int, error)
 	findDishByIDFn        func(ctx context.Context, id int) (*repositorymodels.Dish, error)
+	findDishesByIDsFn     func(ctx context.Context, ids []int) ([]repositorymodels.Dish, error)
 	createDishFn          func(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error
 	updateDishFn          func(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error
 	setDishAvailabilityFn func(ctx context.Context, id int, available bool) error
@@ -67,6 +68,12 @@ func (m *mockRepo) ListDishes(ctx context.Context, f repositorymodels.DishFilter
 }
 func (m *mockRepo) FindDishByID(ctx context.Context, id int) (*repositorymodels.Dish, error) {
 	return m.findDishByIDFn(ctx, id)
+}
+func (m *mockRepo) FindDishesByIDs(ctx context.Context, ids []int) ([]repositorymodels.Dish, error) {
+	if m.findDishesByIDsFn == nil {
+		return nil, nil
+	}
+	return m.findDishesByIDsFn(ctx, ids)
 }
 func (m *mockRepo) CreateDish(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error {
 	return m.createDishFn(ctx, d, tagIDs)

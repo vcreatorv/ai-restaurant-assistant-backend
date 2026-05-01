@@ -1,4 +1,5 @@
-.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api seed seed-descriptions \
+.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api seed seed-descriptions embed-menu \
+        wipe-menu reset-menu \
         migrate-up migrate-down migrate-create \
         docker-build docker-up docker-down docker-logs \
         ci-check fmt-check group-imports-check
@@ -16,6 +17,9 @@ help:
 	@echo "  generate-api       - сгенерировать код из OpenAPI"
 	@echo "  seed               - залить меню (seed/menu.json) в PG + картинки в MinIO"
 	@echo "  seed-descriptions  - обновить только description у блюд из seed/menu.json"
+	@echo "  embed-menu         - проиндексировать блюда в Qdrant (Cohere embeddings)"
+	@echo "  wipe-menu          - удалить всё меню: PG-таблицы меню, MinIO dishes/*, Qdrant collection"
+	@echo "  reset-menu         - wipe-menu + seed + embed-menu (полная перезаливка из seed/menu.json)"
 	@echo "  migrate-up         - применить миграции"
 	@echo "  migrate-down       - откатить последнюю миграцию"
 	@echo "  migrate-create     - создать новую миграцию (NAME=имя)"
@@ -94,6 +98,21 @@ seed:
 	  S3_PUBLIC_BASE_URL=http://localhost:$${MINIO_API_PORT:-9000}/$$MINIO_BUCKET \
 	  go run ./cmd/seed -config configs/config.yaml -seed seed/menu.json -assets seed/assets'
 
+# Индексирует все блюда из PG в Qdrant. Идемпотентно: повторный запуск перезапишет.
+# Перед запуском: make docker-up (нужны postgres/qdrant) + COHERE_API_KEY в .env.
+embed-menu:
+	@bash -c 'set -a && . ./.env && set +a && \
+	  POSTGRES_DSN="postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@localhost:5432/$$POSTGRES_DB?sslmode=disable" \
+	  S3_ENDPOINT=localhost:$${MINIO_API_PORT:-9000} \
+	  S3_ACCESS_KEY=$$MINIO_ROOT_USER \
+	  S3_SECRET_KEY=$$MINIO_ROOT_PASSWORD \
+	  S3_BUCKET=$$MINIO_BUCKET \
+	  S3_PUBLIC_BASE_URL=http://localhost:$${MINIO_API_PORT:-9000}/$$MINIO_BUCKET \
+	  QDRANT_URL=http://localhost:$${QDRANT_HTTP_PORT:-6333} \
+	  QDRANT_API_KEY=$$QDRANT_API_KEY \
+	  COHERE_API_KEY=$$COHERE_API_KEY \
+	  go run ./cmd/embed-menu -config configs/config.yaml'
+
 # Обновляет только description у уже существующих блюд по name. Картинки/S3 не трогаются.
 # S3-env пробрасываются ради валидации конфига, сам S3-клиент в этом режиме не создаётся.
 seed-descriptions:
@@ -105,6 +124,31 @@ seed-descriptions:
 	  S3_BUCKET=$$MINIO_BUCKET \
 	  S3_PUBLIC_BASE_URL=http://localhost:$${MINIO_API_PORT:-9000}/$$MINIO_BUCKET \
 	  go run ./cmd/seed -config configs/config.yaml -seed seed/menu.json -mode=update-descriptions'
+
+# Полностью сбрасывает меню во всех трёх хранилищах:
+#   PG: TRUNCATE dish_tags, dishes, tags, categories (RESTART IDENTITY CASCADE)
+#   MinIO: rm -r dishes/ из бакета (id-image_url'ы protected картинок не трогаем —
+#          но т.к. PG обнулён, ссылки в любом случае пересоздадутся при seed)
+#   Qdrant: DELETE /collections/dishes
+# Сохранность: пользователи, чаты, сессии не затрагиваются. Только меню.
+# Идемпотентно: если что-то уже отсутствует (например, Qdrant collection не создана),
+# таргет всё равно завершится успешно.
+wipe-menu:
+	@bash -c 'set -a && . ./.env && set +a && \
+	  echo "=== PG: truncate menu tables ===" && \
+	  docker compose exec -T postgres psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c \
+	    "TRUNCATE TABLE dish_tags, dishes, tags, categories RESTART IDENTITY CASCADE;" && \
+	  echo "=== MinIO: rm -r dishes/ ===" && \
+	  docker compose exec -T minio-init mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null && \
+	  docker compose exec -T minio-init mc rm --recursive --force "local/$$MINIO_BUCKET/dishes" || true && \
+	  echo "=== Qdrant: drop dishes collection ===" && \
+	  curl -sS -X DELETE "http://localhost:$${QDRANT_HTTP_PORT:-6333}/collections/dishes" \
+	    -H "api-key: $$QDRANT_API_KEY" -o /dev/null -w "  status: %{http_code}\n" && \
+	  echo "=== wipe-menu done ==="'
+
+# Полная перезаливка меню из seed/menu.json. После этого приложение готово к работе.
+reset-menu: wipe-menu seed embed-menu
+	@echo "=== reset-menu done ==="
 
 # ----- Migrations -----
 
