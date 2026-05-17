@@ -67,6 +67,12 @@ func (*mockCartRepo) FindItem(context.Context, uuid.UUID, int) (*repositorymodel
 func (*mockCartRepo) DeleteItem(context.Context, uuid.UUID, int) error {
 	panic("DeleteItem not expected")
 }
+func (*mockCartRepo) LogAddition(
+	context.Context, uuid.UUID, int, int, usecasemodels.CartSource, *uuid.UUID,
+) error {
+	// order usecase не дёргает корзину на «добавить» — лог-метод тут не вызывается.
+	panic("LogAddition not expected")
+}
 
 // mockMenu ручная реализация menu.Usecase — order трогает только GetDishesByIDs
 type mockMenu struct {

@@ -16,6 +16,8 @@ var (
 	ErrCategoryNameTaken = errors.New("category name already taken")
 	// ErrCategoryHasDishes в категории есть блюда — удалить нельзя
 	ErrCategoryHasDishes = errors.New("category has dishes")
+	// ErrInvalidCategoryRole недопустимое значение role
+	ErrInvalidCategoryRole = errors.New("invalid category role")
 
 	// ErrTagNotFound тег не найден
 	ErrTagNotFound = errors.New("tag not found")

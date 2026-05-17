@@ -35,7 +35,7 @@ user: {}
 menu:
   delivery:
     default_limit: 20
-    max_limit: 100
+    max_limit: 200                 # синхронизировано с OpenAPI (parameters.Limit.maximum)
     max_image_size_bytes: 5242880  # 5 MiB
 
 chat:
@@ -77,7 +77,7 @@ rag:
     upsert_batch_size: 96   # сколько точек заливать одной операцией
 
   llm:
-    provider: openrouter                           # openrouter | nvidia — переопределяется LLM_PROVIDER env
+    provider: openrouter                           # openrouter | nvidia | gigachat — переопределяется LLM_PROVIDER env
     common:
       temperature: 0.4
       max_tokens: 1500                             # free-tier модели часто тратят токены на reasoning/повторы; без запаса упираемся в length и теряем JSON-блок
@@ -93,29 +93,51 @@ rag:
       base_url: "https://integrate.api.nvidia.com/v1"
       api_key: ""                                                  # переопределяется NVIDIA_API_KEY env (nvapi-... с build.nvidia.com)
       model: "meta/llama-4-maverick-17b-128e-instruct"             # MoE (17B активных, 128 экспертов), multilingual, non-reasoning, быстрый. Альтернативы: mistralai/mistral-nemotron, mistralai/mistral-large-3-675b-instruct-2512. ИЗБЕГАТЬ reasoning-модели (gpt-oss-*, deepseek-r1, kimi-thinking, nemotron-super) — съедают max_tokens на <think>, теряем JSON-блок recommended_dish_ids. ИЗБЕГАТЬ помеченные «Deprecation in N days» (kimi-k2-instruct, deepseek-v3.x, gemma-3-27b-it и т.п.).
+    gigachat:
+      base_url: "https://gigachat.devices.sberbank.ru/api/v1"
+      auth_url: "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+      authorization_key: ""                                        # переопределяется GIGACHAT_AUTHORIZATION_KEY env (base64 от client_id:client_secret из developers.sber.ru)
+      scope: "GIGACHAT_API_PERS"                                   # GIGACHAT_API_PERS (физлица, free 1M tok/мес) | GIGACHAT_API_B2B | GIGACHAT_API_CORP
+      model: "GigaChat"                                            # GigaChat (Lite, быстрый и дешёвый) | GigaChat-Pro (качественнее, лучше следует инструкциям) | GigaChat-Max
+      ca_bundle_path: "/certs/russian_trusted_bundle.pem"           # внутри docker-образа (см. Dockerfile COPY /src/certs /certs); локально: certs/russian_trusted_bundle.pem           # bundle корневых сертификатов Минцифры (sub + root в одном файле)
+
+  classifier:
+    # Если provider пуст — классификатор использует тот же клиент, что и rag.llm.
+    # Когда захочется отдельную лёгкую модель — заполни provider/openrouter/nvidia
+    # как в rag.llm выше; api-ключи (OPENROUTER_API_KEY / NVIDIA_API_KEY) шарятся.
+    provider: ""                                     # "" = use rag.llm (та же модель и провайдер). Для разделения: "openrouter" или "nvidia".
+    common:
+      temperature: 0.0                               # детерминируем выбор класса — никакого сэмплинга
+      max_tokens: 8                                  # ответ — одно слово (recommend/clarify/chitchat/off_topic)
+      request_timeout: 30s
+      first_token_timeout: 15s
+    openrouter:
+      base_url: "https://openrouter.ai/api/v1"
+      api_key: ""                                    # переопределяется OPENROUTER_API_KEY (общий с rag.llm)
+      model: ""                                      # пусто — see provider above; пример лёгкой: "mistralai/mistral-7b-instruct:free"
+      referer: "http://localhost:8081"
+      title: "AI Restaurant Assistant — classifier"
+    nvidia:
+      base_url: "https://integrate.api.nvidia.com/v1"
+      api_key: ""
+      model: ""                                      # пусто — пример: "meta/llama-3.1-8b-instruct"
+    gigachat:
+      base_url: "https://gigachat.devices.sberbank.ru/api/v1"
+      auth_url: "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
+      authorization_key: ""                          # переопределяется GIGACHAT_AUTHORIZATION_KEY (общий с rag.llm)
+      scope: "GIGACHAT_API_PERS"
+      model: ""                                      # пусто — пример: "GigaChat" (самый быстрый для классификации)
+      ca_bundle_path: "/certs/russian_trusted_bundle.pem"           # внутри docker-образа (см. Dockerfile COPY /src/certs /certs); локально: certs/russian_trusted_bundle.pem
 
   search:
     top_k: 20                                      # сколько кандидатов берём из Qdrant до рерэнкера
-    rerank_top_n: 5                                # сколько остаётся после рерэнкера
+    rerank_top_n: 8                                # сколько остаётся после рерэнкера. 8 > 5: даём LLM больше выбора, чтобы реже повторялись одни и те же блюда между диалогами
     rerank_min_score: 0.01                         # cohere rerank-multilingual-v3 на нашем домене даёт 0.05-0.3; 0.2 был слишком жёстким
 
   chat:
     history_recent_pairs: 2                        # последних пар (user+assistant) подаём в LLM, поверх anchor-сообщения
-    companions:                                    # категории-сопровождение (соус/гарнир/хлеб/десерт/напиток).
-      - "Соусы"                                    # Companion для категории НЕ запускается, если main уже содержит блюдо оттуда —
-      - "Гарниры"                                  # это убирает «два хлеба» / «два соуса» в ответе.
-      - "Закуски"
-      - "Десерты"
-      - "Напитки безалкогольные"
-    main_categories:                               # «основные» категории блюд для диверсификации main-выдачи.
-      - "Супы"                                     # На широком запросе («что покушать на обед?») семантический поиск
-      - "Горячее — мясо"                           # концентрируется в одной нише (например, все top-5 в Салатах).
-      - "Горячее — рыба и морепродукты"            # Тогда в main добавляем top-1 из непокрытых категорий, чтобы LLM
-      - "Стейки"                                   # мог собрать «суп→горячее→десерт» из разнообразного контекста.
-      - "Гриль (хоспер)"
-      - "Бургеры"
-      - "Пицца и паста"
-      - "Салаты"
+    # Списки main / companion категорий живут в БД (categories.role) и управляются админом
+    # через PATCH /admin/categories/{id}. См. миграцию 000009_categories_role.up.sql.
     main_min_categories: 3                         # если в reranked top-N покрыто < 3 main-категорий → диверсифицируем
     main_max_added: 3                              # сколько максимум блюд добавлять при диверсификации
     main_diversify_min_score: 0.4                  # cosine-порог: ниже — категория не релевантна (на «хочу пиццу» суп с score 0.32 не подсосётся)

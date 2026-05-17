@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const categoryColumns = `id, name, sort_order, is_available, created_at, updated_at`
+const categoryColumns = `id, name, sort_order, is_available, role, created_at, updated_at`
 
 const (
 	listCategoriesQuery = `
@@ -26,8 +26,8 @@ const (
 		WHERE id = $1`
 
 	insertCategoryQuery = `
-		INSERT INTO categories (name, sort_order, is_available)
-		VALUES ($1, $2, $3)
+		INSERT INTO categories (name, sort_order, is_available, role)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at, updated_at`
 
 	updateCategoryQuery = `
@@ -35,6 +35,7 @@ const (
 		SET name = $2,
 		    sort_order = $3,
 		    is_available = $4,
+		    role = $5,
 		    updated_at = now()
 		WHERE id = $1`
 
@@ -76,7 +77,7 @@ func (r *Repository) FindCategoryByID(ctx context.Context, id int) (*repositorym
 
 // CreateCategory вставляет категорию
 func (r *Repository) CreateCategory(ctx context.Context, c *repositorymodels.Category) error {
-	err := r.pool.QueryRow(ctx, insertCategoryQuery, c.Name, c.SortOrder, c.IsAvailable).
+	err := r.pool.QueryRow(ctx, insertCategoryQuery, c.Name, c.SortOrder, c.IsAvailable, c.Role).
 		Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 	if err != nil {
 		if isUniqueViolation(err, "categories_name_key") {
@@ -89,7 +90,7 @@ func (r *Repository) CreateCategory(ctx context.Context, c *repositorymodels.Cat
 
 // UpdateCategory сохраняет изменения категории
 func (r *Repository) UpdateCategory(ctx context.Context, c *repositorymodels.Category) error {
-	cmd, err := r.pool.Exec(ctx, updateCategoryQuery, c.ID, c.Name, c.SortOrder, c.IsAvailable)
+	cmd, err := r.pool.Exec(ctx, updateCategoryQuery, c.ID, c.Name, c.SortOrder, c.IsAvailable, c.Role)
 	if err != nil {
 		if isUniqueViolation(err, "categories_name_key") {
 			return menu.ErrCategoryNameTaken
@@ -123,7 +124,7 @@ func (r *Repository) DeleteCategory(ctx context.Context, id int) error {
 
 func scanCategory(row pgx.Row) (*repositorymodels.Category, error) {
 	var c repositorymodels.Category
-	if err := row.Scan(&c.ID, &c.Name, &c.SortOrder, &c.IsAvailable, &c.CreatedAt, &c.UpdatedAt); err != nil {
+	if err := row.Scan(&c.ID, &c.Name, &c.SortOrder, &c.IsAvailable, &c.Role, &c.CreatedAt, &c.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &c, nil

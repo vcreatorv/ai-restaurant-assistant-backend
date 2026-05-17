@@ -4,6 +4,7 @@ import (
 	"context"
 
 	v1 "github.com/example/ai-restaurant-assistant-backend/cmd/app/app/v1"
+	"github.com/example/ai-restaurant-assistant-backend/internal/audit"
 	apimodels "github.com/example/ai-restaurant-assistant-backend/internal/models/api"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/apperrors"
 )
@@ -51,7 +52,8 @@ func (h MenuHandler) AdminCreateCategory(
 	ctx context.Context,
 	request v1.AdminCreateCategoryRequestObject,
 ) (v1.AdminCreateCategoryResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if request.Body == nil {
@@ -61,6 +63,13 @@ func (h MenuHandler) AdminCreateCategory(
 	if err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetCategory,
+		TargetID:    intStr(c.ID),
+		TargetLabel: c.Name,
+		Verb:        audit.VerbCreate,
+	})
 	return v1.AdminCreateCategory201JSONResponse(apimodels.CategoryFromUsecase(*c)), nil
 }
 
@@ -69,7 +78,8 @@ func (h MenuHandler) AdminUpdateCategory(
 	ctx context.Context,
 	request v1.AdminUpdateCategoryRequestObject,
 ) (v1.AdminUpdateCategoryResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if request.Body == nil {
@@ -79,6 +89,14 @@ func (h MenuHandler) AdminUpdateCategory(
 	if err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetCategory,
+		TargetID:    intStr(c.ID),
+		TargetLabel: c.Name,
+		Verb:        audit.VerbUpdate,
+		Changes:     categoryPatchChanges(*request.Body),
+	})
 	return v1.AdminUpdateCategory200JSONResponse(apimodels.CategoryFromUsecase(*c)), nil
 }
 
@@ -87,12 +105,30 @@ func (h MenuHandler) AdminDeleteCategory(
 	ctx context.Context,
 	request v1.AdminDeleteCategoryRequestObject,
 ) (v1.AdminDeleteCategoryResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
+	}
+	// Подтянем имя для лога ДО удаления (после удаления его не получить).
+	label := ""
+	if existing, getErr := h.usecase.ListCategories(ctx); getErr == nil {
+		for _, c := range existing {
+			if c.ID == request.Id {
+				label = c.Name
+				break
+			}
+		}
 	}
 	if err := h.usecase.DeleteCategory(ctx, request.Id); err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetCategory,
+		TargetID:    intStr(request.Id),
+		TargetLabel: label,
+		Verb:        audit.VerbDelete,
+	})
 	return v1.AdminDeleteCategory204Response{}, nil
 }
 
@@ -116,7 +152,8 @@ func (h MenuHandler) AdminCreateTag(
 	ctx context.Context,
 	request v1.AdminCreateTagRequestObject,
 ) (v1.AdminCreateTagResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if request.Body == nil {
@@ -126,6 +163,13 @@ func (h MenuHandler) AdminCreateTag(
 	if err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetTag,
+		TargetID:    intStr(t.ID),
+		TargetLabel: t.Name,
+		Verb:        audit.VerbCreate,
+	})
 	return v1.AdminCreateTag201JSONResponse(apimodels.TagFromUsecase(*t)), nil
 }
 
@@ -134,7 +178,8 @@ func (h MenuHandler) AdminUpdateTag(
 	ctx context.Context,
 	request v1.AdminUpdateTagRequestObject,
 ) (v1.AdminUpdateTagResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if request.Body == nil {
@@ -144,6 +189,14 @@ func (h MenuHandler) AdminUpdateTag(
 	if err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetTag,
+		TargetID:    intStr(t.ID),
+		TargetLabel: t.Name,
+		Verb:        audit.VerbUpdate,
+		Changes:     tagPatchChanges(*request.Body),
+	})
 	return v1.AdminUpdateTag200JSONResponse(apimodels.TagFromUsecase(*t)), nil
 }
 
@@ -152,12 +205,30 @@ func (h MenuHandler) AdminDeleteTag(
 	ctx context.Context,
 	request v1.AdminDeleteTagRequestObject,
 ) (v1.AdminDeleteTagResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
+	}
+	// Подтянем имя тега для лога (после удаления его не получить).
+	label := ""
+	if tags, getErr := h.usecase.ListTags(ctx); getErr == nil {
+		for _, t := range tags {
+			if t.ID == request.Id {
+				label = t.Name
+				break
+			}
+		}
 	}
 	if err := h.usecase.DeleteTag(ctx, request.Id); err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetTag,
+		TargetID:    intStr(request.Id),
+		TargetLabel: label,
+		Verb:        audit.VerbDelete,
+	})
 	return v1.AdminDeleteTag204Response{}, nil
 }
 
@@ -166,7 +237,8 @@ func (h MenuHandler) AdminCreateDish(
 	ctx context.Context,
 	request v1.AdminCreateDishRequestObject,
 ) (v1.AdminCreateDishResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if request.Body == nil {
@@ -176,6 +248,13 @@ func (h MenuHandler) AdminCreateDish(
 	if err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetDish,
+		TargetID:    intStr(d.ID),
+		TargetLabel: d.Name,
+		Verb:        audit.VerbCreate,
+	})
 	return v1.AdminCreateDish201JSONResponse(apimodels.DishFromUsecase(d)), nil
 }
 
@@ -184,7 +263,8 @@ func (h MenuHandler) AdminUpdateDish(
 	ctx context.Context,
 	request v1.AdminUpdateDishRequestObject,
 ) (v1.AdminUpdateDishResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if request.Body == nil {
@@ -194,6 +274,14 @@ func (h MenuHandler) AdminUpdateDish(
 	if err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetDish,
+		TargetID:    intStr(d.ID),
+		TargetLabel: d.Name,
+		Verb:        audit.VerbUpdate,
+		Changes:     dishPatchChanges(*request.Body),
+	})
 	return v1.AdminUpdateDish200JSONResponse(apimodels.DishFromUsecase(d)), nil
 }
 
@@ -202,12 +290,26 @@ func (h MenuHandler) AdminDeleteDish(
 	ctx context.Context,
 	request v1.AdminDeleteDishRequestObject,
 ) (v1.AdminDeleteDishResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
+	}
+	// Подтянем имя для лога — DeleteDish это soft-delete (is_available=false),
+	// блюдо физически останется, но возьмём имя ДО, чтобы не зависеть от типа delete.
+	label := ""
+	if d, getErr := h.usecase.GetDish(ctx, request.Id); getErr == nil {
+		label = d.Name
 	}
 	if err := h.usecase.DeleteDish(ctx, request.Id); err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetDish,
+		TargetID:    intStr(request.Id),
+		TargetLabel: label,
+		Verb:        audit.VerbDelete,
+	})
 	return v1.AdminDeleteDish204Response{}, nil
 }
 
@@ -216,7 +318,8 @@ func (h MenuHandler) AdminUploadDishImage(
 	ctx context.Context,
 	request v1.AdminUploadDishImageRequestObject,
 ) (v1.AdminUploadDishImageResponseObject, error) {
-	if err := h.requireAdmin(ctx); err != nil {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
 		return nil, err
 	}
 	if request.Body == nil {
@@ -232,5 +335,13 @@ func (h MenuHandler) AdminUploadDishImage(
 	if err != nil {
 		return nil, err
 	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetDish,
+		TargetID:    intStr(d.ID),
+		TargetLabel: d.Name,
+		Verb:        audit.VerbUpdate,
+		Changes:     []audit.Change{{Field: "image_url", To: "(загружено новое)"}},
+	})
 	return v1.AdminUploadDishImage200JSONResponse(apimodels.DishFromUsecase(d)), nil
 }

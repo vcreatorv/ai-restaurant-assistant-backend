@@ -12,6 +12,8 @@ type Category struct {
 	SortOrder int
 	// IsAvailable доступна ли в публичной выдаче
 	IsAvailable bool
+	// Role роль категории в RAG-пайплайне: none | main | companion
+	Role string
 	// CreatedAt время создания
 	CreatedAt time.Time
 	// UpdatedAt время последнего обновления

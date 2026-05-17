@@ -23,10 +23,18 @@ func (uc *menuUsecase) CreateCategory(
 	ctx context.Context,
 	c usecasemodels.CategoryCreate,
 ) (*usecasemodels.Category, error) {
+	role := c.Role
+	if role == "" {
+		role = usecasemodels.CategoryRoleNone
+	}
+	if !role.Valid() {
+		return nil, menu.ErrInvalidCategoryRole
+	}
 	r := &usecasemodels.Category{
 		Name:        c.Name,
 		SortOrder:   c.SortOrder,
 		IsAvailable: c.IsAvailable,
+		Role:        role,
 	}
 	repo := usecasemodels.CategoryToRepository(r)
 	if err := uc.repo.CreateCategory(ctx, repo); err != nil {
@@ -47,6 +55,7 @@ func (uc *menuUsecase) UpdateCategory(
 		return nil, err
 	}
 	c := usecasemodels.CategoryFromRepository(*raw)
+	nameChanged := p.Name != nil && *p.Name != c.Name
 	if p.Name != nil {
 		c.Name = *p.Name
 	}
@@ -56,8 +65,22 @@ func (uc *menuUsecase) UpdateCategory(
 	if p.IsAvailable != nil {
 		c.IsAvailable = *p.IsAvailable
 	}
+	if p.Role != nil {
+		if !p.Role.Valid() {
+			return nil, menu.ErrInvalidCategoryRole
+		}
+		c.Role = *p.Role
+	}
 	if err := uc.repo.UpdateCategory(ctx, usecasemodels.CategoryToRepository(&c)); err != nil {
 		return nil, fmt.Errorf("update category: %w", err)
+	}
+	// Имя категории зашито в embed-текст каждого блюда (см. indexer.BuildEmbedText) —
+	// при переименовании реиндексируем все блюда категории, чтобы векторы и payload
+	// соответствовали актуальному имени. Изменение sort_order/is_available/role на
+	// embed/payload не влияет — реиндексация не нужна. Role подхватывается на стороне
+	// chat usecase в момент запроса (поле читается из БД, не из кэша).
+	if nameChanged {
+		uc.reindexCategoryDishes(ctx, c.ID)
 	}
 	return &c, nil
 }
@@ -181,6 +204,7 @@ func (uc *menuUsecase) CreateDish(ctx context.Context, d usecasemodels.DishCreat
 	if err := uc.repo.CreateDish(ctx, repo, d.TagIDs); err != nil {
 		return nil, fmt.Errorf("create dish: %w", err)
 	}
+	uc.reindexDish(ctx, repo.ID)
 	return usecasemodels.DishFromRepository(repo), nil
 }
 
@@ -190,6 +214,7 @@ func (uc *menuUsecase) UpdateDish(ctx context.Context, id int, p usecasemodels.D
 	if err != nil {
 		return nil, err
 	}
+	before := usecasemodels.DishFromRepository(raw)
 	d := usecasemodels.DishFromRepository(raw)
 	applyDishPatch(d, p)
 	if !d.Cuisine.IsValid() {
@@ -204,7 +229,14 @@ func (uc *menuUsecase) UpdateDish(ctx context.Context, id int, p usecasemodels.D
 	if err := uc.repo.UpdateDish(ctx, repo, tagIDs); err != nil {
 		return nil, fmt.Errorf("update dish: %w", err)
 	}
-	return uc.GetDish(ctx, id)
+	after, err := uc.GetDish(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if dishNeedsReindex(before, after) {
+		uc.reindexDish(ctx, id)
+	}
+	return after, nil
 }
 
 // DeleteDish помечает блюдо недоступным

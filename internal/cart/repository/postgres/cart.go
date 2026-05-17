@@ -7,6 +7,7 @@ import (
 
 	"github.com/example/ai-restaurant-assistant-backend/internal/cart"
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
+	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -277,4 +278,27 @@ func scanCartItem(row pgx.Row) (*repositorymodels.CartItem, error) {
 		return nil, err
 	}
 	return &it, nil
+}
+
+const insertCartAdditionQuery = `
+	INSERT INTO cart_additions (user_id, dish_id, quantity, source, message_id)
+	VALUES ($1, $2, $3, $4, $5)`
+
+// LogAddition пишет событие добавления блюда в корзину в cart_additions.
+//
+// Это аналитика, не состояние; ошибки записи не должны валить основной AddItem.
+// Источник истины — наличие записи: один INSERT на одно нажатие «+» (в т.ч. при
+// увеличении quantity уже существующей позиции — это тоже событие добавления).
+func (r *Repository) LogAddition(
+	ctx context.Context,
+	userID uuid.UUID,
+	dishID, quantity int,
+	source usecasemodels.CartSource,
+	messageID *uuid.UUID,
+) error {
+	_, err := r.pool.Exec(ctx, insertCartAdditionQuery, userID, dishID, quantity, string(source), messageID)
+	if err != nil {
+		return fmt.Errorf("insert cart_addition: %w", err)
+	}
+	return nil
 }

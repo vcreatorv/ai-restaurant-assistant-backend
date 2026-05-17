@@ -1077,6 +1077,228 @@ cancelled  → ∅ (terminal)
 - **Атомарность:** обновление status — один SQL UPDATE с `RETURNING`, без транзакции. Параллельные admin-запросы могут «затереть» друг друга (last write wins) — для MVP норм.
 - **403 без admin-роли:** `requireAdmin` через `users.GetByID(session.UserID).IsAdmin()`.
 
+# Admin — prompts (промпты LLM)
+
+Управление текстом промптов, которые чат подставляет в LLM. Три именованных промпта, каждый со своей ролью в pipeline:
+
+| name | где используется | что хранит |
+|---|---|---|
+| `system` | основной ответ (RAG → LLM) — для recommend/clarify | системный промпт ассистента (правила, стиль, формат JSON) |
+| `classification` | первый LLM-вызов в SendMessage (классификатор намерения) | инструкция вернуть одно слово: `recommend`/`clarify`/`chitchat`/`off_topic`. Обязательный плейсхолдер `{{user_message}}` |
+| `refusal` | ответ на off-topic (без RAG, без system) | короткий вежливый отказ + пустой JSON-блок. Обязательный плейсхолдер `{{user_message}}` |
+
+Версионирование (`prompts` таблица) и личные черновики на админа (`prompt_drafts`, по одному на `(admin_id, prompt_name)`) — общие для всех трёх. Имя промпта передаётся **query-параметром** `?name=...`, не в path. Список валидных имён задан в коде (`prompts.SupportedNames`); добавление нового — одна правка Go без изменений OpenAPI.
+
+## Pipeline в чате
+
+```
+user_msg
+  → classify (классификатор LLM, prompt name='classification') → intent
+    intent in {recommend, clarify}: RAG → system → ответ с JSON
+    intent == chitchat:              без RAG → system (короткий ответ, меню в контексте отсутствует)
+    intent == off_topic:             без RAG, без system → refusal → короткий отказ с пустым JSON
+```
+
+Классификатор использует **отдельный** LLM-клиент (`rag.classifier` в config.yaml). Если `provider` пуст — берётся тот же клиент, что и `rag.llm`. Это позволяет посадить классификатор на более лёгкую/быструю модель.
+
+При сбое классификатора (timeout/parse error) — фоллбэк на `intent=recommend`: безопаснее лишний RAG-вызов, чем «не могу помочь» вместо рекомендации. Причина сбоя пишется в `chat_messages.meta.classifier_failure`.
+
+Телеметрия (`chat_messages.meta`):
+- `intent` — итоговая категория
+- `classifier_latency_ms`
+- `classifier_failed` (bool)
+- `classifier_raw_response` — сырое слово от модели
+- `classifier_failure` — причина фоллбэка (если был)
+
+## Как берётся активная версия
+
+В `chatusecase.SendMessage` для каждого нужного промпта:
+```go
+content, err := uc.prompts.GetActive(ctx, prompts.NameSystem /* или Classification/Refusal */, userID)
+```
+
+Если у этого `userID` (если он админ) есть строка в `prompt_drafts` — берётся `content` черновика. Иначе — последняя версия из `prompts` (`MAX(version)` по `name`). Если БД упала или промпта нет — fallback на зашитые в коде константы (`systemPromptFallback` / `refusalPromptFallback`).
+
+## Подготовка
+
+1. Применены миграции (включая `000006_prompts` и `000008_prompts_decomposition`). Если в БД к моменту миграции уже был хотя бы один админ — будут засеяны `system` v1, `classification` v1, `refusal` v1 с дефолтным контентом.
+2. Залогинься админом через папку **Admin — login**.
+3. Открой папку **Admin — prompts** в Postman.
+
+## Эндпойнты
+
+Имя промпта — query-параметр `?name=`. Шаги:
+
+| # | Метод | URL | Что валидируется |
+|---|-------|-----|-------------------|
+| 58 | GET | `/admin/prompts` | Список содержит `system`, `classification`, `refusal` |
+| 59 | GET | `/admin/prompts/details?name=system` | Активная версия + история (DESC по version) + мой черновик |
+| 59a | GET | `/admin/prompts/details?name=classification` | content содержит `{{user_message}}` |
+| 59b | GET | `/admin/prompts/details?name=refusal` | 200 |
+| 59c | GET | `/admin/prompts/details?name=foo` | 404 `prompt_not_found` (`prompts.IsSupported` отбраковал неизвестное) |
+| 60 | PUT | `/admin/prompts/draft?name=system` | Body: `{ "content": "<≥50 символов>" }` → 200 `PromptDraft`. Для classification/refusal — обязателен `{{user_message}}` в content, иначе 400 `prompt_invalid` |
+| 61 | PUT | `/admin/prompts/draft?name=system` (контент <50 символов) | 400 `prompt_invalid` |
+| 62 | POST | `/admin/prompts/publish?name=system` | Раскатить мой черновик → 200 `PromptVersion` с `version+1`. Черновик удаляется в той же транзакции |
+| 63 | POST | `/admin/prompts/rollback?name=system&version=1` | Создаётся новая версия с content из v1 |
+| 64 | DELETE | `/admin/prompts/draft?name=system` | 204; idempotent |
+
+## Workflow «отредактировал → проверил → раскатил»
+
+1. **Сохранить черновик** (#60): `PUT /admin/prompts/draft?name=<name>` с новым контентом. Чат остальных клиентов продолжает работать с активной версией.
+2. **Проверить на себе**: открой папку **Chats** → шаг `Send message`. Cookie твоей админ-сессии передаётся в SendMessage → `prompts.GetActive` подставит твой черновик. Для `classification` — увидишь эффект на роутинге (intent в `meta`); для `system` — на стиле ответа; для `refusal` — на тексте отказа на off-topic.
+3. **Раскатить** (#62): `POST /admin/prompts/publish?name=<name>`. С этого момента все клиенты получают новый промпт.
+4. Если плохо — **откат** (#63): `POST /admin/prompts/rollback?name=<name>&version=<старая>`.
+
+## Валидация content
+
+| Правило | Где проверяется | Ошибка |
+|---|---|---|
+| Длина 50..8000 символов | `validatePromptContent` в `internal/prompts/usecase` + CHECK в БД | 400 `prompt_invalid` |
+| Обязательные плейсхолдеры (`{{user_message}}` для classification/refusal) | `requiredPlaceholders[name]` в usecase | 400 `prompt_invalid` со списком missing |
+| Не-админ зовёт `/admin/prompts/*` | `requireAdmin` в delivery | 403 `access_denied` |
+| Неизвестное `name` | `prompts.IsSupported` в usecase | 404 `prompt_not_found` |
+| `publish` без черновика | usecase | 404 `prompt_draft_not_found` |
+| `rollback?version=X` несуществующая | repo | 404 `prompt_version_not_found` |
+
+## Проверки в БД
+
+```sh
+# Активные версии всех трёх промптов
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT name, MAX(version) AS active_version FROM prompts GROUP BY name ORDER BY name;"
+
+# История версий конкретного промпта
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT version, LEFT(content, 80) AS preview, published_at
+     FROM prompts WHERE name='system' ORDER BY version DESC;"
+
+# Активные черновики (один на админа на name)
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT pd.admin_id, u.email, pd.prompt_name, LEFT(pd.content, 80), pd.updated_at
+     FROM prompt_drafts pd JOIN users u ON u.id = pd.admin_id
+     ORDER BY pd.updated_at DESC;"
+
+# Телеметрия классификатора по последним ответам
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT id, meta->>'intent' AS intent,
+          (meta->>'classifier_latency_ms')::int AS clf_ms,
+          meta->>'classifier_failed' AS clf_failed,
+          meta->>'classifier_raw_response' AS clf_raw
+     FROM chat_messages
+     WHERE role='assistant'
+     ORDER BY created_at DESC LIMIT 10;"
+```
+
+## Что валидирует каждый шаг (prompts)
+
+| Шаг | Что валидируется |
+|---|---|
+| 58 | List отдаёт все три промпта (system, classification, refusal) |
+| 59/59a/59b | Get details по каждому имени; обязательные плейсхолдеры на месте |
+| 59c | Неизвестный `?name=` → 404 |
+| 60 | UpsertDraft — content валидируется; для classification/refusal без `{{user_message}}` будет 400 |
+| 61 | Контент < 50 символов → 400 |
+| 62 | Publish создаёт новую версию + удаляет черновик в одной транзакции |
+| 63 | Rollback создаёт новую версию с content из старой |
+| 64 | DeleteDraft idempotent |
+
+# Admin — audit log (лог админских действий)
+
+Кто и когда менял заказы, меню, теги, категории, промпты. Сами записи делаются автоматически в delivery-слое после успешного выполнения admin-операции (best-effort: ошибка записи не валит бизнес-операцию).
+
+## Что логируется
+
+| Where (delivery handler) | target | verb | пример changes |
+|---|---|---|---|
+| `PATCH /admin/orders/{id}/status` | `order` | `status_change` | `[{field:"status", from:"accepted", to:"cooking"}]` |
+| `POST/PATCH/DELETE /admin/categories[/{id}]` | `category` | `create/update/delete` | при PATCH — `name/sort_order/is_available` (только to) |
+| `POST/PATCH/DELETE /admin/tags[/{id}]` | `tag` | `create/update/delete` | `name/slug/color` |
+| `POST/PATCH/DELETE /admin/menu[/{id}]` | `dish` | `create/update/delete` | `name/price_minor/is_available/category_id/...` |
+| `POST /admin/menu/{id}/image` | `dish` | `update` | `[{field:"image_url", to:"(загружено новое)"}]` |
+| `POST /admin/prompts/{name}/publish` | `prompt` | `publish` | `[{field:"version", from:"v17", to:"v18"}]` |
+| `POST /admin/prompts/{name}/rollback/{version}` | `prompt` | `rollback` | `[{field:"version", from:"v18", to:"v19"}]` |
+
+**Не логируется** (намеренно):
+- `PUT /admin/prompts/{name}/draft` и `DELETE .../draft` — личный черновик, не влияет на клиентов;
+- read-only эндпоинты (`GET /admin/...`);
+- автоматические системные процессы (миграции, чистка гостей).
+
+## Дисамбигуация ФИО
+
+В выдаче `admin.has_namesake = true`, если в `users` есть **другой** админ с такими же `(first_name, last_name)` (регистронезависимо, исключая пустые). Фронт по этому флагу показывает email рядом с именем. Сравнение делается одним SQL-подзапросом в `listColumns` — без N+1.
+
+Если автор удалён (FK `ON DELETE SET NULL`), запись остаётся, `admin.id = null`, `admin.display_name = "Удалённый админ"`, `email = null`.
+
+## Подготовка
+
+1. Применены миграции (`make migrate-up`), включая `000007_admin_actions`.
+2. Залогиниться админом (Admin — login).
+3. Сделать любую admin-операцию (например, поменять статус заказа в Admin — orders → шаг 4).
+4. Открыть папку **Admin — audit log**.
+
+## Эндпойнты
+
+| # | Метод | URL | Что валидируется |
+|---|-------|-----|-------------------|
+| 65 | GET | `/admin/actions?limit=20` | Лента: items[].admin.display_name + has_namesake; target/verb из enum |
+| 66 | GET | `/admin/actions?admin_id=me&limit=20` | Только мои действия (admin_id=me резолвится из сессии) |
+| 67 | GET | `/admin/actions?target=order&limit=10` | Фильтр по типу объекта |
+| 68 | GET | `/admin/orders/{orderId}/actions?limit=20` | История по конкретному заказу: target=order, target_id=orderId |
+| 69 | GET | `/admin/actions?admin_id=not-a-uuid` | 400 (не валидный UUID и не 'me') |
+
+## Параметры `/admin/actions`
+
+| Параметр | Тип | Описание |
+|---|---|---|
+| `admin_id` | uuid \| `me` | Фильтр по автору. `me` — текущий админ из сессии. |
+| `target`   | enum | `order`, `dish`, `category`, `tag`, `prompt` |
+| `from`     | RFC3339 | created_at >= from |
+| `to`       | RFC3339 | created_at <= to |
+| `limit`    | int | Default 50, max 200 |
+| `offset`   | int | Пагинация |
+
+Сортировка — `created_at DESC, id DESC` (стабильна на одинаковом `created_at`).
+
+## Атомарность и failure-поведение
+
+Запись делается **после** успешного UPDATE/INSERT/DELETE основного объекта, через `audit.SafeRecorder.Record(ctx, ...)`. Внутри `SafeRecorder`:
+
+- если `Record` вернул ошибку — она логируется через `slog.Warn` с полями `target/target_id/verb/err`;
+- бизнес-операции это **не** ломает — клиент получает 200, заказ/блюдо обновлено, в логе строки нет.
+
+Это сознательный trade-off: лог не должен валить прод. Если потеря отдельной записи критична — вынесем запись в transaction-outbox или сделаем основную операцию + INSERT в одной транзакции.
+
+## Проверки в БД
+
+```sh
+# Свежие 20 действий
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT a.id, u.email AS by_email, a.target, a.target_id, a.target_label, a.verb, a.changes, a.created_at
+     FROM admin_actions a LEFT JOIN users u ON u.id = a.admin_id
+     ORDER BY a.created_at DESC LIMIT 20;"
+
+# Сколько действий по каждому типу
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT target, verb, COUNT(*) FROM admin_actions GROUP BY target, verb ORDER BY 1, 2;"
+
+# История одного заказа
+docker compose exec postgres psql -U restaurant -d restaurant -c \
+  "SELECT target_label, verb, changes, created_at
+     FROM admin_actions
+     WHERE target = 'order' AND target_id = '<orderUUID>'
+     ORDER BY created_at;"
+```
+
+## Что валидирует каждый шаг (audit log)
+
+| Шаг | Что валидируется |
+|---|---|
+| 65 | List отдаёт записи с author + has_namesake; target/verb валидные |
+| 66 | admin_id=me резолвится в id текущего админа |
+| 67 | Фильтр target режет правильное подмножество |
+| 68 | ListByOrder отдаёт только записи по этому order_id |
+| 69 | Кривой UUID в admin_id → 400 |
+
 # Filters & profiles (теги, аллергены, диеты, hard-фильтры RAG)
 
 Эта секция собирает в одно место способы проверить, что **фильтры каталога**

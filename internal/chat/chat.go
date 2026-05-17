@@ -39,6 +39,12 @@ type DoneEvent struct {
 	TokensOut int
 	// Model фактическая модель, которой ответил OpenRouter
 	Model string
+	// RecommendedDishIDs финальный список id блюд, которые ассистент реально упомянул в ответе.
+	// Отличается от MetaEvent.RecommendedDishIDs: там — RAG-кандидаты (всё, что подавалось модели);
+	// здесь — то, что прошло после парсинга JSON-блока ответа и/или fallback-восстановления имён.
+	// Фронт обязан предпочесть это поле — иначе при пропуске JSON в выдаче LLM пользователь увидит
+	// все RAG-кандидаты, а не реально названные блюда.
+	RecommendedDishIDs []int
 }
 
 // SendCallbacks набор колбэков для streaming ответа ассистента

@@ -6,8 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/example/ai-restaurant-assistant-backend/internal/chat"
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
@@ -15,6 +18,7 @@ import (
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/llm"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/logger"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/qdrant"
+	"github.com/example/ai-restaurant-assistant-backend/internal/prompts"
 	"github.com/example/ai-restaurant-assistant-backend/internal/rag"
 
 	"github.com/google/uuid"
@@ -31,11 +35,21 @@ var cuisineRU = map[string]string{
 	"american": "американская",
 }
 
-// jsonFencedRe ловит JSON-блок, обёрнутый в ```json ... ``` (рекомендуемый формат от LLM)
-var jsonFencedRe = regexp.MustCompile("(?s)```(?:json)?\\s*({[^`]*?})\\s*```")
+// jsonFencedRe ловит JSON-блок recommended_dish_ids, обёрнутый в 1-3 backticks
+// с опциональным префиксом "json" (тройной, двойной или одинарный fence).
+// GigaChat нередко возвращает блок в одинарных backticks вместо тройных
+// (видели на «деталь о блюде» сценариях) — отсюда диапазон {1,3}.
+var jsonFencedRe = regexp.MustCompile(
+	"(?s)`{1,3}(?:json)?\\s*(\\{[^{}]*\"recommended_dish_ids\"[^{}]*\\})\\s*`{1,3}",
+)
 
 // jsonTailRe ловит голый JSON-объект с recommended_dish_ids в самом конце ответа LLM
 var jsonTailRe = regexp.MustCompile(`(?s)\{[^{}]*"recommended_dish_ids"[^{}]*\}\s*$`)
+
+// jsonAnywhereRe — последняя попытка: голый JSON-объект с recommended_dish_ids
+// где угодно в тексте. Используется, если модель обернула блок чем-то экзотичным
+// (вроде HTML-тегов или нестандартных fence), что не подпало под jsonFencedRe.
+var jsonAnywhereRe = regexp.MustCompile(`(?s)\{[^{}]*"recommended_dish_ids"[^{}]*\}`)
 
 // GetActive возвращает активный чат пользователя; создаёт новый, если последний устарел или отсутствует
 func (uc *chatUsecase) GetActive(ctx context.Context, userID uuid.UUID) (*usecasemodels.Chat, error) {
@@ -164,41 +178,90 @@ func (uc *chatUsecase) SendMessage(
 		"prior_recommended", hist.priorRecommended,
 	)
 
-	// 4. RAG: embed → search → rerank → load full data + companions.
-	rag, ragErr := uc.runRAG(ctx, content, profile)
-	if ragErr != nil {
-		log.Error("chat rag stage failed", "stage", "rag", "err", ragErr)
-		return ragErr
-	}
-	log.Info("chat rag retrieved",
-		"stage", "rag",
-		"retrieved_count", len(rag.retrievedIDs),
-		"retrieved_ids", rag.retrievedIDs,
-		"reranked_ids", rag.rerankedIDs,
-		"companion_ids", companionIDs(rag.companions),
-	)
+	// 4. Классификация намерения. Отдельный лёгкий LLM-вызов до RAG.
+	// Решает, нужен ли вообще RAG и какой промпт подложить ассистенту.
+	cls := uc.classify(ctx, content, userID)
 
-	// 5. Готовим metadata для клиента и assistant-сообщения.
+	// 5. По интенту собираем prompt для основной LLM. RAG запускаем только когда нужны блюда.
+	var rag ragResult
+	var prompt []llm.Message
+	switch cls.intent {
+	case intentOffTopic:
+		// Refusal: системный промпт ассистента не используется. Берём refusal из БД,
+		// подставляем сообщение пользователя — модель сама сформулирует короткий отказ.
+		refusalTpl, perr := uc.prompts.GetActive(ctx, prompts.NameRefusal, userID)
+		if perr != nil {
+			log.Warn("refusal prompt load failed, using fallback", "err", perr)
+			refusalTpl = refusalPromptFallback
+		}
+		body := strings.ReplaceAll(refusalTpl, "{{user_message}}", content)
+		prompt = []llm.Message{{Role: llm.RoleUser, Content: body}}
+
+	case intentChitchat:
+		// Chitchat: RAG не нужен (нет вопроса по меню). Используем основной system —
+		// в нём уже есть правило короткого ответа на «спасибо/пока».
+		systemContent, sysErr := uc.prompts.GetActive(ctx, prompts.NameSystem, userID)
+		if sysErr != nil {
+			log.Warn("system prompt load failed, using fallback", "err", sysErr)
+			systemContent = ""
+		}
+		prompt = buildPrompt(promptInput{
+			systemContent:    systemContent,
+			profile:          profile,
+			retrieved:        nil, // без меню — buildUserContent напишет «не найдено»
+			companions:       nil,
+			priorRecommended: hist.priorRecommended,
+			anchor:           hist.anchor,
+			history:          hist.recent,
+			currentUserText:  content,
+		})
+
+	default: // intentRecommend, intentClarify
+		// Полный pipeline: RAG → system prompt с меню-контекстом.
+		var ragErr error
+		anchorText := ""
+		if hist.anchor != nil {
+			anchorText = hist.anchor.Content
+		}
+		rag, ragErr = uc.runRAG(ctx, content, anchorText, profile, hist.priorRecommended)
+		if ragErr != nil {
+			log.Error("chat rag stage failed", "stage", "rag", "err", ragErr)
+			return ragErr
+		}
+		log.Info("chat rag retrieved",
+			"stage", "rag",
+			"retrieved_count", len(rag.retrievedIDs),
+			"retrieved_ids", rag.retrievedIDs,
+			"reranked_ids", rag.rerankedIDs,
+			"companion_ids", companionIDs(rag.companions),
+		)
+		systemContent, sysErr := uc.prompts.GetActive(ctx, prompts.NameSystem, userID)
+		if sysErr != nil {
+			log.Warn("system prompt load failed, using fallback", "err", sysErr)
+			systemContent = ""
+		}
+		prompt = buildPrompt(promptInput{
+			systemContent:    systemContent,
+			profile:          profile,
+			retrieved:        rag.main,
+			companions:       rag.companions,
+			priorRecommended: hist.priorRecommended,
+			anchor:           hist.anchor,
+			history:          hist.recent,
+			currentUserText:  content,
+		})
+	}
+
+	// 6. Готовим metadata для клиента и assistant-сообщения.
 	assistantMessageID := uc.uuid.New()
 	if cb.OnMeta != nil {
 		if err := cb.OnMeta(chat.MetaEvent{
 			MessageID:          assistantMessageID,
-			RecommendedDishIDs: rag.rerankedIDs,
+			RecommendedDishIDs: rag.rerankedIDs, // пусто для chitchat/off_topic
 		}); err != nil {
 			return fmt.Errorf("on meta: %w", err)
 		}
 	}
-
-	// 6. Promp + LLM stream. Накопленный текст пишем в буфер, токены отдаём клиенту.
-	prompt := buildPrompt(promptInput{
-		profile:          profile,
-		retrieved:        rag.main,
-		companions:       rag.companions,
-		priorRecommended: hist.priorRecommended,
-		anchor:           hist.anchor,
-		history:          hist.recent,
-		currentUserText:  content,
-	})
 	llmStart := time.Now()
 	log.Debug("chat llm prompt assembled",
 		"stage", "llm.prompt",
@@ -207,7 +270,13 @@ func (uc *chatUsecase) SendMessage(
 		"companions", len(rag.companions),
 	)
 	var fullText strings.Builder
-	usage, llmErr := uc.llm.ChatStream(ctx, llm.ChatRequest{Messages: prompt}, func(delta string) error {
+	// SessionID = chat_id: для GigaChat это X-Session-ID, кэширующий префикс
+	// контекста между запросами одного чата (меньше токенов на длинных диалогах).
+	// Для NVIDIA/OpenRouter заголовок игнорируется — безопасно ставить всегда.
+	usage, llmErr := uc.llm.ChatStream(ctx, llm.ChatRequest{
+		Messages:  prompt,
+		SessionID: chatID.String(),
+	}, func(delta string) error {
 		fullText.WriteString(delta)
 		if cb.OnDelta != nil {
 			return cb.OnDelta(delta)
@@ -242,12 +311,35 @@ func (uc *chatUsecase) SendMessage(
 	}
 
 	// 7. Парсим JSON-блок ассистента, чистим текст для сохранения и отдачи.
-	cleanText, llmRecommended := parseLLMTail(fullText.String())
+	// Сырой ответ логируем целиком на DEBUG — нужно для разбора кейсов,
+	// когда LLM не вернула финальный JSON-блок: только так видно, был ли он
+	// вообще в ответе модели или это наш parser промахнулся.
+	raw := fullText.String()
+	log.Debug("chat llm raw response",
+		"stage", "llm.raw",
+		"text", raw,
+		"text_len", len(raw),
+	)
+	cleanText, llmRecommended := parseLLMTail(raw)
 	log.Debug("chat llm parsed",
 		"stage", "llm.parse",
 		"clean_text_preview", previewText(cleanText, 120),
 		"llm_recommended", llmRecommended,
 	)
+
+	// Fallback: некоторые модели (GigaChat и старшие, не GPT-4-класса) плохо
+	// следуют инструкции «в конце добавь JSON-блок». Если массив пустой —
+	// пытаемся восстановить id по упоминаниям блюд в тексте: матчим имена в
+	// **double-stars** с known-блюдами из подаваемого RAG-контекста.
+	if len(llmRecommended) == 0 {
+		llmRecommended = recoverIDsFromText(cleanText, rag.main, rag.companions)
+		if len(llmRecommended) > 0 {
+			log.Debug("chat llm recovered ids from text",
+				"stage", "llm.parse.fallback",
+				"recovered", llmRecommended,
+			)
+		}
+	}
 
 	// recommended_dish_ids в API/БД отражает то, что LLM реально упомянула в ответе.
 	// От рерэнкера в meta остаётся отдельное поле reranked_ids — для аналитики.
@@ -258,14 +350,21 @@ func (uc *chatUsecase) SendMessage(
 
 	// 8. Assistant-message в БД с полной телеметрией.
 	assistantMeta := map[string]any{
-		"latency_ms":    time.Since(start).Milliseconds(),
-		"tokens_in":     usage.PromptTokens,
-		"tokens_out":    usage.CompletionTokens,
-		"finish_reason": usage.FinishReason,
-		"model":         usage.Model,
-		"retrieved_ids": rag.retrievedIDs,
-		"reranked_ids":  rag.rerankedIDs,
-		"companion_ids": companionIDs(rag.companions),
+		"latency_ms":              time.Since(start).Milliseconds(),
+		"tokens_in":               usage.PromptTokens,
+		"tokens_out":              usage.CompletionTokens,
+		"finish_reason":           usage.FinishReason,
+		"model":                   usage.Model,
+		"retrieved_ids":           rag.retrievedIDs,
+		"reranked_ids":            rag.rerankedIDs,
+		"companion_ids":           companionIDs(rag.companions),
+		"intent":                  string(cls.intent),
+		"classifier_latency_ms":   cls.latency.Milliseconds(),
+		"classifier_failed":       cls.failed,
+		"classifier_raw_response": cls.rawResponse,
+	}
+	if cls.failureReason != "" {
+		assistantMeta["classifier_failure"] = cls.failureReason
 	}
 	assistantMsg := &repositorymodels.Message{
 		ID:                 assistantMessageID,
@@ -279,13 +378,16 @@ func (uc *chatUsecase) SendMessage(
 		return fmt.Errorf("append assistant message: %w", err)
 	}
 
-	// 9. Финальный done.
+	// 9. Финальный done. Передаём актуальный recommended_dish_ids — это нужно фронту,
+	// чтобы он показал именно реально названные ассистентом блюда, а не все RAG-кандидаты
+	// из meta-события (которые он получил до начала стрима).
 	if cb.OnDone != nil {
 		if err := cb.OnDone(chat.DoneEvent{
-			LatencyMS: time.Since(start).Milliseconds(),
-			TokensIn:  usage.PromptTokens,
-			TokensOut: usage.CompletionTokens,
-			Model:     usage.Model,
+			LatencyMS:          time.Since(start).Milliseconds(),
+			TokensIn:           usage.PromptTokens,
+			TokensOut:          usage.CompletionTokens,
+			Model:              usage.Model,
+			RecommendedDishIDs: finalRecommended,
 		}); err != nil {
 			return fmt.Errorf("on done: %w", err)
 		}
@@ -306,18 +408,40 @@ type ragResult struct {
 }
 
 // runRAG выполняет embed → primary search/rerank → companion searches → load.
-// Embed и rerank работают только с текущим сообщением — иначе разнотемные предыдущие
+//
+// Базово embed и rerank работают по текущему сообщению — иначе разнотемные предыдущие
 // вопросы смазывают вектор и rerank теряет фокус. Контекст диалога LLM получает
 // отдельно через массив messages.
+//
+// Исключение: если в текущем сообщении есть указательные/референциальные слова
+// («эти», «к ним», «к этому», «такой же», «ещё»), сами по себе они не несут
+// смысла блюда — без склейки с anchor (первый user-msg чата) retrieval вытянет
+// универсальные позиции. В этом случае склеиваем `anchor + " " + currentMessage`
+// для embed/rerank, чтобы фокус остался на исходной теме («гарнир к рыбе»,
+// а не просто «гарнир»).
+//
+// priorRecommendedIDs — id блюд, уже названных в этом чате; они исключаются из Qdrant
+// must_not по dish_id, чтобы новые сообщения получали в RAG-контексте свежие позиции,
+// а не повторно те же «мороженое»/«картофель фри», которые тяжёлый эмбеддинг обычно
+// держит в верхушке top-k.
 func (uc *chatUsecase) runRAG(
 	ctx context.Context,
 	currentMessage string,
+	anchorMessage string,
 	profile *usecasemodels.User,
+	priorRecommendedIDs []int,
 ) (ragResult, error) {
 	log := logger.ForCtx(ctx)
 
+	query := effectiveRAGQuery(currentMessage, anchorMessage)
+	log.Debug("rag query resolved",
+		"stage", "rag.query",
+		"resolved_len", len(query),
+		"used_anchor", query != currentMessage,
+	)
+
 	t0 := time.Now()
-	embeds, err := uc.cohere.Embed(ctx, []string{currentMessage}, rag.CohereInputQuery)
+	embeds, err := uc.cohere.Embed(ctx, []string{query}, rag.CohereInputQuery)
 	if err != nil {
 		return ragResult{}, fmt.Errorf("%w: embed: %s", chat.ErrUpstreamFailure, err.Error())
 	}
@@ -331,7 +455,7 @@ func (uc *chatUsecase) runRAG(
 		"dim", len(embed),
 	)
 
-	prefilter := buildPrefilter(profile)
+	prefilter := buildPrefilter(profile, priorRecommendedIDs)
 	hits, err := uc.qdrant.Search(ctx, embed, prefilter, uc.ragCfg.Search.TopK, true)
 	if err != nil {
 		return ragResult{}, fmt.Errorf("%w: search: %s", chat.ErrUpstreamFailure, err.Error())
@@ -347,10 +471,15 @@ func (uc *chatUsecase) runRAG(
 		return ragResult{}, fmt.Errorf("list categories: %w", err)
 	}
 	catName := make(map[int]string, len(categories))
-	catIDByName := make(map[string]int, len(categories))
+	var mainCats, companionCats []usecasemodels.Category
 	for _, c := range categories {
 		catName[c.ID] = c.Name
-		catIDByName[c.Name] = c.ID
+		switch c.Role {
+		case usecasemodels.CategoryRoleMain:
+			mainCats = append(mainCats, c)
+		case usecasemodels.CategoryRoleCompanion:
+			companionCats = append(companionCats, c)
+		}
 	}
 
 	if len(hits) == 0 {
@@ -385,7 +514,7 @@ func (uc *chatUsecase) runRAG(
 	}
 
 	t2 := time.Now()
-	rerankedIDs := uc.rerankOrFallback(ctx, currentMessage, rerankInput, rerankIDs)
+	rerankedIDs := uc.rerankOrFallback(ctx, query, rerankInput, rerankIDs)
 	log.Debug("rag rerank done",
 		"stage", "rag.rerank",
 		"rerank_ms", time.Since(t2).Milliseconds(),
@@ -400,23 +529,19 @@ func (uc *chatUsecase) runRAG(
 	}
 	mainCatSet := make(map[int]struct{}, len(main))
 	for _, d := range main {
-		if catID, ok := catIDByName[d.categoryName]; ok {
-			mainCatSet[catID] = struct{}{}
-		}
+		mainCatSet[d.categoryID] = struct{}{}
 	}
 
 	// Диверсификация main по категориям (если в reranked top-N покрыто мало
 	// разных main-категорий — добавляем top-1 из непокрытых).
-	diversified := uc.runMainDiversification(ctx, embed, prefilter, mainSet, mainCatSet, catIDByName, catName)
+	diversified := uc.runMainDiversification(ctx, embed, prefilter, mainSet, mainCatSet, mainCats, catName)
 	for _, d := range diversified {
 		main = append(main, d)
 		mainSet[d.id] = struct{}{}
-		if catID, ok := catIDByName[d.categoryName]; ok {
-			mainCatSet[catID] = struct{}{}
-		}
+		mainCatSet[d.categoryID] = struct{}{}
 	}
 
-	companions := uc.runCompanions(ctx, embed, prefilter, mainSet, mainCatSet, catIDByName, catName)
+	companions := uc.runCompanions(ctx, embed, prefilter, mainSet, mainCatSet, companionCats, catName)
 
 	return ragResult{
 		main:         main,
@@ -427,7 +552,7 @@ func (uc *chatUsecase) runRAG(
 }
 
 // runMainDiversification на широких запросах добавляет в main top-1 из тех
-// main-категорий (rag.chat.main_categories), которые не покрыты reranked top-N.
+// main-категорий (categories с role='main'), которые не покрыты reranked top-N.
 // Срабатывает только если: (а) в main < cfg.MainMinCategories разных main-категорий,
 // (б) score top-1 >= cfg.MainDiversifyMinScore (на узком запросе нерелевантное не подсосётся).
 // Лимит cfg.MainMaxAdded.
@@ -437,26 +562,25 @@ func (uc *chatUsecase) runMainDiversification(
 	base *qdrant.Filter,
 	mainSet map[int]struct{},
 	mainCatSet map[int]struct{},
-	catIDByName map[string]int,
+	mainCats []usecasemodels.Category,
 	catName map[int]string,
 ) []retrievedDish {
 	log := logger.ForCtx(ctx)
-	names := uc.ragCfg.Chat.MainCategories
 	minCats := uc.ragCfg.Chat.MainMinCategories
 	maxAdded := uc.ragCfg.Chat.MainMaxAdded
 	minScore := uc.ragCfg.Chat.MainDiversifyMinScore
-	if len(names) == 0 || maxAdded <= 0 {
+	if len(mainCats) == 0 || maxAdded <= 0 {
 		return nil
 	}
 
-	// Считаем покрытые main-категории (только те, что есть в нашем list main_categories)
+	// Считаем покрытые main-категории (только те, у которых role='main').
 	covered := 0
-	mainCatNames := make(map[string]struct{}, len(names))
-	for _, n := range names {
-		mainCatNames[n] = struct{}{}
+	mainCatIDs := make(map[int]struct{}, len(mainCats))
+	for _, c := range mainCats {
+		mainCatIDs[c.ID] = struct{}{}
 	}
 	for catID := range mainCatSet {
-		if _, ok := mainCatNames[catName[catID]]; ok {
+		if _, ok := mainCatIDs[catID]; ok {
 			covered++
 		}
 	}
@@ -470,26 +594,22 @@ func (uc *chatUsecase) runMainDiversification(
 	}
 
 	collected := make([]int, 0, maxAdded)
-	for _, name := range names {
+	for _, c := range mainCats {
 		if len(collected) >= maxAdded {
 			break
 		}
-		catID, ok := catIDByName[name]
-		if !ok {
-			log.Warn("rag diversify category not found", "name", name)
+		if _, alreadyCovered := mainCatSet[c.ID]; alreadyCovered {
 			continue
 		}
-		if _, alreadyCovered := mainCatSet[catID]; alreadyCovered {
-			continue
-		}
-		filter := withCategoryID(base, catID)
+		filter := withCategoryID(base, c.ID)
 
 		t := time.Now()
 		hits, err := uc.qdrant.Search(ctx, embed, filter, 1, false)
 		if err != nil {
 			log.Warn("rag diversify search failed",
 				"stage", "rag.diversify",
-				"category", name,
+				"category", c.Name,
+				"category_id", c.ID,
 				"err", err,
 			)
 			continue
@@ -499,8 +619,8 @@ func (uc *chatUsecase) runMainDiversification(
 		}
 		log.Debug("rag diversify search done",
 			"stage", "rag.diversify",
-			"category", name,
-			"category_id", catID,
+			"category", c.Name,
+			"category_id", c.ID,
 			"top_score", hits[0].Score,
 			"min_score", minScore,
 			"search_ms", time.Since(t).Milliseconds(),
@@ -536,8 +656,8 @@ func (uc *chatUsecase) runMainDiversification(
 	return out
 }
 
-// runCompanions для каждой companion-категории из конфига делает Qdrant.Search
-// с pre-filter (профиль + is_available + category_id) и берёт top-1, дедупит с main.
+// runCompanions для каждой companion-категории (categories с role='companion') делает
+// Qdrant.Search с pre-filter (профиль + is_available + category_id) и берёт top-1, дедупит с main.
 // Без rerank: companion — это «лучшая семантически близкая позиция в категории»,
 // ради точности нет смысла платить ещё один Cohere-вызов.
 //
@@ -549,52 +669,46 @@ func (uc *chatUsecase) runCompanions(
 	base *qdrant.Filter,
 	mainSet map[int]struct{},
 	mainCatSet map[int]struct{},
-	catIDByName map[string]int,
+	companionCats []usecasemodels.Category,
 	catName map[int]string,
 ) []retrievedDish {
 	log := logger.ForCtx(ctx)
-	names := uc.ragCfg.Chat.Companions
-	if len(names) == 0 {
+	if len(companionCats) == 0 {
 		return nil
 	}
 
-	used := make(map[int]struct{}, len(mainSet)+len(names))
+	used := make(map[int]struct{}, len(mainSet)+len(companionCats))
 	for id := range mainSet {
 		used[id] = struct{}{}
 	}
 
-	collected := make([]int, 0, len(names))
-	for _, name := range names {
-		catID, ok := catIDByName[name]
-		if !ok {
-			log.Warn("companion category not found", "name", name)
-			continue
-		}
-		if _, exists := mainCatSet[catID]; exists {
+	collected := make([]int, 0, len(companionCats))
+	for _, c := range companionCats {
+		if _, exists := mainCatSet[c.ID]; exists {
 			log.Debug("rag companion skipped (category already in main)",
 				"stage", "rag.search.companion",
-				"category", name,
-				"category_id", catID,
+				"category", c.Name,
+				"category_id", c.ID,
 			)
 			continue
 		}
-		filter := withCategoryID(base, catID)
+		filter := withCategoryID(base, c.ID)
 
 		t := time.Now()
 		hits, err := uc.qdrant.Search(ctx, embed, filter, 5, false)
 		if err != nil {
 			log.Warn("rag companion search failed",
 				"stage", "rag.search.companion",
-				"category", name,
-				"category_id", catID,
+				"category", c.Name,
+				"category_id", c.ID,
 				"err", err,
 			)
 			continue
 		}
 		log.Debug("rag companion search done",
 			"stage", "rag.search.companion",
-			"category", name,
-			"category_id", catID,
+			"category", c.Name,
+			"category_id", c.ID,
 			"hits", len(hits),
 			"top_score", topScore(hits),
 			"search_ms", time.Since(t).Milliseconds(),
@@ -652,6 +766,7 @@ func buildRetrievedDishes(ids []int, dishesByID map[int]usecasemodels.Dish, catN
 			name:         d.Name,
 			description:  d.Description,
 			composition:  d.Composition,
+			categoryID:   d.CategoryID,
 			categoryName: catName[d.CategoryID],
 			cuisineRU:    cuisineLabel(string(d.Cuisine)),
 			priceMinor:   d.PriceMinor,
@@ -812,8 +927,34 @@ func (uc *chatUsecase) isStale(lastMessageAt time.Time) bool {
 	return time.Since(lastMessageAt) > uc.chatCfg.AutoNewChatAfter
 }
 
-// buildPrefilter собирает Qdrant-фильтр из аллергенов/диеты пользователя + is_available
-func buildPrefilter(u *usecasemodels.User) *qdrant.Filter {
+// referenceWordRe детектит указательные/референциальные слова в текущем сообщении гостя.
+// Если они найдены, retrieval склеивает anchor + current, чтобы не потерять тему диалога:
+// например, «а что на гарнир к этим блюдам?» без склейки даёт универсальные гарниры,
+// а со склейкой anchor=«хочу что-то из морских продуктов» — гарниры именно к морепродуктам.
+//
+// Паттерн нарочно широкий и нестрогий: лучше иногда дать anchor, чем потерять контекст.
+var referenceWordRe = regexp.MustCompile(`(?i)\b(эт(о|и|а|их|им|ими|ого|ому|ой|ом)|так(ой|ая|ое|ие|ому|ой)|так\s+же|так-то|тот|та|те|их|им|ими|ему|ей|ему|нему|ним|ним|ним же|ним-то|ним|него|неё|них|нему|нему же|ещё|еще)\b`)
+
+// effectiveRAGQuery определяет, что подавать в Cohere embed и rerank.
+//
+// По умолчанию это просто currentMessage. Но если в currentMessage есть указательные слова
+// («эти», «к ним», «такой же», «ещё») и в чате есть anchor — мы склеиваем «anchor . current»,
+// чтобы retrieval сохранил тему первого вопроса.
+func effectiveRAGQuery(currentMessage, anchorMessage string) string {
+	if strings.TrimSpace(anchorMessage) == "" {
+		return currentMessage
+	}
+	if !referenceWordRe.MatchString(currentMessage) {
+		return currentMessage
+	}
+	return anchorMessage + ". " + currentMessage
+}
+
+// buildPrefilter собирает Qdrant-фильтр: is_available + hard-фильтры профиля
+// (аллергены/диета) + список priorRecommended dish_id, которые надо исключить
+// из выдачи (чтобы LLM не получал в контексте уже названные блюда — иначе
+// «десерт = мороженое» залипает между сообщениями одного чата).
+func buildPrefilter(u *usecasemodels.User, priorRecommendedIDs []int) *qdrant.Filter {
 	f := &qdrant.Filter{
 		Must: []qdrant.FilterCondition{
 			{Key: "is_available", Match: &qdrant.FilterMatch{Value: true}},
@@ -830,6 +971,16 @@ func buildPrefilter(u *usecasemodels.User) *qdrant.Filter {
 				Key: "dietary", Match: &qdrant.FilterMatch{Value: d},
 			})
 		}
+	}
+	if len(priorRecommendedIDs) > 0 {
+		anyVals := make([]any, len(priorRecommendedIDs))
+		for i, id := range priorRecommendedIDs {
+			anyVals[i] = id
+		}
+		f.MustNot = append(f.MustNot, qdrant.FilterCondition{
+			Key:   "dish_id",
+			Match: &qdrant.FilterMatch{Any: anyVals},
+		})
 	}
 	return f
 }
@@ -854,14 +1005,181 @@ func cuisineLabel(code string) string {
 	return code
 }
 
-// parseLLMTail извлекает recommended_dish_ids из JSON-блока в конце ответа и удаляет блок из текста.
-// Поддерживает три формата: ```json{...}```, ```{...}```, голый {...} в конце.
+// boldSpanRe ловит контент markdown-обёрток **...**. Используется в
+// recoverIDsFromText как «фильтр интента»: tail-reminder требует от LLM
+// оборачивать названия блюд в bold, поэтому матчинг блюд ведётся только
+// внутри этих спанов, а не по всему тексту ответа. Это защищает от
+// false-positive на словах из описаний («эспрессо со льдом», «апельсиновым
+// фрешем»), которые ложно матчили имена companions при поиске по всему тексту.
+var boldSpanRe = regexp.MustCompile(`\*\*([^*]+)\*\*`)
+
+// recoverIDsFromText fallback-парсер: восстанавливает recommended_dish_ids
+// по упоминаниям блюд в тексте, когда LLM не вернула финальный JSON-блок
+// (или вернула пустой массив, но при этом назвала блюда в тексте).
+//
+// Принцип: ищем только внутри **bold**-спанов. Tail-reminder в промпте
+// требует от LLM выделять названия блюд жирным — это её явный сигнал
+// «это название, а не описание». Описательные слова («эспрессо со льдом»,
+// «острый соус») в жирное не выделяются, поэтому ложно блюда они не сматчат.
+//
+// Внутри каждого spans пробуем двухуровневый матч:
+//  1. Полное case-insensitive substring-совпадение имени с word-boundary
+//     защитой — точно для номинатива («**Цезарь**»).
+//  2. Стем-fallback: GigaChat склоняет имена («**Хлебную корзину**» вместо
+//     «Хлебная корзина»). Срезаем падежные окончания и требуем, чтобы все
+//     значимые стемы встретились в spans.
+//
+// Если жирных спанов в тексте нет — возвращаем nil. Лучше пусто, чем
+// аггрессивно искать по всему тексту и попадать на false-positive.
+func recoverIDsFromText(text string, main, companions []retrievedDish) []int {
+	if text == "" {
+		return nil
+	}
+	boldMatches := boldSpanRe.FindAllStringSubmatch(text, -1)
+	if len(boldMatches) == 0 {
+		return nil
+	}
+	spans := make([]string, len(boldMatches))
+	for i, m := range boldMatches {
+		spans[i] = strings.ToLower(m[1])
+	}
+
+	type candidate struct {
+		id  int
+		idx int // позиция в slice spans — отражает порядок появления в тексте
+	}
+	var found []candidate
+	seen := make(map[int]struct{})
+
+	check := func(d retrievedDish) {
+		if d.name == "" {
+			return
+		}
+		if _, dup := seen[d.id]; dup {
+			return
+		}
+		needle := strings.ToLower(d.name)
+		stems := significantStems(d.name)
+
+		for i, span := range spans {
+			// Уровень 1: полное вхождение имени блюда в bold-span.
+			if idx := strings.Index(span, needle); idx >= 0 && boundaryOK(span, idx, len(needle)) {
+				seen[d.id] = struct{}{}
+				found = append(found, candidate{id: d.id, idx: i})
+				return
+			}
+			// Уровень 2: все значимые стемы имени встречаются в span.
+			if len(stems) == 0 {
+				continue
+			}
+			allMatch := true
+			for _, s := range stems {
+				if !strings.Contains(span, s) {
+					allMatch = false
+					break
+				}
+			}
+			if allMatch {
+				seen[d.id] = struct{}{}
+				found = append(found, candidate{id: d.id, idx: i})
+				return
+			}
+		}
+	}
+	for _, d := range main {
+		check(d)
+	}
+	for _, d := range companions {
+		check(d)
+	}
+
+	// Порядок появления в тексте — чтобы id шли в том порядке, как LLM их назвал.
+	sort.Slice(found, func(i, j int) bool { return found[i].idx < found[j].idx })
+
+	out := make([]int, len(found))
+	for i, c := range found {
+		out[i] = c.id
+	}
+	return out
+}
+
+// stemMinLength минимальная длина стема (в рунах), чтобы он попал в матч.
+// Стемы короче (например, «бо» от «Борщ») дают много false-positive: «бо» внутри
+// «большой», «более», «бок». Лучше пропустить — у таких блюд остаётся только
+// шанс на полное substring-совпадение (Уровень 1 в recoverIDsFromText).
+const stemMinLength = 4
+
+// significantStems извлекает «стемы» (приближённые корни) значимых слов имени блюда.
+// Используется в recoverIDsFromText для матчинга склонённых форм: «Хлебную корзину»
+// → стемы ["хлебн", "корзи"] совпадают с именем в БД «Хлебная корзина».
+//
+// Эвристика:
+//   - слова ≤ 3 рун пропускаем (предлоги/союзы «в», «на», «и»);
+//   - срезаем 2 последних символа у слов 4-8 рун и 3 у слов > 8 рун (покрывает
+//     большинство русских падежных и числовых окончаний);
+//   - стемы короче stemMinLength отбрасываем — слишком короткий «корень» даёт
+//     ложные срабатывания на словах общей лексики.
+//
+// Возвращает lowercase-стемы. Пунктуация и не-буквы вокруг слов отбрасываются.
+func significantStems(name string) []string {
+	out := []string{}
+	for _, w := range strings.Fields(strings.ToLower(name)) {
+		trimmed := strings.TrimFunc(w, func(r rune) bool {
+			return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+		})
+		runes := []rune(trimmed)
+		if len(runes) <= 3 {
+			continue
+		}
+		cut := 2
+		if len(runes) > 8 {
+			cut = 3
+		}
+		stem := string(runes[:len(runes)-cut])
+		if utf8.RuneCountInString(stem) < stemMinLength {
+			continue
+		}
+		out = append(out, stem)
+	}
+	return out
+}
+
+// boundaryOK true если символы вокруг [start, start+length) не являются «продолжением слова»
+// (буквы/цифры). Простая эвристика поверх unicode.IsLetter/IsDigit для UTF-8 имён.
+func boundaryOK(s string, start, length int) bool {
+	end := start + length
+	if start > 0 {
+		prevRune, _ := utf8.DecodeLastRuneInString(s[:start])
+		if unicode.IsLetter(prevRune) || unicode.IsDigit(prevRune) {
+			return false
+		}
+	}
+	if end < len(s) {
+		nextRune, _ := utf8.DecodeRuneInString(s[end:])
+		if unicode.IsLetter(nextRune) || unicode.IsDigit(nextRune) {
+			return false
+		}
+	}
+	return true
+}
+
+// parseLLMTail извлекает recommended_dish_ids из JSON-блока в ответе и удаляет блок из текста.
+// Порядок попыток (от наиболее предпочтительного к запасному):
+//  1. fenced с любыми backticks (тройной/двойной/одинарный fence) — берём последнее
+//     вхождение, если модель почему-то вывела несколько блоков;
+//  2. голый {...} в самом конце ответа — «канонический» формат при потерянных backticks;
+//  3. голый {...} где угодно (последнее вхождение) — последний шанс.
 func parseLLMTail(raw string) (string, []int) {
-	if loc := jsonFencedRe.FindStringSubmatchIndex(raw); loc != nil {
-		return extractIDs(raw, loc[0], loc[1], raw[loc[2]:loc[3]])
+	if locs := jsonFencedRe.FindAllStringSubmatchIndex(raw, -1); len(locs) > 0 {
+		last := locs[len(locs)-1]
+		return extractIDs(raw, last[0], last[1], raw[last[2]:last[3]])
 	}
 	if loc := jsonTailRe.FindStringIndex(raw); loc != nil {
 		return extractIDs(raw, loc[0], loc[1], raw[loc[0]:loc[1]])
+	}
+	if locs := jsonAnywhereRe.FindAllStringIndex(raw, -1); len(locs) > 0 {
+		last := locs[len(locs)-1]
+		return extractIDs(raw, last[0], last[1], raw[last[0]:last[1]])
 	}
 	return strings.TrimSpace(raw), []int{}
 }

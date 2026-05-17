@@ -16,6 +16,150 @@ const (
 	CookieAuthScopes = "cookieAuth.Scopes"
 )
 
+// Defines values for AddCartItemRequestSource.
+const (
+	AddCartItemRequestSourceCart  AddCartItemRequestSource = "cart"
+	AddCartItemRequestSourceChat  AddCartItemRequestSource = "chat"
+	AddCartItemRequestSourceMenu  AddCartItemRequestSource = "menu"
+	AddCartItemRequestSourceOther AddCartItemRequestSource = "other"
+)
+
+// Valid indicates whether the value is a known member of the AddCartItemRequestSource enum.
+func (e AddCartItemRequestSource) Valid() bool {
+	switch e {
+	case AddCartItemRequestSourceCart:
+		return true
+	case AddCartItemRequestSourceChat:
+		return true
+	case AddCartItemRequestSourceMenu:
+		return true
+	case AddCartItemRequestSourceOther:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminActionTarget.
+const (
+	AdminActionTargetCategory AdminActionTarget = "category"
+	AdminActionTargetDish     AdminActionTarget = "dish"
+	AdminActionTargetOrder    AdminActionTarget = "order"
+	AdminActionTargetPrompt   AdminActionTarget = "prompt"
+	AdminActionTargetTag      AdminActionTarget = "tag"
+)
+
+// Valid indicates whether the value is a known member of the AdminActionTarget enum.
+func (e AdminActionTarget) Valid() bool {
+	switch e {
+	case AdminActionTargetCategory:
+		return true
+	case AdminActionTargetDish:
+		return true
+	case AdminActionTargetOrder:
+		return true
+	case AdminActionTargetPrompt:
+		return true
+	case AdminActionTargetTag:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminActionVerb.
+const (
+	Create       AdminActionVerb = "create"
+	Delete       AdminActionVerb = "delete"
+	Publish      AdminActionVerb = "publish"
+	Rollback     AdminActionVerb = "rollback"
+	StatusChange AdminActionVerb = "status_change"
+	Update       AdminActionVerb = "update"
+)
+
+// Valid indicates whether the value is a known member of the AdminActionVerb enum.
+func (e AdminActionVerb) Valid() bool {
+	switch e {
+	case Create:
+		return true
+	case Delete:
+		return true
+	case Publish:
+		return true
+	case Rollback:
+		return true
+	case StatusChange:
+		return true
+	case Update:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminAnalyticsPeriod.
+const (
+	AdminAnalyticsPeriodMonth AdminAnalyticsPeriod = "month"
+	AdminAnalyticsPeriodToday AdminAnalyticsPeriod = "today"
+	AdminAnalyticsPeriodWeek  AdminAnalyticsPeriod = "week"
+)
+
+// Valid indicates whether the value is a known member of the AdminAnalyticsPeriod enum.
+func (e AdminAnalyticsPeriod) Valid() bool {
+	switch e {
+	case AdminAnalyticsPeriodMonth:
+		return true
+	case AdminAnalyticsPeriodToday:
+		return true
+	case AdminAnalyticsPeriodWeek:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDashboardPeriod.
+const (
+	AdminDashboardPeriodMonth AdminDashboardPeriod = "month"
+	AdminDashboardPeriodToday AdminDashboardPeriod = "today"
+	AdminDashboardPeriodWeek  AdminDashboardPeriod = "week"
+)
+
+// Valid indicates whether the value is a known member of the AdminDashboardPeriod enum.
+func (e AdminDashboardPeriod) Valid() bool {
+	switch e {
+	case AdminDashboardPeriodMonth:
+		return true
+	case AdminDashboardPeriodToday:
+		return true
+	case AdminDashboardPeriodWeek:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CategoryRole.
+const (
+	Companion CategoryRole = "companion"
+	Main      CategoryRole = "main"
+	None      CategoryRole = "none"
+)
+
+// Valid indicates whether the value is a known member of the CategoryRole enum.
+func (e CategoryRole) Valid() bool {
+	switch e {
+	case Companion:
+		return true
+	case Main:
+		return true
+	case None:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Cuisine.
 const (
 	American Cuisine = "american"
@@ -190,32 +334,205 @@ func (e SessionInfoRole) Valid() bool {
 	}
 }
 
-// AddCartItemRequest defines model for AddCartItemRequest.
-type AddCartItemRequest struct {
-	DishId   int     `json:"dish_id"`
-	Note     *string `json:"note,omitempty"`
-	Quantity int     `json:"quantity"`
+// Defines values for AdminListActionsParamsTarget.
+const (
+	AdminListActionsParamsTargetCategory AdminListActionsParamsTarget = "category"
+	AdminListActionsParamsTargetDish     AdminListActionsParamsTarget = "dish"
+	AdminListActionsParamsTargetOrder    AdminListActionsParamsTarget = "order"
+	AdminListActionsParamsTargetPrompt   AdminListActionsParamsTarget = "prompt"
+	AdminListActionsParamsTargetTag      AdminListActionsParamsTarget = "tag"
+)
+
+// Valid indicates whether the value is a known member of the AdminListActionsParamsTarget enum.
+func (e AdminListActionsParamsTarget) Valid() bool {
+	switch e {
+	case AdminListActionsParamsTargetCategory:
+		return true
+	case AdminListActionsParamsTargetDish:
+		return true
+	case AdminListActionsParamsTargetOrder:
+		return true
+	case AdminListActionsParamsTargetPrompt:
+		return true
+	case AdminListActionsParamsTargetTag:
+		return true
+	default:
+		return false
+	}
 }
 
-// AnalyticsOverview defines model for AnalyticsOverview.
-type AnalyticsOverview struct {
-	// ConversionRate query → order ratio
-	ConversionRate       *float32  `json:"conversion_rate,omitempty"`
-	PeriodFrom           time.Time `json:"period_from"`
-	PeriodTo             time.Time `json:"period_to"`
-	TopAllergensExcluded *[]struct {
-		Code  string `json:"code"`
-		Count int    `json:"count"`
-	} `json:"top_allergens_excluded,omitempty"`
-	TopDishes *[]struct {
-		Count  int    `json:"count"`
-		DishId int    `json:"dish_id"`
-		Name   string `json:"name"`
-	} `json:"top_dishes,omitempty"`
-	TotalOrders  *int `json:"total_orders,omitempty"`
-	TotalQueries *int `json:"total_queries,omitempty"`
-	TotalUsers   *int `json:"total_users,omitempty"`
+// Defines values for AdminGetAnalyticsParamsPeriod.
+const (
+	AdminGetAnalyticsParamsPeriodMonth AdminGetAnalyticsParamsPeriod = "month"
+	AdminGetAnalyticsParamsPeriodToday AdminGetAnalyticsParamsPeriod = "today"
+	AdminGetAnalyticsParamsPeriodWeek  AdminGetAnalyticsParamsPeriod = "week"
+)
+
+// Valid indicates whether the value is a known member of the AdminGetAnalyticsParamsPeriod enum.
+func (e AdminGetAnalyticsParamsPeriod) Valid() bool {
+	switch e {
+	case AdminGetAnalyticsParamsPeriodMonth:
+		return true
+	case AdminGetAnalyticsParamsPeriodToday:
+		return true
+	case AdminGetAnalyticsParamsPeriodWeek:
+		return true
+	default:
+		return false
+	}
 }
+
+// Defines values for AdminGetDashboardParamsPeriod.
+const (
+	AdminGetDashboardParamsPeriodMonth AdminGetDashboardParamsPeriod = "month"
+	AdminGetDashboardParamsPeriodToday AdminGetDashboardParamsPeriod = "today"
+	AdminGetDashboardParamsPeriodWeek  AdminGetDashboardParamsPeriod = "week"
+)
+
+// Valid indicates whether the value is a known member of the AdminGetDashboardParamsPeriod enum.
+func (e AdminGetDashboardParamsPeriod) Valid() bool {
+	switch e {
+	case AdminGetDashboardParamsPeriodMonth:
+		return true
+	case AdminGetDashboardParamsPeriodToday:
+		return true
+	case AdminGetDashboardParamsPeriodWeek:
+		return true
+	default:
+		return false
+	}
+}
+
+// AddCartItemRequest defines model for AddCartItemRequest.
+type AddCartItemRequest struct {
+	DishId int `json:"dish_id"`
+
+	// MessageId id assistant-сообщения, из которого взято блюдо (опционально, только при source="chat").
+	// Позволяет связать клик с конкретной рекомендацией для аналитики.
+	MessageId *openapi_types.UUID `json:"message_id,omitempty"`
+	Note      *string             `json:"note,omitempty"`
+	Quantity  int                 `json:"quantity"`
+
+	// Source Источник добавления — используется только для аналитики (cart_additions).
+	// Не влияет на корзину. Если не передан — считается "other".
+	// "chat" — добавление из карточки блюда в ответе ассистента;
+	// "menu" — со страницы публичного меню;
+	// "cart" — изменение в самой корзине;
+	// "other" — fallback для старых клиентов.
+	Source *AddCartItemRequestSource `json:"source,omitempty"`
+}
+
+// AddCartItemRequestSource Источник добавления — используется только для аналитики (cart_additions).
+// Не влияет на корзину. Если не передан — считается "other".
+// "chat" — добавление из карточки блюда в ответе ассистента;
+// "menu" — со страницы публичного меню;
+// "cart" — изменение в самой корзине;
+// "other" — fallback для старых клиентов.
+type AddCartItemRequestSource string
+
+// AdminAction defines model for AdminAction.
+type AdminAction struct {
+	Admin     AdminActionAuthor   `json:"admin"`
+	Changes   []AdminActionChange `json:"changes"`
+	CreatedAt time.Time           `json:"created_at"`
+
+	// Id стабильный id (bigserial→string)
+	Id          string            `json:"id"`
+	Target      AdminActionTarget `json:"target"`
+	TargetId    string            `json:"target_id"`
+	TargetLabel string            `json:"target_label"`
+	Verb        AdminActionVerb   `json:"verb"`
+}
+
+// AdminActionAuthor defines model for AdminActionAuthor.
+type AdminActionAuthor struct {
+	DisplayName string               `json:"display_name"`
+	Email       *openapi_types.Email `json:"email,omitempty"`
+
+	// HasNamesake true, если в системе есть другой админ с таким же ФИО — фронт показывает email рядом
+	HasNamesake bool                `json:"has_namesake"`
+	Id          *openapi_types.UUID `json:"id,omitempty"`
+}
+
+// AdminActionChange defines model for AdminActionChange.
+type AdminActionChange struct {
+	Field string  `json:"field"`
+	From  *string `json:"from,omitempty"`
+	To    *string `json:"to,omitempty"`
+}
+
+// AdminActionList defines model for AdminActionList.
+type AdminActionList struct {
+	Items  []AdminAction `json:"items"`
+	Limit  int           `json:"limit"`
+	Offset int           `json:"offset"`
+	Total  int           `json:"total"`
+}
+
+// AdminActionTarget defines model for AdminActionTarget.
+type AdminActionTarget string
+
+// AdminActionVerb defines model for AdminActionVerb.
+type AdminActionVerb string
+
+// AdminAnalytics defines model for AdminAnalytics.
+type AdminAnalytics struct {
+	// AssistantMessages число assistant-ответов с рекомендациями
+	AssistantMessages int `json:"assistant_messages"`
+
+	// AvgAddedToCartPerMessage среднее количество рекомендованных блюд, добавленных в корзину из чата
+	AvgAddedToCartPerMessage float32 `json:"avg_added_to_cart_per_message"`
+
+	// AvgOrderedPerMessage среднее количество рекомендованных блюд, реально заказанных гостем
+	AvgOrderedPerMessage float32              `json:"avg_ordered_per_message"`
+	Period               AdminAnalyticsPeriod `json:"period"`
+	TopRecommendedDishes []TopDishEntry       `json:"top_recommended_dishes"`
+}
+
+// AdminAnalyticsPeriod defines model for AdminAnalytics.Period.
+type AdminAnalyticsPeriod string
+
+// AdminChatSuggestion defines model for AdminChatSuggestion.
+type AdminChatSuggestion struct {
+	// ClicksCount Сколько раз гости кликали по подсказке
+	ClicksCount int64  `json:"clicks_count"`
+	Id          int    `json:"id"`
+	IsActive    bool   `json:"is_active"`
+	SortOrder   int    `json:"sort_order"`
+	Text        string `json:"text"`
+}
+
+// AdminChatSuggestionList defines model for AdminChatSuggestionList.
+type AdminChatSuggestionList struct {
+	Items []AdminChatSuggestion `json:"items"`
+}
+
+// AdminDashboard defines model for AdminDashboard.
+type AdminDashboard struct {
+	// AverageCheckMinor средний чек в копейках
+	AverageCheckMinor int `json:"average_check_minor"`
+
+	// CartAdditionsFromChat из них — добавлений из карточки в ответе ассистента (source='chat')
+	CartAdditionsFromChat int `json:"cart_additions_from_chat"`
+
+	// CartAdditionsFromMenu из них — добавлений со страницы /menu (source='menu')
+	CartAdditionsFromMenu int `json:"cart_additions_from_menu"`
+
+	// CartAdditionsTotal всего «+» в корзину за период (все источники)
+	CartAdditionsTotal int `json:"cart_additions_total"`
+
+	// Orders количество заказов за период
+	Orders         int                   `json:"orders"`
+	OrdersByStatus []OrdersByStatusEntry `json:"orders_by_status"`
+	Period         AdminDashboardPeriod  `json:"period"`
+
+	// RevenueMinor выручка в копейках
+	RevenueMinor int            `json:"revenue_minor"`
+	TopDishes    []TopDishEntry `json:"top_dishes"`
+}
+
+// AdminDashboardPeriod defines model for AdminDashboard.Period.
+type AdminDashboardPeriod string
 
 // Cart defines model for Cart.
 type Cart struct {
@@ -258,13 +575,25 @@ type Category struct {
 	Id          int    `json:"id"`
 	IsAvailable bool   `json:"is_available"`
 	Name        string `json:"name"`
-	SortOrder   int    `json:"sort_order"`
+
+	// Role Роль категории в RAG-пайплайне рекомендаций:
+	// * `none`      — не участвует в diversify/companion-логике;
+	// * `main`      — основная категория, для диверсификации main-выдачи;
+	// * `companion` — сопровождение (соус/гарнир/десерт/напиток), по 1 блюду на запрос.
+	Role      CategoryRole `json:"role"`
+	SortOrder int          `json:"sort_order"`
 }
 
 // CategoryList defines model for CategoryList.
 type CategoryList struct {
 	Items []Category `json:"items"`
 }
+
+// CategoryRole Роль категории в RAG-пайплайне рекомендаций:
+// * `none`      — не участвует в diversify/companion-логике;
+// * `main`      — основная категория, для диверсификации main-выдачи;
+// * `companion` — сопровождение (соус/гарнир/десерт/напиток), по 1 блюду на запрос.
+type CategoryRole string
 
 // ChangePasswordRequest defines model for ChangePasswordRequest.
 type ChangePasswordRequest struct {
@@ -289,6 +618,17 @@ type ChatList struct {
 	Total  int    `json:"total"`
 }
 
+// ChatSuggestion defines model for ChatSuggestion.
+type ChatSuggestion struct {
+	Id   int    `json:"id"`
+	Text string `json:"text"`
+}
+
+// ChatSuggestionList defines model for ChatSuggestionList.
+type ChatSuggestionList struct {
+	Items []ChatSuggestion `json:"items"`
+}
+
 // ChatWithMessages defines model for ChatWithMessages.
 type ChatWithMessages struct {
 	Chat Chat `json:"chat"`
@@ -304,12 +644,25 @@ type ChatWithMessages struct {
 type CreateCategoryRequest struct {
 	IsAvailable *bool  `json:"is_available,omitempty"`
 	Name        string `json:"name"`
-	SortOrder   *int   `json:"sort_order,omitempty"`
+
+	// Role Роль категории в RAG-пайплайне рекомендаций:
+	// * `none`      — не участвует в diversify/companion-логике;
+	// * `main`      — основная категория, для диверсификации main-выдачи;
+	// * `companion` — сопровождение (соус/гарнир/десерт/напиток), по 1 блюду на запрос.
+	Role      *CategoryRole `json:"role,omitempty"`
+	SortOrder *int          `json:"sort_order,omitempty"`
 }
 
 // CreateChatRequest defines model for CreateChatRequest.
 type CreateChatRequest struct {
 	Title *string `json:"title,omitempty"`
+}
+
+// CreateChatSuggestionRequest defines model for CreateChatSuggestionRequest.
+type CreateChatSuggestionRequest struct {
+	IsActive  *bool  `json:"is_active,omitempty"`
+	SortOrder *int   `json:"sort_order,omitempty"`
+	Text      string `json:"text"`
 }
 
 // CreateDishRequest defines model for CreateDishRequest.
@@ -506,6 +859,12 @@ type OrderList struct {
 // OrderStatus defines model for OrderStatus.
 type OrderStatus string
 
+// OrdersByStatusEntry defines model for OrdersByStatusEntry.
+type OrdersByStatusEntry struct {
+	Count  int         `json:"count"`
+	Status OrderStatus `json:"status"`
+}
+
 // PatchCartItemRequest defines model for PatchCartItemRequest.
 type PatchCartItemRequest struct {
 	Note      *string `json:"note,omitempty"`
@@ -517,7 +876,20 @@ type PatchCartItemRequest struct {
 type PatchCategoryRequest struct {
 	IsAvailable *bool   `json:"is_available,omitempty"`
 	Name        *string `json:"name,omitempty"`
-	SortOrder   *int    `json:"sort_order,omitempty"`
+
+	// Role Роль категории в RAG-пайплайне рекомендаций:
+	// * `none`      — не участвует в diversify/companion-логике;
+	// * `main`      — основная категория, для диверсификации main-выдачи;
+	// * `companion` — сопровождение (соус/гарнир/десерт/напиток), по 1 блюду на запрос.
+	Role      *CategoryRole `json:"role,omitempty"`
+	SortOrder *int          `json:"sort_order,omitempty"`
+}
+
+// PatchChatSuggestionRequest defines model for PatchChatSuggestionRequest.
+type PatchChatSuggestionRequest struct {
+	IsActive  *bool   `json:"is_active,omitempty"`
+	SortOrder *int    `json:"sort_order,omitempty"`
+	Text      *string `json:"text,omitempty"`
 }
 
 // PatchDishRequest defines model for PatchDishRequest.
@@ -581,24 +953,57 @@ type Profile struct {
 	Phone *string `json:"phone,omitempty"`
 }
 
-// QueryEvent defines model for QueryEvent.
-type QueryEvent struct {
-	ChatId            *openapi_types.UUID `json:"chat_id,omitempty"`
-	CreatedAt         time.Time           `json:"created_at"`
-	DetectedAllergens *[]string           `json:"detected_allergens,omitempty"`
-	DetectedDietary   *[]string           `json:"detected_dietary,omitempty"`
-	Id                openapi_types.UUID  `json:"id"`
-	RecommendedIds    *[]int              `json:"recommended_ids,omitempty"`
-	Text              string              `json:"text"`
-	UserId            openapi_types.UUID  `json:"user_id"`
+// Prompt defines model for Prompt.
+type Prompt struct {
+	Current PromptVersion `json:"current"`
+	Draft   *PromptDraft  `json:"draft,omitempty"`
+
+	// Name Имя промпта. Валидные значения определены в коде (prompts.SupportedNames).
+	Name PromptName `json:"name"`
 }
 
-// QueryEventList defines model for QueryEventList.
-type QueryEventList struct {
-	Items  []QueryEvent `json:"items"`
-	Limit  int          `json:"limit"`
-	Offset int          `json:"offset"`
-	Total  int          `json:"total"`
+// PromptAuthor defines model for PromptAuthor.
+type PromptAuthor struct {
+	DisplayName string              `json:"display_name"`
+	Email       openapi_types.Email `json:"email"`
+	Id          openapi_types.UUID  `json:"id"`
+}
+
+// PromptDetails defines model for PromptDetails.
+type PromptDetails struct {
+	Current PromptVersion `json:"current"`
+	Draft   *PromptDraft  `json:"draft,omitempty"`
+
+	// History Все версии (включая active) в порядке убывания version
+	History []PromptVersion `json:"history"`
+
+	// Name Имя промпта. Валидные значения определены в коде (prompts.SupportedNames).
+	Name PromptName `json:"name"`
+}
+
+// PromptDraft defines model for PromptDraft.
+type PromptDraft struct {
+	Content string `json:"content"`
+
+	// Name Имя промпта. Валидные значения определены в коде (prompts.SupportedNames).
+	Name      PromptName `json:"name"`
+	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+// PromptList defines model for PromptList.
+type PromptList struct {
+	Items []Prompt `json:"items"`
+}
+
+// PromptName Имя промпта. Валидные значения определены в коде (prompts.SupportedNames).
+type PromptName = string
+
+// PromptVersion defines model for PromptVersion.
+type PromptVersion struct {
+	Content     string       `json:"content"`
+	PublishedAt time.Time    `json:"published_at"`
+	PublishedBy PromptAuthor `json:"published_by"`
+	Version     int          `json:"version"`
 }
 
 // RegisterRequest defines model for RegisterRequest.
@@ -639,6 +1044,20 @@ type TagList struct {
 	Items []Tag `json:"items"`
 }
 
+// TopDishEntry defines model for TopDishEntry.
+type TopDishEntry struct {
+	DishId   int    `json:"dish_id"`
+	DishName string `json:"dish_name"`
+
+	// Value значение метрики (заказано / рекомендовано)
+	Value int `json:"value"`
+}
+
+// UpsertPromptDraftRequest defines model for UpsertPromptDraftRequest.
+type UpsertPromptDraftRequest struct {
+	Content string `json:"content"`
+}
+
 // CSRFToken defines model for CSRFToken.
 type CSRFToken = string
 
@@ -657,6 +1076,9 @@ type PathID = openapi_types.UUID
 // PathIntID defines model for PathIntID.
 type PathIntID = int
 
+// QueryPromptName defines model for QueryPromptName.
+type QueryPromptName = string
+
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
 
@@ -672,19 +1094,27 @@ type NotFound = Error
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
-// AdminGetAnalyticsOverviewParams defines parameters for AdminGetAnalyticsOverview.
-type AdminGetAnalyticsOverviewParams struct {
-	From *time.Time `form:"from,omitempty" json:"from,omitempty"`
-	To   *time.Time `form:"to,omitempty" json:"to,omitempty"`
+// AdminListActionsParams defines parameters for AdminListActions.
+type AdminListActionsParams struct {
+	// AdminId uuid админа или строка 'me'
+	AdminId *string                       `form:"admin_id,omitempty" json:"admin_id,omitempty"`
+	Target  *AdminListActionsParamsTarget `form:"target,omitempty" json:"target,omitempty"`
+	From    *time.Time                    `form:"from,omitempty" json:"from,omitempty"`
+	To      *time.Time                    `form:"to,omitempty" json:"to,omitempty"`
+	Limit   *Limit                        `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset  *Offset                       `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
-// AdminListAnalyticsQueriesParams defines parameters for AdminListAnalyticsQueries.
-type AdminListAnalyticsQueriesParams struct {
-	From   *time.Time `form:"from,omitempty" json:"from,omitempty"`
-	To     *time.Time `form:"to,omitempty" json:"to,omitempty"`
-	Limit  *Limit     `form:"limit,omitempty" json:"limit,omitempty"`
-	Offset *Offset    `form:"offset,omitempty" json:"offset,omitempty"`
+// AdminListActionsParamsTarget defines parameters for AdminListActions.
+type AdminListActionsParamsTarget string
+
+// AdminGetAnalyticsParams defines parameters for AdminGetAnalytics.
+type AdminGetAnalyticsParams struct {
+	Period AdminGetAnalyticsParamsPeriod `form:"period" json:"period"`
 }
+
+// AdminGetAnalyticsParamsPeriod defines parameters for AdminGetAnalytics.
+type AdminGetAnalyticsParamsPeriod string
 
 // AdminCreateCategoryParams defines parameters for AdminCreateCategory.
 type AdminCreateCategoryParams struct {
@@ -700,6 +1130,14 @@ type AdminDeleteCategoryParams struct {
 type AdminUpdateCategoryParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
+
+// AdminGetDashboardParams defines parameters for AdminGetDashboard.
+type AdminGetDashboardParams struct {
+	Period AdminGetDashboardParamsPeriod `form:"period" json:"period"`
+}
+
+// AdminGetDashboardParamsPeriod defines parameters for AdminGetDashboard.
+type AdminGetDashboardParamsPeriod string
 
 // AdminCreateDishParams defines parameters for AdminCreateDish.
 type AdminCreateDishParams struct {
@@ -736,8 +1174,74 @@ type AdminListOrdersParams struct {
 	Offset *Offset             `form:"offset,omitempty" json:"offset,omitempty"`
 }
 
+// AdminListOrderActionsParams defines parameters for AdminListOrderActions.
+type AdminListOrderActionsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Offset *Offset `form:"offset,omitempty" json:"offset,omitempty"`
+}
+
 // AdminUpdateOrderStatusParams defines parameters for AdminUpdateOrderStatus.
 type AdminUpdateOrderStatusParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminGetPromptParams defines parameters for AdminGetPrompt.
+type AdminGetPromptParams struct {
+	// Name Имя промпта. Список валидных имён задан в коде (prompts.SupportedNames).
+	// Сейчас: system, classification, refusal. Расширение — без правки OpenAPI,
+	// проверка идёт в usecase через prompts.IsSupported.
+	Name QueryPromptName `form:"name" json:"name"`
+}
+
+// AdminDeletePromptDraftParams defines parameters for AdminDeletePromptDraft.
+type AdminDeletePromptDraftParams struct {
+	// Name Имя промпта. Список валидных имён задан в коде (prompts.SupportedNames).
+	// Сейчас: system, classification, refusal. Расширение — без правки OpenAPI,
+	// проверка идёт в usecase через prompts.IsSupported.
+	Name       QueryPromptName `form:"name" json:"name"`
+	XCSRFToken CSRFToken       `json:"X-CSRF-Token"`
+}
+
+// AdminUpsertPromptDraftParams defines parameters for AdminUpsertPromptDraft.
+type AdminUpsertPromptDraftParams struct {
+	// Name Имя промпта. Список валидных имён задан в коде (prompts.SupportedNames).
+	// Сейчас: system, classification, refusal. Расширение — без правки OpenAPI,
+	// проверка идёт в usecase через prompts.IsSupported.
+	Name       QueryPromptName `form:"name" json:"name"`
+	XCSRFToken CSRFToken       `json:"X-CSRF-Token"`
+}
+
+// AdminPublishPromptParams defines parameters for AdminPublishPrompt.
+type AdminPublishPromptParams struct {
+	// Name Имя промпта. Список валидных имён задан в коде (prompts.SupportedNames).
+	// Сейчас: system, classification, refusal. Расширение — без правки OpenAPI,
+	// проверка идёт в usecase через prompts.IsSupported.
+	Name       QueryPromptName `form:"name" json:"name"`
+	XCSRFToken CSRFToken       `json:"X-CSRF-Token"`
+}
+
+// AdminRollbackPromptParams defines parameters for AdminRollbackPrompt.
+type AdminRollbackPromptParams struct {
+	// Name Имя промпта. Список валидных имён задан в коде (prompts.SupportedNames).
+	// Сейчас: system, classification, refusal. Расширение — без правки OpenAPI,
+	// проверка идёт в usecase через prompts.IsSupported.
+	Name       QueryPromptName `form:"name" json:"name"`
+	Version    int             `form:"version" json:"version"`
+	XCSRFToken CSRFToken       `json:"X-CSRF-Token"`
+}
+
+// AdminCreateChatSuggestionParams defines parameters for AdminCreateChatSuggestion.
+type AdminCreateChatSuggestionParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminDeleteChatSuggestionParams defines parameters for AdminDeleteChatSuggestion.
+type AdminDeleteChatSuggestionParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminUpdateChatSuggestionParams defines parameters for AdminUpdateChatSuggestion.
+type AdminUpdateChatSuggestionParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
@@ -793,6 +1297,11 @@ type RemoveCartItemParams struct {
 
 // UpdateCartItemParams defines parameters for UpdateCartItem.
 type UpdateCartItemParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// TrackChatSuggestionClickParams defines parameters for TrackChatSuggestionClick.
+type TrackChatSuggestionClickParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
@@ -875,6 +1384,15 @@ type AdminUploadDishImageMultipartRequestBody AdminUploadDishImageMultipartBody
 
 // AdminUpdateOrderStatusJSONRequestBody defines body for AdminUpdateOrderStatus for application/json ContentType.
 type AdminUpdateOrderStatusJSONRequestBody = PatchOrderStatusRequest
+
+// AdminUpsertPromptDraftJSONRequestBody defines body for AdminUpsertPromptDraft for application/json ContentType.
+type AdminUpsertPromptDraftJSONRequestBody = UpsertPromptDraftRequest
+
+// AdminCreateChatSuggestionJSONRequestBody defines body for AdminCreateChatSuggestion for application/json ContentType.
+type AdminCreateChatSuggestionJSONRequestBody = CreateChatSuggestionRequest
+
+// AdminUpdateChatSuggestionJSONRequestBody defines body for AdminUpdateChatSuggestion for application/json ContentType.
+type AdminUpdateChatSuggestionJSONRequestBody = PatchChatSuggestionRequest
 
 // AdminCreateTagJSONRequestBody defines body for AdminCreateTag for application/json ContentType.
 type AdminCreateTagJSONRequestBody = CreateTagRequest

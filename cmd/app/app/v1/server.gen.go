@@ -28,12 +28,12 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Агрегированные показатели
-	// (GET /admin/analytics/overview)
-	AdminGetAnalyticsOverview(w http.ResponseWriter, r *http.Request, params AdminGetAnalyticsOverviewParams)
-	// Детальные события запросов к ассистенту
-	// (GET /admin/analytics/queries)
-	AdminListAnalyticsQueries(w http.ResponseWriter, r *http.Request, params AdminListAnalyticsQueriesParams)
+	// Лента админских действий с фильтрами
+	// (GET /admin/actions)
+	AdminListActions(w http.ResponseWriter, r *http.Request, params AdminListActionsParams)
+	// Поведенческие метрики ассистента за период
+	// (GET /admin/analytics)
+	AdminGetAnalytics(w http.ResponseWriter, r *http.Request, params AdminGetAnalyticsParams)
 	// Создать категорию
 	// (POST /admin/categories)
 	AdminCreateCategory(w http.ResponseWriter, r *http.Request, params AdminCreateCategoryParams)
@@ -43,6 +43,9 @@ type ServerInterface interface {
 	// Обновить категорию
 	// (PATCH /admin/categories/{id})
 	AdminUpdateCategory(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateCategoryParams)
+	// Операционные метрики по заказам за период (today | week | month)
+	// (GET /admin/dashboard)
+	AdminGetDashboard(w http.ResponseWriter, r *http.Request, params AdminGetDashboardParams)
 	// Создать блюдо
 	// (POST /admin/menu)
 	AdminCreateDish(w http.ResponseWriter, r *http.Request, params AdminCreateDishParams)
@@ -61,9 +64,42 @@ type ServerInterface interface {
 	// Детали заказа
 	// (GET /admin/orders/{id})
 	AdminGetOrder(w http.ResponseWriter, r *http.Request, id PathID)
+	// История изменений конкретного заказа
+	// (GET /admin/orders/{id}/actions)
+	AdminListOrderActions(w http.ResponseWriter, r *http.Request, id PathID, params AdminListOrderActionsParams)
 	// Сменить статус заказа
 	// (PATCH /admin/orders/{id}/status)
 	AdminUpdateOrderStatus(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateOrderStatusParams)
+	// Список промптов с активными версиями
+	// (GET /admin/prompts)
+	AdminListPrompts(w http.ResponseWriter, r *http.Request)
+	// Один промпт с историей версий и моим черновиком
+	// (GET /admin/prompts/details)
+	AdminGetPrompt(w http.ResponseWriter, r *http.Request, params AdminGetPromptParams)
+	// Удалить мой черновик
+	// (DELETE /admin/prompts/draft)
+	AdminDeletePromptDraft(w http.ResponseWriter, r *http.Request, params AdminDeletePromptDraftParams)
+	// Создать или обновить мой черновик промпта
+	// (PUT /admin/prompts/draft)
+	AdminUpsertPromptDraft(w http.ResponseWriter, r *http.Request, params AdminUpsertPromptDraftParams)
+	// Опубликовать мой черновик как новую активную версию
+	// (POST /admin/prompts/publish)
+	AdminPublishPrompt(w http.ResponseWriter, r *http.Request, params AdminPublishPromptParams)
+	// Откатить промпт к указанной старой версии (создаёт новую запись с тем же content)
+	// (POST /admin/prompts/rollback)
+	AdminRollbackPrompt(w http.ResponseWriter, r *http.Request, params AdminRollbackPromptParams)
+	// Список всех подсказок чата (включая неактивные)
+	// (GET /admin/suggestions)
+	AdminListChatSuggestions(w http.ResponseWriter, r *http.Request)
+	// Создать подсказку
+	// (POST /admin/suggestions)
+	AdminCreateChatSuggestion(w http.ResponseWriter, r *http.Request, params AdminCreateChatSuggestionParams)
+	// Удалить подсказку
+	// (DELETE /admin/suggestions/{id})
+	AdminDeleteChatSuggestion(w http.ResponseWriter, r *http.Request, id int, params AdminDeleteChatSuggestionParams)
+	// Обновить подсказку
+	// (PATCH /admin/suggestions/{id})
+	AdminUpdateChatSuggestion(w http.ResponseWriter, r *http.Request, id int, params AdminUpdateChatSuggestionParams)
 	// Список тегов (для админ-формы блюда)
 	// (GET /admin/tags)
 	AdminListTags(w http.ResponseWriter, r *http.Request)
@@ -109,6 +145,12 @@ type ServerInterface interface {
 	// Список доступных категорий
 	// (GET /categories)
 	ListCategories(w http.ResponseWriter, r *http.Request)
+	// Активные подсказки для чата (заполняются админом)
+	// (GET /chat/suggestions)
+	ListChatSuggestions(w http.ResponseWriter, r *http.Request)
+	// Зарегистрировать клик по подсказке (для аналитики)
+	// (POST /chat/suggestions/{id}/click)
+	TrackChatSuggestionClick(w http.ResponseWriter, r *http.Request, id int, params TrackChatSuggestionClickParams)
 	// Список чатов текущего пользователя
 	// (GET /chats)
 	ListChats(w http.ResponseWriter, r *http.Request, params ListChatsParams)
@@ -159,8 +201,8 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// AdminGetAnalyticsOverview operation middleware
-func (siw *ServerInterfaceWrapper) AdminGetAnalyticsOverview(w http.ResponseWriter, r *http.Request) {
+// AdminListActions operation middleware
+func (siw *ServerInterfaceWrapper) AdminListActions(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -171,48 +213,23 @@ func (siw *ServerInterfaceWrapper) AdminGetAnalyticsOverview(w http.ResponseWrit
 	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params AdminGetAnalyticsOverviewParams
+	var params AdminListActionsParams
 
-	// ------------- Optional query parameter "from" -------------
+	// ------------- Optional query parameter "admin_id" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "admin_id", r.URL.Query(), &params.AdminId, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "admin_id", Err: err})
 		return
 	}
 
-	// ------------- Optional query parameter "to" -------------
+	// ------------- Optional query parameter "target" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date-time"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "target", r.URL.Query(), &params.Target, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "target", Err: err})
 		return
 	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AdminGetAnalyticsOverview(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// AdminListAnalyticsQueries operation middleware
-func (siw *ServerInterfaceWrapper) AdminListAnalyticsQueries(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params AdminListAnalyticsQueriesParams
 
 	// ------------- Optional query parameter "from" -------------
 
@@ -247,7 +264,47 @@ func (siw *ServerInterfaceWrapper) AdminListAnalyticsQueries(w http.ResponseWrit
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AdminListAnalyticsQueries(w, r, params)
+		siw.Handler.AdminListActions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetAnalytics operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetAnalytics(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetAnalyticsParams
+
+	// ------------- Required query parameter "period" -------------
+
+	if paramValue := r.URL.Query().Get("period"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "period"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "period", r.URL.Query(), &params.Period, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "period", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetAnalytics(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -416,6 +473,46 @@ func (siw *ServerInterfaceWrapper) AdminUpdateCategory(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminUpdateCategory(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetDashboard operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetDashboard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetDashboardParams
+
+	// ------------- Required query parameter "period" -------------
+
+	if paramValue := r.URL.Query().Get("period"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "period"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "period", r.URL.Query(), &params.Period, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "period", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetDashboard(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -756,6 +853,56 @@ func (siw *ServerInterfaceWrapper) AdminGetOrder(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// AdminListOrderActions operation middleware
+func (siw *ServerInterfaceWrapper) AdminListOrderActions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id PathID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid"})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminListOrderActionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "offset" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "offset", r.URL.Query(), &params.Offset, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "offset", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListOrderActions(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AdminUpdateOrderStatus operation middleware
 func (siw *ServerInterfaceWrapper) AdminUpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 
@@ -806,6 +953,529 @@ func (siw *ServerInterfaceWrapper) AdminUpdateOrderStatus(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminUpdateOrderStatus(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminListPrompts operation middleware
+func (siw *ServerInterfaceWrapper) AdminListPrompts(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListPrompts(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminGetPrompt operation middleware
+func (siw *ServerInterfaceWrapper) AdminGetPrompt(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminGetPromptParams
+
+	// ------------- Required query parameter "name" -------------
+
+	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "name", r.URL.Query(), &params.Name, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminGetPrompt(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminDeletePromptDraft operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeletePromptDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeletePromptDraftParams
+
+	// ------------- Required query parameter "name" -------------
+
+	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "name", r.URL.Query(), &params.Name, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDeletePromptDraft(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminUpsertPromptDraft operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpsertPromptDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminUpsertPromptDraftParams
+
+	// ------------- Required query parameter "name" -------------
+
+	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "name", r.URL.Query(), &params.Name, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminUpsertPromptDraft(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminPublishPrompt operation middleware
+func (siw *ServerInterfaceWrapper) AdminPublishPrompt(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminPublishPromptParams
+
+	// ------------- Required query parameter "name" -------------
+
+	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "name", r.URL.Query(), &params.Name, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminPublishPrompt(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminRollbackPrompt operation middleware
+func (siw *ServerInterfaceWrapper) AdminRollbackPrompt(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminRollbackPromptParams
+
+	// ------------- Required query parameter "name" -------------
+
+	if paramValue := r.URL.Query().Get("name"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "name"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "name", r.URL.Query(), &params.Name, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "version" -------------
+
+	if paramValue := r.URL.Query().Get("version"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "version"})
+		return
+	}
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "version", r.URL.Query(), &params.Version, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "version", Err: err})
+		return
+	}
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminRollbackPrompt(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminListChatSuggestions operation middleware
+func (siw *ServerInterfaceWrapper) AdminListChatSuggestions(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListChatSuggestions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminCreateChatSuggestion operation middleware
+func (siw *ServerInterfaceWrapper) AdminCreateChatSuggestion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminCreateChatSuggestionParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminCreateChatSuggestion(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminDeleteChatSuggestion operation middleware
+func (siw *ServerInterfaceWrapper) AdminDeleteChatSuggestion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDeleteChatSuggestionParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDeleteChatSuggestion(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminUpdateChatSuggestion operation middleware
+func (siw *ServerInterfaceWrapper) AdminUpdateChatSuggestion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminUpdateChatSuggestionParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminUpdateChatSuggestion(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1448,6 +2118,85 @@ func (siw *ServerInterfaceWrapper) ListCategories(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListCategories(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListChatSuggestions operation middleware
+func (siw *ServerInterfaceWrapper) ListChatSuggestions(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListChatSuggestions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TrackChatSuggestionClick operation middleware
+func (siw *ServerInterfaceWrapper) TrackChatSuggestionClick(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params TrackChatSuggestionClickParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TrackChatSuggestionClick(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2164,18 +2913,30 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	m.HandleFunc("GET "+options.BaseURL+"/admin/analytics/overview", wrapper.AdminGetAnalyticsOverview)
-	m.HandleFunc("GET "+options.BaseURL+"/admin/analytics/queries", wrapper.AdminListAnalyticsQueries)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/actions", wrapper.AdminListActions)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/analytics", wrapper.AdminGetAnalytics)
 	m.HandleFunc("POST "+options.BaseURL+"/admin/categories", wrapper.AdminCreateCategory)
 	m.HandleFunc("DELETE "+options.BaseURL+"/admin/categories/{id}", wrapper.AdminDeleteCategory)
 	m.HandleFunc("PATCH "+options.BaseURL+"/admin/categories/{id}", wrapper.AdminUpdateCategory)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/dashboard", wrapper.AdminGetDashboard)
 	m.HandleFunc("POST "+options.BaseURL+"/admin/menu", wrapper.AdminCreateDish)
 	m.HandleFunc("DELETE "+options.BaseURL+"/admin/menu/{id}", wrapper.AdminDeleteDish)
 	m.HandleFunc("PATCH "+options.BaseURL+"/admin/menu/{id}", wrapper.AdminUpdateDish)
 	m.HandleFunc("POST "+options.BaseURL+"/admin/menu/{id}/image", wrapper.AdminUploadDishImage)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/orders", wrapper.AdminListOrders)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/orders/{id}", wrapper.AdminGetOrder)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/orders/{id}/actions", wrapper.AdminListOrderActions)
 	m.HandleFunc("PATCH "+options.BaseURL+"/admin/orders/{id}/status", wrapper.AdminUpdateOrderStatus)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/prompts", wrapper.AdminListPrompts)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/prompts/details", wrapper.AdminGetPrompt)
+	m.HandleFunc("DELETE "+options.BaseURL+"/admin/prompts/draft", wrapper.AdminDeletePromptDraft)
+	m.HandleFunc("PUT "+options.BaseURL+"/admin/prompts/draft", wrapper.AdminUpsertPromptDraft)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/prompts/publish", wrapper.AdminPublishPrompt)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/prompts/rollback", wrapper.AdminRollbackPrompt)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/suggestions", wrapper.AdminListChatSuggestions)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/suggestions", wrapper.AdminCreateChatSuggestion)
+	m.HandleFunc("DELETE "+options.BaseURL+"/admin/suggestions/{id}", wrapper.AdminDeleteChatSuggestion)
+	m.HandleFunc("PATCH "+options.BaseURL+"/admin/suggestions/{id}", wrapper.AdminUpdateChatSuggestion)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/tags", wrapper.AdminListTags)
 	m.HandleFunc("POST "+options.BaseURL+"/admin/tags", wrapper.AdminCreateTag)
 	m.HandleFunc("DELETE "+options.BaseURL+"/admin/tags/{id}", wrapper.AdminDeleteTag)
@@ -2191,6 +2952,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/cart/items/{dish_id}", wrapper.RemoveCartItem)
 	m.HandleFunc("PATCH "+options.BaseURL+"/cart/items/{dish_id}", wrapper.UpdateCartItem)
 	m.HandleFunc("GET "+options.BaseURL+"/categories", wrapper.ListCategories)
+	m.HandleFunc("GET "+options.BaseURL+"/chat/suggestions", wrapper.ListChatSuggestions)
+	m.HandleFunc("POST "+options.BaseURL+"/chat/suggestions/{id}/click", wrapper.TrackChatSuggestionClick)
 	m.HandleFunc("GET "+options.BaseURL+"/chats", wrapper.ListChats)
 	m.HandleFunc("POST "+options.BaseURL+"/chats", wrapper.CreateChat)
 	m.HandleFunc("GET "+options.BaseURL+"/chats/active", wrapper.GetActiveChat)
@@ -2218,70 +2981,79 @@ type NotFoundJSONResponse Error
 
 type UnauthorizedJSONResponse Error
 
-type AdminGetAnalyticsOverviewRequestObject struct {
-	Params AdminGetAnalyticsOverviewParams
+type AdminListActionsRequestObject struct {
+	Params AdminListActionsParams
 }
 
-type AdminGetAnalyticsOverviewResponseObject interface {
-	VisitAdminGetAnalyticsOverviewResponse(w http.ResponseWriter) error
+type AdminListActionsResponseObject interface {
+	VisitAdminListActionsResponse(w http.ResponseWriter) error
 }
 
-type AdminGetAnalyticsOverview200JSONResponse AnalyticsOverview
+type AdminListActions200JSONResponse AdminActionList
 
-func (response AdminGetAnalyticsOverview200JSONResponse) VisitAdminGetAnalyticsOverviewResponse(w http.ResponseWriter) error {
+func (response AdminListActions200JSONResponse) VisitAdminListActionsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminGetAnalyticsOverview401JSONResponse struct{ UnauthorizedJSONResponse }
+type AdminListActions400JSONResponse struct{ BadRequestJSONResponse }
 
-func (response AdminGetAnalyticsOverview401JSONResponse) VisitAdminGetAnalyticsOverviewResponse(w http.ResponseWriter) error {
+func (response AdminListActions400JSONResponse) VisitAdminListActionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListActions401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListActions401JSONResponse) VisitAdminListActionsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminGetAnalyticsOverview403JSONResponse struct{ ForbiddenJSONResponse }
+type AdminListActions403JSONResponse struct{ ForbiddenJSONResponse }
 
-func (response AdminGetAnalyticsOverview403JSONResponse) VisitAdminGetAnalyticsOverviewResponse(w http.ResponseWriter) error {
+func (response AdminListActions403JSONResponse) VisitAdminListActionsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminListAnalyticsQueriesRequestObject struct {
-	Params AdminListAnalyticsQueriesParams
+type AdminGetAnalyticsRequestObject struct {
+	Params AdminGetAnalyticsParams
 }
 
-type AdminListAnalyticsQueriesResponseObject interface {
-	VisitAdminListAnalyticsQueriesResponse(w http.ResponseWriter) error
+type AdminGetAnalyticsResponseObject interface {
+	VisitAdminGetAnalyticsResponse(w http.ResponseWriter) error
 }
 
-type AdminListAnalyticsQueries200JSONResponse QueryEventList
+type AdminGetAnalytics200JSONResponse AdminAnalytics
 
-func (response AdminListAnalyticsQueries200JSONResponse) VisitAdminListAnalyticsQueriesResponse(w http.ResponseWriter) error {
+func (response AdminGetAnalytics200JSONResponse) VisitAdminGetAnalyticsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminListAnalyticsQueries401JSONResponse struct{ UnauthorizedJSONResponse }
+type AdminGetAnalytics401JSONResponse struct{ UnauthorizedJSONResponse }
 
-func (response AdminListAnalyticsQueries401JSONResponse) VisitAdminListAnalyticsQueriesResponse(w http.ResponseWriter) error {
+func (response AdminGetAnalytics401JSONResponse) VisitAdminGetAnalyticsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type AdminListAnalyticsQueries403JSONResponse struct{ ForbiddenJSONResponse }
+type AdminGetAnalytics403JSONResponse struct{ ForbiddenJSONResponse }
 
-func (response AdminListAnalyticsQueries403JSONResponse) VisitAdminListAnalyticsQueriesResponse(w http.ResponseWriter) error {
+func (response AdminGetAnalytics403JSONResponse) VisitAdminGetAnalyticsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
@@ -2446,6 +3218,41 @@ type AdminUpdateCategory404JSONResponse struct{ NotFoundJSONResponse }
 func (response AdminUpdateCategory404JSONResponse) VisitAdminUpdateCategoryResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetDashboardRequestObject struct {
+	Params AdminGetDashboardParams
+}
+
+type AdminGetDashboardResponseObject interface {
+	VisitAdminGetDashboardResponse(w http.ResponseWriter) error
+}
+
+type AdminGetDashboard200JSONResponse AdminDashboard
+
+func (response AdminGetDashboard200JSONResponse) VisitAdminGetDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetDashboard401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminGetDashboard401JSONResponse) VisitAdminGetDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetDashboard403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminGetDashboard403JSONResponse) VisitAdminGetDashboardResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -2755,6 +3562,51 @@ func (response AdminGetOrder404JSONResponse) VisitAdminGetOrderResponse(w http.R
 	return json.NewEncoder(w).Encode(response)
 }
 
+type AdminListOrderActionsRequestObject struct {
+	Id     PathID `json:"id"`
+	Params AdminListOrderActionsParams
+}
+
+type AdminListOrderActionsResponseObject interface {
+	VisitAdminListOrderActionsResponse(w http.ResponseWriter) error
+}
+
+type AdminListOrderActions200JSONResponse AdminActionList
+
+func (response AdminListOrderActions200JSONResponse) VisitAdminListOrderActionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListOrderActions401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListOrderActions401JSONResponse) VisitAdminListOrderActionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListOrderActions403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListOrderActions403JSONResponse) VisitAdminListOrderActionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListOrderActions404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminListOrderActions404JSONResponse) VisitAdminListOrderActionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type AdminUpdateOrderStatusRequestObject struct {
 	Id     PathID `json:"id"`
 	Params AdminUpdateOrderStatusParams
@@ -2804,6 +3656,438 @@ func (response AdminUpdateOrderStatus403JSONResponse) VisitAdminUpdateOrderStatu
 type AdminUpdateOrderStatus404JSONResponse struct{ NotFoundJSONResponse }
 
 func (response AdminUpdateOrderStatus404JSONResponse) VisitAdminUpdateOrderStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListPromptsRequestObject struct {
+}
+
+type AdminListPromptsResponseObject interface {
+	VisitAdminListPromptsResponse(w http.ResponseWriter) error
+}
+
+type AdminListPrompts200JSONResponse PromptList
+
+func (response AdminListPrompts200JSONResponse) VisitAdminListPromptsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListPrompts401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListPrompts401JSONResponse) VisitAdminListPromptsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListPrompts403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListPrompts403JSONResponse) VisitAdminListPromptsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetPromptRequestObject struct {
+	Params AdminGetPromptParams
+}
+
+type AdminGetPromptResponseObject interface {
+	VisitAdminGetPromptResponse(w http.ResponseWriter) error
+}
+
+type AdminGetPrompt200JSONResponse PromptDetails
+
+func (response AdminGetPrompt200JSONResponse) VisitAdminGetPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetPrompt400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminGetPrompt400JSONResponse) VisitAdminGetPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetPrompt401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminGetPrompt401JSONResponse) VisitAdminGetPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetPrompt403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminGetPrompt403JSONResponse) VisitAdminGetPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminGetPrompt404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminGetPrompt404JSONResponse) VisitAdminGetPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDeletePromptDraftRequestObject struct {
+	Params AdminDeletePromptDraftParams
+}
+
+type AdminDeletePromptDraftResponseObject interface {
+	VisitAdminDeletePromptDraftResponse(w http.ResponseWriter) error
+}
+
+type AdminDeletePromptDraft204Response struct {
+}
+
+func (response AdminDeletePromptDraft204Response) VisitAdminDeletePromptDraftResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminDeletePromptDraft400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminDeletePromptDraft400JSONResponse) VisitAdminDeletePromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDeletePromptDraft401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminDeletePromptDraft401JSONResponse) VisitAdminDeletePromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDeletePromptDraft403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDeletePromptDraft403JSONResponse) VisitAdminDeletePromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpsertPromptDraftRequestObject struct {
+	Params AdminUpsertPromptDraftParams
+	Body   *AdminUpsertPromptDraftJSONRequestBody
+}
+
+type AdminUpsertPromptDraftResponseObject interface {
+	VisitAdminUpsertPromptDraftResponse(w http.ResponseWriter) error
+}
+
+type AdminUpsertPromptDraft200JSONResponse PromptDraft
+
+func (response AdminUpsertPromptDraft200JSONResponse) VisitAdminUpsertPromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpsertPromptDraft400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminUpsertPromptDraft400JSONResponse) VisitAdminUpsertPromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpsertPromptDraft401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminUpsertPromptDraft401JSONResponse) VisitAdminUpsertPromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpsertPromptDraft403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminUpsertPromptDraft403JSONResponse) VisitAdminUpsertPromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpsertPromptDraft404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminUpsertPromptDraft404JSONResponse) VisitAdminUpsertPromptDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPublishPromptRequestObject struct {
+	Params AdminPublishPromptParams
+}
+
+type AdminPublishPromptResponseObject interface {
+	VisitAdminPublishPromptResponse(w http.ResponseWriter) error
+}
+
+type AdminPublishPrompt200JSONResponse PromptVersion
+
+func (response AdminPublishPrompt200JSONResponse) VisitAdminPublishPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPublishPrompt400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminPublishPrompt400JSONResponse) VisitAdminPublishPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPublishPrompt401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminPublishPrompt401JSONResponse) VisitAdminPublishPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPublishPrompt403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminPublishPrompt403JSONResponse) VisitAdminPublishPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPublishPrompt404JSONResponse Error
+
+func (response AdminPublishPrompt404JSONResponse) VisitAdminPublishPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminRollbackPromptRequestObject struct {
+	Params AdminRollbackPromptParams
+}
+
+type AdminRollbackPromptResponseObject interface {
+	VisitAdminRollbackPromptResponse(w http.ResponseWriter) error
+}
+
+type AdminRollbackPrompt200JSONResponse PromptVersion
+
+func (response AdminRollbackPrompt200JSONResponse) VisitAdminRollbackPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminRollbackPrompt400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminRollbackPrompt400JSONResponse) VisitAdminRollbackPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminRollbackPrompt401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminRollbackPrompt401JSONResponse) VisitAdminRollbackPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminRollbackPrompt403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminRollbackPrompt403JSONResponse) VisitAdminRollbackPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminRollbackPrompt404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminRollbackPrompt404JSONResponse) VisitAdminRollbackPromptResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListChatSuggestionsRequestObject struct {
+}
+
+type AdminListChatSuggestionsResponseObject interface {
+	VisitAdminListChatSuggestionsResponse(w http.ResponseWriter) error
+}
+
+type AdminListChatSuggestions200JSONResponse AdminChatSuggestionList
+
+func (response AdminListChatSuggestions200JSONResponse) VisitAdminListChatSuggestionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListChatSuggestions401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListChatSuggestions401JSONResponse) VisitAdminListChatSuggestionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListChatSuggestions403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListChatSuggestions403JSONResponse) VisitAdminListChatSuggestionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateChatSuggestionRequestObject struct {
+	Params AdminCreateChatSuggestionParams
+	Body   *AdminCreateChatSuggestionJSONRequestBody
+}
+
+type AdminCreateChatSuggestionResponseObject interface {
+	VisitAdminCreateChatSuggestionResponse(w http.ResponseWriter) error
+}
+
+type AdminCreateChatSuggestion201JSONResponse AdminChatSuggestion
+
+func (response AdminCreateChatSuggestion201JSONResponse) VisitAdminCreateChatSuggestionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateChatSuggestion400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminCreateChatSuggestion400JSONResponse) VisitAdminCreateChatSuggestionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateChatSuggestion401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminCreateChatSuggestion401JSONResponse) VisitAdminCreateChatSuggestionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminCreateChatSuggestion403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminCreateChatSuggestion403JSONResponse) VisitAdminCreateChatSuggestionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDeleteChatSuggestionRequestObject struct {
+	Id     int `json:"id"`
+	Params AdminDeleteChatSuggestionParams
+}
+
+type AdminDeleteChatSuggestionResponseObject interface {
+	VisitAdminDeleteChatSuggestionResponse(w http.ResponseWriter) error
+}
+
+type AdminDeleteChatSuggestion204Response struct {
+}
+
+func (response AdminDeleteChatSuggestion204Response) VisitAdminDeleteChatSuggestionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminDeleteChatSuggestion404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminDeleteChatSuggestion404JSONResponse) VisitAdminDeleteChatSuggestionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateChatSuggestionRequestObject struct {
+	Id     int `json:"id"`
+	Params AdminUpdateChatSuggestionParams
+	Body   *AdminUpdateChatSuggestionJSONRequestBody
+}
+
+type AdminUpdateChatSuggestionResponseObject interface {
+	VisitAdminUpdateChatSuggestionResponse(w http.ResponseWriter) error
+}
+
+type AdminUpdateChatSuggestion200JSONResponse AdminChatSuggestion
+
+func (response AdminUpdateChatSuggestion200JSONResponse) VisitAdminUpdateChatSuggestionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateChatSuggestion400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminUpdateChatSuggestion400JSONResponse) VisitAdminUpdateChatSuggestionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminUpdateChatSuggestion404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminUpdateChatSuggestion404JSONResponse) VisitAdminUpdateChatSuggestionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
 
@@ -3355,6 +4639,48 @@ func (response ListCategories200JSONResponse) VisitListCategoriesResponse(w http
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListChatSuggestionsRequestObject struct {
+}
+
+type ListChatSuggestionsResponseObject interface {
+	VisitListChatSuggestionsResponse(w http.ResponseWriter) error
+}
+
+type ListChatSuggestions200JSONResponse ChatSuggestionList
+
+func (response ListChatSuggestions200JSONResponse) VisitListChatSuggestionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TrackChatSuggestionClickRequestObject struct {
+	Id     int `json:"id"`
+	Params TrackChatSuggestionClickParams
+}
+
+type TrackChatSuggestionClickResponseObject interface {
+	VisitTrackChatSuggestionClickResponse(w http.ResponseWriter) error
+}
+
+type TrackChatSuggestionClick204Response struct {
+}
+
+func (response TrackChatSuggestionClick204Response) VisitTrackChatSuggestionClickResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type TrackChatSuggestionClick404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response TrackChatSuggestionClick404JSONResponse) VisitTrackChatSuggestionClickResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListChatsRequestObject struct {
 	Params ListChatsParams
 }
@@ -3835,12 +5161,12 @@ func (response UpdateProfile403JSONResponse) VisitUpdateProfileResponse(w http.R
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Агрегированные показатели
-	// (GET /admin/analytics/overview)
-	AdminGetAnalyticsOverview(ctx context.Context, request AdminGetAnalyticsOverviewRequestObject) (AdminGetAnalyticsOverviewResponseObject, error)
-	// Детальные события запросов к ассистенту
-	// (GET /admin/analytics/queries)
-	AdminListAnalyticsQueries(ctx context.Context, request AdminListAnalyticsQueriesRequestObject) (AdminListAnalyticsQueriesResponseObject, error)
+	// Лента админских действий с фильтрами
+	// (GET /admin/actions)
+	AdminListActions(ctx context.Context, request AdminListActionsRequestObject) (AdminListActionsResponseObject, error)
+	// Поведенческие метрики ассистента за период
+	// (GET /admin/analytics)
+	AdminGetAnalytics(ctx context.Context, request AdminGetAnalyticsRequestObject) (AdminGetAnalyticsResponseObject, error)
 	// Создать категорию
 	// (POST /admin/categories)
 	AdminCreateCategory(ctx context.Context, request AdminCreateCategoryRequestObject) (AdminCreateCategoryResponseObject, error)
@@ -3850,6 +5176,9 @@ type StrictServerInterface interface {
 	// Обновить категорию
 	// (PATCH /admin/categories/{id})
 	AdminUpdateCategory(ctx context.Context, request AdminUpdateCategoryRequestObject) (AdminUpdateCategoryResponseObject, error)
+	// Операционные метрики по заказам за период (today | week | month)
+	// (GET /admin/dashboard)
+	AdminGetDashboard(ctx context.Context, request AdminGetDashboardRequestObject) (AdminGetDashboardResponseObject, error)
 	// Создать блюдо
 	// (POST /admin/menu)
 	AdminCreateDish(ctx context.Context, request AdminCreateDishRequestObject) (AdminCreateDishResponseObject, error)
@@ -3868,9 +5197,42 @@ type StrictServerInterface interface {
 	// Детали заказа
 	// (GET /admin/orders/{id})
 	AdminGetOrder(ctx context.Context, request AdminGetOrderRequestObject) (AdminGetOrderResponseObject, error)
+	// История изменений конкретного заказа
+	// (GET /admin/orders/{id}/actions)
+	AdminListOrderActions(ctx context.Context, request AdminListOrderActionsRequestObject) (AdminListOrderActionsResponseObject, error)
 	// Сменить статус заказа
 	// (PATCH /admin/orders/{id}/status)
 	AdminUpdateOrderStatus(ctx context.Context, request AdminUpdateOrderStatusRequestObject) (AdminUpdateOrderStatusResponseObject, error)
+	// Список промптов с активными версиями
+	// (GET /admin/prompts)
+	AdminListPrompts(ctx context.Context, request AdminListPromptsRequestObject) (AdminListPromptsResponseObject, error)
+	// Один промпт с историей версий и моим черновиком
+	// (GET /admin/prompts/details)
+	AdminGetPrompt(ctx context.Context, request AdminGetPromptRequestObject) (AdminGetPromptResponseObject, error)
+	// Удалить мой черновик
+	// (DELETE /admin/prompts/draft)
+	AdminDeletePromptDraft(ctx context.Context, request AdminDeletePromptDraftRequestObject) (AdminDeletePromptDraftResponseObject, error)
+	// Создать или обновить мой черновик промпта
+	// (PUT /admin/prompts/draft)
+	AdminUpsertPromptDraft(ctx context.Context, request AdminUpsertPromptDraftRequestObject) (AdminUpsertPromptDraftResponseObject, error)
+	// Опубликовать мой черновик как новую активную версию
+	// (POST /admin/prompts/publish)
+	AdminPublishPrompt(ctx context.Context, request AdminPublishPromptRequestObject) (AdminPublishPromptResponseObject, error)
+	// Откатить промпт к указанной старой версии (создаёт новую запись с тем же content)
+	// (POST /admin/prompts/rollback)
+	AdminRollbackPrompt(ctx context.Context, request AdminRollbackPromptRequestObject) (AdminRollbackPromptResponseObject, error)
+	// Список всех подсказок чата (включая неактивные)
+	// (GET /admin/suggestions)
+	AdminListChatSuggestions(ctx context.Context, request AdminListChatSuggestionsRequestObject) (AdminListChatSuggestionsResponseObject, error)
+	// Создать подсказку
+	// (POST /admin/suggestions)
+	AdminCreateChatSuggestion(ctx context.Context, request AdminCreateChatSuggestionRequestObject) (AdminCreateChatSuggestionResponseObject, error)
+	// Удалить подсказку
+	// (DELETE /admin/suggestions/{id})
+	AdminDeleteChatSuggestion(ctx context.Context, request AdminDeleteChatSuggestionRequestObject) (AdminDeleteChatSuggestionResponseObject, error)
+	// Обновить подсказку
+	// (PATCH /admin/suggestions/{id})
+	AdminUpdateChatSuggestion(ctx context.Context, request AdminUpdateChatSuggestionRequestObject) (AdminUpdateChatSuggestionResponseObject, error)
 	// Список тегов (для админ-формы блюда)
 	// (GET /admin/tags)
 	AdminListTags(ctx context.Context, request AdminListTagsRequestObject) (AdminListTagsResponseObject, error)
@@ -3916,6 +5278,12 @@ type StrictServerInterface interface {
 	// Список доступных категорий
 	// (GET /categories)
 	ListCategories(ctx context.Context, request ListCategoriesRequestObject) (ListCategoriesResponseObject, error)
+	// Активные подсказки для чата (заполняются админом)
+	// (GET /chat/suggestions)
+	ListChatSuggestions(ctx context.Context, request ListChatSuggestionsRequestObject) (ListChatSuggestionsResponseObject, error)
+	// Зарегистрировать клик по подсказке (для аналитики)
+	// (POST /chat/suggestions/{id}/click)
+	TrackChatSuggestionClick(ctx context.Context, request TrackChatSuggestionClickRequestObject) (TrackChatSuggestionClickResponseObject, error)
 	// Список чатов текущего пользователя
 	// (GET /chats)
 	ListChats(ctx context.Context, request ListChatsRequestObject) (ListChatsResponseObject, error)
@@ -3986,25 +5354,25 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
-// AdminGetAnalyticsOverview operation middleware
-func (sh *strictHandler) AdminGetAnalyticsOverview(w http.ResponseWriter, r *http.Request, params AdminGetAnalyticsOverviewParams) {
-	var request AdminGetAnalyticsOverviewRequestObject
+// AdminListActions operation middleware
+func (sh *strictHandler) AdminListActions(w http.ResponseWriter, r *http.Request, params AdminListActionsParams) {
+	var request AdminListActionsRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.AdminGetAnalyticsOverview(ctx, request.(AdminGetAnalyticsOverviewRequestObject))
+		return sh.ssi.AdminListActions(ctx, request.(AdminListActionsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "AdminGetAnalyticsOverview")
+		handler = middleware(handler, "AdminListActions")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(AdminGetAnalyticsOverviewResponseObject); ok {
-		if err := validResponse.VisitAdminGetAnalyticsOverviewResponse(w); err != nil {
+	} else if validResponse, ok := response.(AdminListActionsResponseObject); ok {
+		if err := validResponse.VisitAdminListActionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4012,25 +5380,25 @@ func (sh *strictHandler) AdminGetAnalyticsOverview(w http.ResponseWriter, r *htt
 	}
 }
 
-// AdminListAnalyticsQueries operation middleware
-func (sh *strictHandler) AdminListAnalyticsQueries(w http.ResponseWriter, r *http.Request, params AdminListAnalyticsQueriesParams) {
-	var request AdminListAnalyticsQueriesRequestObject
+// AdminGetAnalytics operation middleware
+func (sh *strictHandler) AdminGetAnalytics(w http.ResponseWriter, r *http.Request, params AdminGetAnalyticsParams) {
+	var request AdminGetAnalyticsRequestObject
 
 	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.AdminListAnalyticsQueries(ctx, request.(AdminListAnalyticsQueriesRequestObject))
+		return sh.ssi.AdminGetAnalytics(ctx, request.(AdminGetAnalyticsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "AdminListAnalyticsQueries")
+		handler = middleware(handler, "AdminGetAnalytics")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(AdminListAnalyticsQueriesResponseObject); ok {
-		if err := validResponse.VisitAdminListAnalyticsQueriesResponse(w); err != nil {
+	} else if validResponse, ok := response.(AdminGetAnalyticsResponseObject); ok {
+		if err := validResponse.VisitAdminGetAnalyticsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4125,6 +5493,32 @@ func (sh *strictHandler) AdminUpdateCategory(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminUpdateCategoryResponseObject); ok {
 		if err := validResponse.VisitAdminUpdateCategoryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminGetDashboard operation middleware
+func (sh *strictHandler) AdminGetDashboard(w http.ResponseWriter, r *http.Request, params AdminGetDashboardParams) {
+	var request AdminGetDashboardRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetDashboard(ctx, request.(AdminGetDashboardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetDashboard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminGetDashboardResponseObject); ok {
+		if err := validResponse.VisitAdminGetDashboardResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4312,6 +5706,33 @@ func (sh *strictHandler) AdminGetOrder(w http.ResponseWriter, r *http.Request, i
 	}
 }
 
+// AdminListOrderActions operation middleware
+func (sh *strictHandler) AdminListOrderActions(w http.ResponseWriter, r *http.Request, id PathID, params AdminListOrderActionsParams) {
+	var request AdminListOrderActionsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListOrderActions(ctx, request.(AdminListOrderActionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListOrderActions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminListOrderActionsResponseObject); ok {
+		if err := validResponse.VisitAdminListOrderActionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // AdminUpdateOrderStatus operation middleware
 func (sh *strictHandler) AdminUpdateOrderStatus(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateOrderStatusParams) {
 	var request AdminUpdateOrderStatusRequestObject
@@ -4339,6 +5760,285 @@ func (sh *strictHandler) AdminUpdateOrderStatus(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminUpdateOrderStatusResponseObject); ok {
 		if err := validResponse.VisitAdminUpdateOrderStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminListPrompts operation middleware
+func (sh *strictHandler) AdminListPrompts(w http.ResponseWriter, r *http.Request) {
+	var request AdminListPromptsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListPrompts(ctx, request.(AdminListPromptsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListPrompts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminListPromptsResponseObject); ok {
+		if err := validResponse.VisitAdminListPromptsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminGetPrompt operation middleware
+func (sh *strictHandler) AdminGetPrompt(w http.ResponseWriter, r *http.Request, params AdminGetPromptParams) {
+	var request AdminGetPromptRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminGetPrompt(ctx, request.(AdminGetPromptRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminGetPrompt")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminGetPromptResponseObject); ok {
+		if err := validResponse.VisitAdminGetPromptResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminDeletePromptDraft operation middleware
+func (sh *strictHandler) AdminDeletePromptDraft(w http.ResponseWriter, r *http.Request, params AdminDeletePromptDraftParams) {
+	var request AdminDeletePromptDraftRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeletePromptDraft(ctx, request.(AdminDeletePromptDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeletePromptDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDeletePromptDraftResponseObject); ok {
+		if err := validResponse.VisitAdminDeletePromptDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminUpsertPromptDraft operation middleware
+func (sh *strictHandler) AdminUpsertPromptDraft(w http.ResponseWriter, r *http.Request, params AdminUpsertPromptDraftParams) {
+	var request AdminUpsertPromptDraftRequestObject
+
+	request.Params = params
+
+	var body AdminUpsertPromptDraftJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpsertPromptDraft(ctx, request.(AdminUpsertPromptDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpsertPromptDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminUpsertPromptDraftResponseObject); ok {
+		if err := validResponse.VisitAdminUpsertPromptDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminPublishPrompt operation middleware
+func (sh *strictHandler) AdminPublishPrompt(w http.ResponseWriter, r *http.Request, params AdminPublishPromptParams) {
+	var request AdminPublishPromptRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminPublishPrompt(ctx, request.(AdminPublishPromptRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminPublishPrompt")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminPublishPromptResponseObject); ok {
+		if err := validResponse.VisitAdminPublishPromptResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminRollbackPrompt operation middleware
+func (sh *strictHandler) AdminRollbackPrompt(w http.ResponseWriter, r *http.Request, params AdminRollbackPromptParams) {
+	var request AdminRollbackPromptRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminRollbackPrompt(ctx, request.(AdminRollbackPromptRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminRollbackPrompt")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminRollbackPromptResponseObject); ok {
+		if err := validResponse.VisitAdminRollbackPromptResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminListChatSuggestions operation middleware
+func (sh *strictHandler) AdminListChatSuggestions(w http.ResponseWriter, r *http.Request) {
+	var request AdminListChatSuggestionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListChatSuggestions(ctx, request.(AdminListChatSuggestionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListChatSuggestions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminListChatSuggestionsResponseObject); ok {
+		if err := validResponse.VisitAdminListChatSuggestionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminCreateChatSuggestion operation middleware
+func (sh *strictHandler) AdminCreateChatSuggestion(w http.ResponseWriter, r *http.Request, params AdminCreateChatSuggestionParams) {
+	var request AdminCreateChatSuggestionRequestObject
+
+	request.Params = params
+
+	var body AdminCreateChatSuggestionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminCreateChatSuggestion(ctx, request.(AdminCreateChatSuggestionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminCreateChatSuggestion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminCreateChatSuggestionResponseObject); ok {
+		if err := validResponse.VisitAdminCreateChatSuggestionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminDeleteChatSuggestion operation middleware
+func (sh *strictHandler) AdminDeleteChatSuggestion(w http.ResponseWriter, r *http.Request, id int, params AdminDeleteChatSuggestionParams) {
+	var request AdminDeleteChatSuggestionRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDeleteChatSuggestion(ctx, request.(AdminDeleteChatSuggestionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDeleteChatSuggestion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDeleteChatSuggestionResponseObject); ok {
+		if err := validResponse.VisitAdminDeleteChatSuggestionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminUpdateChatSuggestion operation middleware
+func (sh *strictHandler) AdminUpdateChatSuggestion(w http.ResponseWriter, r *http.Request, id int, params AdminUpdateChatSuggestionParams) {
+	var request AdminUpdateChatSuggestionRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	var body AdminUpdateChatSuggestionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminUpdateChatSuggestion(ctx, request.(AdminUpdateChatSuggestionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminUpdateChatSuggestion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminUpdateChatSuggestionResponseObject); ok {
+		if err := validResponse.VisitAdminUpdateChatSuggestionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4781,6 +6481,57 @@ func (sh *strictHandler) ListCategories(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// ListChatSuggestions operation middleware
+func (sh *strictHandler) ListChatSuggestions(w http.ResponseWriter, r *http.Request) {
+	var request ListChatSuggestionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListChatSuggestions(ctx, request.(ListChatSuggestionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListChatSuggestions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListChatSuggestionsResponseObject); ok {
+		if err := validResponse.VisitListChatSuggestionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TrackChatSuggestionClick operation middleware
+func (sh *strictHandler) TrackChatSuggestionClick(w http.ResponseWriter, r *http.Request, id int, params TrackChatSuggestionClickParams) {
+	var request TrackChatSuggestionClickRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TrackChatSuggestionClick(ctx, request.(TrackChatSuggestionClickRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TrackChatSuggestionClick")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TrackChatSuggestionClickResponseObject); ok {
+		if err := validResponse.VisitTrackChatSuggestionClickResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListChats operation middleware
 func (sh *strictHandler) ListChats(w http.ResponseWriter, r *http.Request, params ListChatsParams) {
 	var request ListChatsRequestObject
@@ -5152,115 +6903,163 @@ func (sh *strictHandler) UpdateProfile(w http.ResponseWriter, r *http.Request, p
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"JMdUbzQtcr16e/X/AwAA//9O+tTxaqUAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

@@ -79,6 +79,15 @@ type Repository interface {
 	DeleteItem(ctx context.Context, cartID uuid.UUID, dishID int) error
 	// DeleteAllItems очищает корзину
 	DeleteAllItems(ctx context.Context, cartID uuid.UUID) error
+	// LogAddition пишет событие в cart_additions (для аналитики «из чата» vs «из меню»).
+	// Не влияет на состояние корзины; ошибка не должна валить AddItem-операцию.
+	LogAddition(
+		ctx context.Context,
+		userID uuid.UUID,
+		dishID, quantity int,
+		source usecasemodels.CartSource,
+		messageID *uuid.UUID,
+	) error
 }
 
 // UUIDGen генератор UUID для cart-id

@@ -55,6 +55,12 @@ type ChatRequest struct {
 	Messages []Message
 	// ModelOverride если задан, переопределяет cfg.Model
 	ModelOverride string
+	// SessionID опциональный идентификатор сессии для кэширования контекста
+	// на стороне провайдера. Используется GigaChat через заголовок X-Session-ID:
+	// одинаковый префикс сообщений между запросами не пересчитывается → меньше
+	// токенов и быстрее. Для NVIDIA/OpenRouter заголовок безопасен (игнорируется).
+	// В нашем чате удобно подавать chat_id (UUID) — он идентифицирует диалог.
+	SessionID string
 }
 
 // Usage агрегированная телеметрия одного ответа
@@ -70,13 +76,26 @@ type Usage struct {
 }
 
 // Config параметры одного экземпляра клиента (один провайдер)
+// TokenProvider возвращает свежий Bearer-токен для запроса.
+//
+// Используется провайдерами с короткоживущими access_token'ами (GigaChat: ~30 минут);
+// для статических ключей (NVIDIA, OpenRouter) поле не задаётся — используется APIKey.
+// Если TokenProvider задан, APIKey игнорируется.
+type TokenProvider func(ctx context.Context) (string, error)
+
 type Config struct {
-	// Provider короткое имя провайдера для логов ("openrouter", "nvidia")
+	// Provider короткое имя провайдера для логов ("openrouter", "nvidia", "gigachat")
 	Provider string
 	// BaseURL базовый URL API (без хвостового слэша, без /chat/completions)
 	BaseURL string
-	// APIKey ключ API (Bearer)
+	// APIKey ключ API (Bearer). Игнорируется, если задан TokenProvider.
 	APIKey string
+	// TokenProvider если задан, на каждый запрос дёргается за свежим токеном
+	// вместо статического APIKey (для OAuth2-провайдеров).
+	TokenProvider TokenProvider
+	// HTTPClient внешний http.Client; если задан — используется как есть
+	// (для GigaChat — с custom RootCAs Минцифры). Если nil, клиент создаётся внутри.
+	HTTPClient *http.Client
 	// Model имя модели по умолчанию (можно переопределить через ChatRequest.ModelOverride)
 	Model string
 	// Temperature 0..1
@@ -97,32 +116,38 @@ type Client struct {
 	http *http.Client
 }
 
-// New создаёт клиент. Возвращает ErrEmptyAPIKey, если в cfg не задан APIKey.
+// New создаёт клиент.
+//
+// Требуется либо APIKey, либо TokenProvider — иначе ErrEmptyAPIKey.
+// Если HTTPClient в cfg задан (например, в GigaChat — с custom RootCAs Минцифры),
+// он используется как есть; иначе создаётся внутренний с тюнингом таймаутов
+// под походы из РФ.
 func New(cfg Config) (*Client, error) {
-	if cfg.APIKey == "" {
+	if cfg.APIKey == "" && cfg.TokenProvider == nil {
 		return nil, ErrEmptyAPIKey
 	}
 	if cfg.Provider == "" {
 		cfg.Provider = "llm"
 	}
-	// Кастомный transport: дефолтный TLSHandshakeTimeout=10s слишком жёсткий
-	// для походов из РФ; держим TLS handshake до 30s, остальное — по дефолтам.
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   30 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		// Кастомный transport: дефолтный TLSHandshakeTimeout=10s слишком жёсткий
+		// для походов из РФ; держим TLS handshake до 30s, остальное — по дефолтам.
+		transport := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			ForceAttemptHTTP2:     true,
+			MaxIdleConns:          100,
+			IdleConnTimeout:       90 * time.Second,
+			TLSHandshakeTimeout:   30 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
+		}
+		httpClient = &http.Client{Timeout: cfg.RequestTimeout, Transport: transport}
 	}
-	return &Client{
-		cfg:  cfg,
-		http: &http.Client{Timeout: cfg.RequestTimeout, Transport: transport},
-	}, nil
+	return &Client{cfg: cfg, http: httpClient}, nil
 }
 
 // Provider возвращает короткое имя провайдера (для логирования)
@@ -183,7 +208,7 @@ func (c *Client) ChatStream(
 	}
 
 	start := time.Now()
-	resp, err := c.doWithRetry(ctx, raw)
+	resp, err := c.doWithRetry(ctx, raw, req.SessionID)
 	if err != nil {
 		return Usage{}, fmt.Errorf("do request: %w", err)
 	}
@@ -227,7 +252,7 @@ func (c *Client) ChatStream(
 
 // doWithRetry шлёт HTTP-запрос chat-completions с повторами на сетевые таймауты.
 // Безопасно повторять только до того, как мы начали потреблять SSE-стрим.
-func (c *Client) doWithRetry(ctx context.Context, body []byte) (*http.Response, error) {
+func (c *Client) doWithRetry(ctx context.Context, body []byte, sessionID string) (*http.Response, error) {
 	url := c.cfg.BaseURL + "/chat/completions"
 	log := logger.ForCtx(ctx).With(
 		"service", c.cfg.Provider,
@@ -244,7 +269,15 @@ func (c *Client) doWithRetry(ctx context.Context, body []byte) (*http.Response, 
 		if err != nil {
 			return nil, fmt.Errorf("build request: %w", err)
 		}
-		req.Header.Set("Authorization", "Bearer "+c.cfg.APIKey)
+		token := c.cfg.APIKey
+		if c.cfg.TokenProvider != nil {
+			t, terr := c.cfg.TokenProvider(ctx)
+			if terr != nil {
+				return nil, fmt.Errorf("%w: token: %s", ErrUpstreamFailure, terr.Error())
+			}
+			token = t
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Accept", "text/event-stream")
 		for k, v := range c.cfg.ExtraHeaders {
@@ -252,6 +285,11 @@ func (c *Client) doWithRetry(ctx context.Context, body []byte) (*http.Response, 
 				continue
 			}
 			req.Header.Set(k, v)
+		}
+		// GigaChat: X-Session-ID кэширует префикс контекста между запросами одной сессии.
+		// Для OpenRouter / NVIDIA этот header игнорируется — безопасно ставить везде.
+		if sessionID != "" {
+			req.Header.Set("X-Session-ID", sessionID)
 		}
 
 		t := time.Now()

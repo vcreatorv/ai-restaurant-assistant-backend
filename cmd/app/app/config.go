@@ -125,6 +125,13 @@ func LoadConfig(path string) (*Config, error) {
 	if v := os.Getenv("NVIDIA_API_KEY"); v != "" {
 		c.RAG.LLM.Nvidia.APIKey = v
 	}
+	// GIGACHAT_AUTHORIZATION_KEY — base64 от client_id:client_secret из ЛК developers.sber.ru;
+	// шарим один ключ между rag.llm и classifier, потому что они логически принадлежат одному
+	// аккаунту GigaChat (так же, как с NVIDIA / OpenRouter).
+	if v := os.Getenv("GIGACHAT_AUTHORIZATION_KEY"); v != "" {
+		c.RAG.LLM.GigaChat.AuthorizationKey = v
+		c.RAG.Classifier.GigaChat.AuthorizationKey = v
+	}
 	if v := os.Getenv("LLM_PROVIDER"); v != "" {
 		c.RAG.LLM.Provider = v
 	}
@@ -145,7 +152,7 @@ func LoadConfig(path string) (*Config, error) {
 		c.Menu.Delivery.DefaultLimit = 20
 	}
 	if c.Menu.Delivery.MaxLimit <= 0 {
-		c.Menu.Delivery.MaxLimit = 100
+		c.Menu.Delivery.MaxLimit = 200
 	}
 	if c.Menu.Delivery.MaxImageSizeBytes <= 0 {
 		c.Menu.Delivery.MaxImageSizeBytes = 5 * 1024 * 1024

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/example/ai-restaurant-assistant-backend/cmd/app/app"
+	"github.com/example/ai-restaurant-assistant-backend/internal/menu/indexer"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/cohere"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/datasources"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/qdrant"
@@ -18,17 +18,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-// cuisineRU маппинг enum-кода кухни в русское слово для embed-текста
-var cuisineRU = map[string]string{
-	"russian":  "русская",
-	"italian":  "итальянская",
-	"japanese": "японская",
-	"french":   "французская",
-	"asian":    "азиатская",
-	"european": "европейская",
-	"american": "американская",
-}
 
 // dishRow одна строка выборки блюда из PG для индексации в Qdrant
 type dishRow struct {
@@ -217,7 +206,11 @@ func loadDishes(ctx context.Context, pool *pgxpool.Pool) ([]dishRow, error) {
 	return out, nil
 }
 
-// indexDishes эмбеддит и upsert-ит блюда батчами
+// indexDishes эмбеддит и upsert-ит блюда батчами через общий indexer.
+//
+// Размер батча — минимум из cohere.embed_batch_size и qdrant.upsert_batch_size.
+// Логика embed-текста и payload живёт в internal/menu/indexer, чтобы не разъезжаться
+// с runtime'ом из menu/usecase.
 func indexDishes(
 	ctx context.Context,
 	dishes []dishRow,
@@ -230,91 +223,42 @@ func indexDishes(
 		batch = cfg.Qdrant.UpsertBatchSize
 	}
 
+	idx := indexer.New(co, qc)
+
 	for start := 0; start < len(dishes); start += batch {
 		end := start + batch
 		if end > len(dishes) {
 			end = len(dishes)
 		}
 		chunk := dishes[start:end]
-
-		texts := make([]string, len(chunk))
+		views := make([]indexer.DishView, len(chunk))
 		for i, d := range chunk {
-			texts[i] = buildEmbedText(d)
+			views[i] = dishRowToView(d)
 		}
-
-		vectors, err := co.Embed(ctx, texts, rag.CohereInputDocument)
-		if err != nil {
-			return fmt.Errorf("embed batch [%d:%d]: %w", start, end, err)
-		}
-
-		points := make([]qdrant.Point, len(chunk))
-		for i, d := range chunk {
-			points[i] = qdrant.Point{
-				// dish.id из PG (SERIAL) — всегда положительный, помещается в uint64
-				ID:      uint64(d.id), //nolint:gosec // dish_id non-negative serial
-				Vector:  vectors[i],
-				Payload: buildPayload(d),
-			}
-		}
-		if err := qc.Upsert(ctx, points); err != nil {
-			return fmt.Errorf("upsert batch [%d:%d]: %w", start, end, err)
+		if err := idx.ReindexMany(ctx, views); err != nil {
+			return fmt.Errorf("reindex batch [%d:%d]: %w", start, end, err)
 		}
 		slog.Info("indexed batch", "from", start, "to", end, "size", len(chunk))
 	}
 	return nil
 }
 
-// buildEmbedText собирает текст блюда для эмбеддинга
-func buildEmbedText(d dishRow) string {
-	cuisine := cuisineRU[d.cuisine]
-	if cuisine == "" {
-		cuisine = d.cuisine
+// dishRowToView маппит локальную строку выборки PG в нейтральный indexer.DishView.
+func dishRowToView(d dishRow) indexer.DishView {
+	return indexer.DishView{
+		ID:             d.id,
+		Name:           d.name,
+		Description:    d.description,
+		Composition:    d.composition,
+		Cuisine:        d.cuisine,
+		CategoryID:     d.categoryID,
+		CategoryName:   d.categoryName,
+		Allergens:      d.allergens,
+		Dietary:        d.dietary,
+		TagIDs:         d.tagIDs,
+		PriceMinor:     d.priceMinor,
+		CaloriesKcal:   d.caloriesKcal,
+		PortionWeightG: d.portionWeightG,
+		IsAvailable:    d.isAvailable,
 	}
-	parts := []string{d.name + "."}
-	if d.description != "" {
-		parts = append(parts, d.description)
-	}
-	if d.composition != "" {
-		parts = append(parts, "Состав: "+d.composition+".")
-	}
-	parts = append(parts,
-		"Кухня: "+cuisine+".",
-		"Категория: "+d.categoryName+".",
-	)
-	return strings.Join(parts, " ")
-}
-
-// buildPayload собирает payload точки Qdrant (только поля для фильтрации)
-func buildPayload(d dishRow) map[string]any {
-	p := map[string]any{
-		"dish_id":      d.id,
-		"category_id":  d.categoryID,
-		"cuisine":      d.cuisine,
-		"allergens":    coalesceStrings(d.allergens),
-		"dietary":      coalesceStrings(d.dietary),
-		"tag_ids":      coalesceInts(d.tagIDs),
-		"price_minor":  d.priceMinor,
-		"is_available": d.isAvailable,
-	}
-	if d.caloriesKcal != nil {
-		p["calories_kcal"] = *d.caloriesKcal
-	}
-	if d.portionWeightG != nil {
-		p["portion_weight_g"] = *d.portionWeightG
-	}
-	return p
-}
-
-func coalesceStrings(s []string) []string {
-	if s == nil {
-		return []string{}
-	}
-	return s
-}
-
-func coalesceInts(s []int) []int {
-	if s == nil {
-		return []int{}
-	}
-	return s
 }

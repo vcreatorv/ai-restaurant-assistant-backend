@@ -11,6 +11,7 @@ func CategoryFromUsecase(c usecasemodels.Category) Category {
 		Name:        c.Name,
 		SortOrder:   c.SortOrder,
 		IsAvailable: c.IsAvailable,
+		Role:        CategoryRole(c.Role),
 	}
 }
 
@@ -29,6 +30,7 @@ func CreateCategoryRequestToUsecase(req CreateCategoryRequest) usecasemodels.Cat
 		Name:        req.Name,
 		SortOrder:   0,
 		IsAvailable: true,
+		Role:        usecasemodels.CategoryRoleNone,
 	}
 	if req.SortOrder != nil {
 		c.SortOrder = *req.SortOrder
@@ -36,16 +38,24 @@ func CreateCategoryRequestToUsecase(req CreateCategoryRequest) usecasemodels.Cat
 	if req.IsAvailable != nil {
 		c.IsAvailable = *req.IsAvailable
 	}
+	if req.Role != nil {
+		c.Role = usecasemodels.CategoryRole(*req.Role)
+	}
 	return c
 }
 
 // PatchCategoryRequestToUsecase маппит api.PatchCategoryRequest в usecase.CategoryPatch
 func PatchCategoryRequestToUsecase(req PatchCategoryRequest) usecasemodels.CategoryPatch {
-	return usecasemodels.CategoryPatch{
+	p := usecasemodels.CategoryPatch{
 		Name:        req.Name,
 		SortOrder:   req.SortOrder,
 		IsAvailable: req.IsAvailable,
 	}
+	if req.Role != nil {
+		role := usecasemodels.CategoryRole(*req.Role)
+		p.Role = &role
+	}
+	return p
 }
 
 // TagFromUsecase маппит usecase.Tag в api.Tag

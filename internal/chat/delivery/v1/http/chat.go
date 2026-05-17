@@ -136,10 +136,11 @@ func (h ChatHandler) SendMessage(
 			},
 			OnDone: func(d chat.DoneEvent) error {
 				return writeSSEEvent(pw, "done", map[string]any{
-					"latency_ms": d.LatencyMS,
-					"tokens_in":  d.TokensIn,
-					"tokens_out": d.TokensOut,
-					"model":      d.Model,
+					"latency_ms":           d.LatencyMS,
+					"tokens_in":            d.TokensIn,
+					"tokens_out":           d.TokensOut,
+					"model":                d.Model,
+					"recommended_dish_ids": coalesceInts(d.RecommendedDishIDs),
 				})
 			},
 		})

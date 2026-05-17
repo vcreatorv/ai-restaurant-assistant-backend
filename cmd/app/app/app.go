@@ -10,6 +10,10 @@ import (
 	"time"
 
 	v1 "github.com/example/ai-restaurant-assistant-backend/cmd/app/app/v1"
+	"github.com/example/ai-restaurant-assistant-backend/internal/audit"
+	audithttp "github.com/example/ai-restaurant-assistant-backend/internal/audit/delivery/v1/http"
+	auditpostgres "github.com/example/ai-restaurant-assistant-backend/internal/audit/repository/postgres"
+	auditusecase "github.com/example/ai-restaurant-assistant-backend/internal/audit/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/auth"
 	authhttp "github.com/example/ai-restaurant-assistant-backend/internal/auth/delivery/v1/http"
 	authusecase "github.com/example/ai-restaurant-assistant-backend/internal/auth/usecase"
@@ -23,6 +27,7 @@ import (
 	chatusecase "github.com/example/ai-restaurant-assistant-backend/internal/chat/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
 	menuhttp "github.com/example/ai-restaurant-assistant-backend/internal/menu/delivery/v1/http"
+	"github.com/example/ai-restaurant-assistant-backend/internal/menu/indexer"
 	menupostgres "github.com/example/ai-restaurant-assistant-backend/internal/menu/repository/postgres"
 	menuusecase "github.com/example/ai-restaurant-assistant-backend/internal/menu/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/order"
@@ -37,12 +42,23 @@ import (
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/llm"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/logger"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/middleware"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/gigachat"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/nvidia"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/openrouter"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/qdrant"
 	pkgredis "github.com/example/ai-restaurant-assistant-backend/internal/pkg/redis"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/s3"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/uuid"
+	analyticshttp "github.com/example/ai-restaurant-assistant-backend/internal/analytics/delivery/v1/http"
+	analyticspostgres "github.com/example/ai-restaurant-assistant-backend/internal/analytics/repository/postgres"
+	analyticsusecase "github.com/example/ai-restaurant-assistant-backend/internal/analytics/usecase"
+	"github.com/example/ai-restaurant-assistant-backend/internal/prompts"
+	promptshttp "github.com/example/ai-restaurant-assistant-backend/internal/prompts/delivery/v1/http"
+	promptspostgres "github.com/example/ai-restaurant-assistant-backend/internal/prompts/repository/postgres"
+	promptsusecase "github.com/example/ai-restaurant-assistant-backend/internal/prompts/usecase"
+	suggestionshttp "github.com/example/ai-restaurant-assistant-backend/internal/suggestions/delivery/v1/http"
+	suggestionspostgres "github.com/example/ai-restaurant-assistant-backend/internal/suggestions/repository/postgres"
+	suggestionsusecase "github.com/example/ai-restaurant-assistant-backend/internal/suggestions/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/rag"
 	sessionredis "github.com/example/ai-restaurant-assistant-backend/internal/session/repository/redis"
 	sessionusecase "github.com/example/ai-restaurant-assistant-backend/internal/session/usecase"
@@ -158,6 +174,8 @@ func buildAPI(
 	chatRepository := chatpostgres.New(pgPool)
 	cartRepository := cartpostgres.New(pgPool)
 	orderRepository := orderpostgres.New(pgPool)
+	promptsRepository := promptspostgres.New(pgPool)
+	auditRepository := auditpostgres.New(pgPool)
 
 	cohereClient, err := cohere.New(cfg.RAG.Cohere)
 	if err != nil {
@@ -168,21 +186,35 @@ func buildAPI(
 	if err != nil {
 		return Handler{}, nil, fmt.Errorf("llm provider %q: %w", cfg.RAG.LLM.Provider, err)
 	}
+	// classifierClient — отдельный клиент для классификатора намерений.
+	// Если в конфиге classifier.provider не задан — переиспользуем основной llmClient
+	// (та же модель). Иначе строим независимого клиента (дешевле/быстрее модель).
+	classifierClient := llmClient
+	if cfg.RAG.Classifier.Provider != "" {
+		classifierClient, err = buildLLMClient(cfg.RAG.Classifier)
+		if err != nil {
+			return Handler{}, nil, fmt.Errorf("classifier llm provider %q: %w", cfg.RAG.Classifier.Provider, err)
+		}
+	}
 
 	sessionUsecase := sessionusecase.New(sessionRepository, uuidGen, csrfGen)
 	userUsecase := userusecase.New(userRepository)
 	authUsecase := authusecase.New(userRepository, sessionUsecase, bcryptHasher, uuidGen)
-	menuUsecase := menuusecase.New(menuRepository, s3Storage)
+	menuIndexer := indexer.New(cohereClient, qdrantClient)
+	menuUsecase := menuusecase.New(menuRepository, s3Storage, menuIndexer)
+	promptsUsecase := promptsusecase.New(promptsRepository)
 	chatUsecase := chatusecase.New(chatusecase.Deps{
-		Repo:    chatRepository,
-		UUID:    uuidGen,
-		Users:   userUsecase,
-		Menu:    menuUsecase,
-		Cohere:  cohereClient,
-		Qdrant:  qdrantClient,
-		LLM:     llmClient,
-		ChatCfg: cfg.Chat.Usecase,
-		RAGCfg:  cfg.RAG,
+		Repo:       chatRepository,
+		UUID:       uuidGen,
+		Users:      userUsecase,
+		Menu:       menuUsecase,
+		Cohere:     cohereClient,
+		Qdrant:     qdrantClient,
+		LLM:        llmClient,
+		Classifier: classifierClient,
+		Prompts:    promptsUsecase,
+		ChatCfg:    cfg.Chat.Usecase,
+		RAGCfg:     cfg.RAG,
 	})
 	cartUsecase := cartusecase.New(cartusecase.Deps{
 		Repo: cartRepository,
@@ -196,20 +228,37 @@ func buildAPI(
 		UUID:     uuidGen,
 	})
 
+	auditReader := auditusecase.New(auditRepository, auditusecase.LimitDefaults{Default: 50, Max: 200})
+	auditRecorder := auditusecase.NewSafeRecorder(auditRepository, log)
+
 	authHandler := authhttp.New(authUsecase, userUsecase)
 	userHandler := userhttp.New(userUsecase)
-	menuHandler := menuhttp.New(cfg.Menu.Delivery, menuUsecase, userUsecase)
+	menuHandler := menuhttp.New(cfg.Menu.Delivery, menuUsecase, userUsecase, auditRecorder)
 	chatHandler := chathttp.New(cfg.Chat.Delivery, chatUsecase)
 	cartHandler := carthttp.New(cfg.Cart.Delivery, cartUsecase)
-	orderHandler := orderhttp.New(cfg.Order.Delivery, orderUsecase, userUsecase)
+	orderHandler := orderhttp.New(cfg.Order.Delivery, orderUsecase, userUsecase, auditRecorder)
+	promptsHandler := promptshttp.New(promptsUsecase, userUsecase, auditRecorder)
+	auditHandler := audithttp.New(auditReader, userUsecase)
+
+	suggestionsRepository := suggestionspostgres.New(pgPool)
+	suggestionsUsecase := suggestionsusecase.New(suggestionsRepository)
+	suggestionsHandler := suggestionshttp.New(suggestionsUsecase, userUsecase)
+
+	analyticsRepository := analyticspostgres.New(pgPool)
+	analyticsUsecase := analyticsusecase.New(analyticsRepository)
+	analyticsHandler := analyticshttp.New(analyticsUsecase, userUsecase)
 
 	handler := Handler{
-		AuthHandler:  authHandler,
-		UserHandler:  userHandler,
-		MenuHandler:  menuHandler,
-		ChatHandler:  chatHandler,
-		CartHandler:  cartHandler,
-		OrderHandler: orderHandler,
+		AuthHandler:        authHandler,
+		UserHandler:        userHandler,
+		MenuHandler:        menuHandler,
+		ChatHandler:        chatHandler,
+		CartHandler:        cartHandler,
+		OrderHandler:       orderHandler,
+		PromptsHandler:     promptsHandler,
+		AuditHandler:       auditHandler,
+		SuggestionsHandler: suggestionsHandler,
+		AnalyticsHandler:   analyticsHandler,
 	}
 
 	swagger, err := v1.GetSwagger()
@@ -266,7 +315,7 @@ func requestErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 }
 
 // responseErrorHandler маппит ошибки бизнес-логики в HTTP-ответы
-func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
+func responseErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, apperrors.ErrNotImplemented):
 		writeError(w, http.StatusNotImplemented, "not_implemented", "This endpoint is not yet implemented")
@@ -285,6 +334,10 @@ func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 		writeError(w, http.StatusConflict, "email_already_taken", "Email is already registered")
 	case errors.Is(err, user.ErrInsufficientRole):
 		writeError(w, http.StatusForbidden, "access_denied", "Operation not allowed for this role")
+	case errors.Is(err, user.ErrInvalidAllergen):
+		writeError(w, http.StatusBadRequest, "invalid_allergen", "Invalid allergen code in profile")
+	case errors.Is(err, user.ErrInvalidDietary):
+		writeError(w, http.StatusBadRequest, "invalid_dietary", "Invalid dietary code in profile")
 
 	case errors.Is(err, auth.ErrInvalidCredentials):
 		writeError(w, http.StatusUnauthorized, "invalid_credentials", "Invalid credentials")
@@ -307,6 +360,8 @@ func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 		writeError(w, http.StatusConflict, "dish_name_taken", "Dish with this name already exists")
 	case errors.Is(err, menu.ErrInvalidCuisine):
 		writeError(w, http.StatusBadRequest, "invalid_cuisine", "Invalid cuisine value")
+	case errors.Is(err, menu.ErrInvalidCategoryRole):
+		writeError(w, http.StatusBadRequest, "invalid_category_role", "Invalid category role value")
 	case errors.Is(err, menu.ErrImageTooLarge):
 		writeError(w, http.StatusRequestEntityTooLarge, "image_too_large", "Image exceeds maximum allowed size")
 	case errors.Is(err, menu.ErrImageUnsupportedType):
@@ -351,7 +406,28 @@ func responseErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 	case errors.Is(err, order.ErrInvalidStatusTransition):
 		writeError(w, http.StatusBadRequest, "invalid_status_transition", "Status transition is not allowed")
 
+	case errors.Is(err, prompts.ErrUnknownName):
+		writeError(w, http.StatusNotFound, "prompt_not_found", "Unknown prompt name")
+	case errors.Is(err, prompts.ErrNotFound):
+		writeError(w, http.StatusNotFound, "prompt_not_found", "Prompt not found")
+	case errors.Is(err, prompts.ErrVersionNotFound):
+		writeError(w, http.StatusNotFound, "prompt_version_not_found", "Prompt version not found")
+	case errors.Is(err, prompts.ErrDraftNotFound):
+		writeError(w, http.StatusNotFound, "prompt_draft_not_found", "No draft to publish")
+	case errors.Is(err, prompts.ErrInvalidContent):
+		writeError(w, http.StatusBadRequest, "prompt_invalid", err.Error())
+
+	case errors.Is(err, audit.ErrInvalidFilter):
+		writeError(w, http.StatusBadRequest, "validation_failed", err.Error())
+
 	default:
+		// Без логирования default-ветки нельзя понять, что сломалось — тех. подробности
+		// мы намеренно не выводим клиенту, но себе в логи писать обязаны.
+		logger.ForCtx(r.Context()).Error("unhandled handler error",
+			"path", r.URL.Path,
+			"method", r.Method,
+			"err", err.Error(),
+		)
 		writeError(w, http.StatusInternalServerError, "internal_error", "An unexpected error occurred")
 	}
 }
@@ -365,10 +441,12 @@ func buildLLMClient(cfg rag.LLMConfig) (*llm.Client, error) {
 		return openrouter.New(cfg.OpenRouter, cfg.Common)
 	case "nvidia":
 		return nvidia.New(cfg.Nvidia, cfg.Common)
+	case "gigachat":
+		return gigachat.New(cfg.GigaChat, cfg.Common)
 	case "":
-		return nil, fmt.Errorf("rag.llm.provider is required (openrouter | nvidia)")
+		return nil, fmt.Errorf("rag.llm.provider is required (openrouter | nvidia | gigachat)")
 	default:
-		return nil, fmt.Errorf("rag.llm.provider %q is not supported (use openrouter | nvidia)", cfg.Provider)
+		return nil, fmt.Errorf("rag.llm.provider %q is not supported (use openrouter | nvidia | gigachat)", cfg.Provider)
 	}
 }
 

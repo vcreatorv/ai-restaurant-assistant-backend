@@ -288,7 +288,9 @@
           "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] } },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('200 OK', () => pm.response.to.have.status(200));",
-            "pm.test('items array', () => pm.expect(pm.response.json().items).to.be.an('array'));"
+            "const items = pm.response.json().items;",
+            "pm.test('items array', () => pm.expect(items).to.be.an('array'));",
+            "pm.test('each item has role enum', () => items.forEach(c => pm.expect(['none','main','companion']).to.include(c.role)));"
           ] } }]
         },
         {
@@ -1666,13 +1668,14 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": { "raw": "{{baseUrl}}/admin/categories", "host": ["{{baseUrl}}"], "path": ["admin", "categories"] },
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Супы\",\n  \"sort_order\": 10,\n  \"is_available\": true\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Супы\",\n  \"sort_order\": 10,\n  \"is_available\": true,\n  \"role\": \"main\"\n}" }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('201', () => pm.response.to.have.status(201));",
             "const body = pm.response.json();",
             "pm.collectionVariables.set('categoryId', String(body.id));",
-            "pm.test('id captured', () => pm.expect(body.id).to.be.a('number'));"
+            "pm.test('id captured', () => pm.expect(body.id).to.be.a('number'));",
+            "pm.test('role echoed', () => pm.expect(body.role).to.eql('main'));"
           ] } }]
         },
         {
@@ -1681,11 +1684,24 @@
             "method": "PATCH",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": { "raw": "{{baseUrl}}/admin/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["admin", "categories", "{{categoryId}}"] },
-            "body": { "mode": "raw", "raw": "{\n  \"sort_order\": 5\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"sort_order\": 5,\n  \"role\": \"companion\"\n}" }
           },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('200', () => pm.response.to.have.status(200));",
-            "pm.test('sort_order = 5', () => pm.expect(pm.response.json().sort_order).to.eql(5));"
+            "pm.test('sort_order = 5', () => pm.expect(pm.response.json().sort_order).to.eql(5));",
+            "pm.test('role = companion', () => pm.expect(pm.response.json().role).to.eql('companion'));"
+          ] } }]
+        },
+        {
+          "name": "Update category — invalid role → 400",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["admin", "categories", "{{categoryId}}"] },
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"unknown\"\n}" }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
           ] } }]
         },
         {
@@ -1833,6 +1849,231 @@
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('409', () => pm.response.to.have.status(409));",
             "pm.test('code = category_has_dishes', () => pm.expect(pm.response.json().error.code).to.eql('category_has_dishes'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — prompts",
+      "description": "Управление промптами LLM. Три именованных промпта:\n  - system        — основной промпт для генерации ответа (RAG + меню в контексте);\n  - classification — короткий классификатор намерения (recommend / clarify / chitchat / off_topic);\n  - refusal       — короткий вежливый отказ при off-topic.\n\nИмя промпта передаётся **query-параметром** ?name=... (а не путём). Список валидных имён задан в коде (prompts.SupportedNames).\n\nWorkflow:\n  1. GET /admin/prompts — посмотреть все три, активные версии и есть ли мои черновики.\n  2. PUT /admin/prompts/draft?name=system — сохранить мой draft.\n  3. Опционально: поговорить с чатом — usecase подставит мой draft вместо активной для запросов под моей сессией.\n  4. POST /admin/prompts/publish?name=system — раскатить draft на всех клиентов.\n  5. POST /admin/prompts/rollback?name=system&version=N — откатить.\n\nПредусловия: залогинься admin'ом через папку «Admin — login». Миграции 000006 + 000008 применены.",
+      "item": [
+        {
+          "name": "List prompts (GET /admin/prompts)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts", "host": ["{{baseUrl}}"], "path": ["admin", "prompts"] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "const names = body.items.map(p => p.name);",
+            "pm.test('contains system', () => pm.expect(names).to.include('system'));",
+            "pm.test('contains classification', () => pm.expect(names).to.include('classification'));",
+            "pm.test('contains refusal', () => pm.expect(names).to.include('refusal'));"
+          ] } }]
+        },
+        {
+          "name": "Get system (GET /admin/prompts/details?name=system)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts/details?name=system", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "details"], "query": [{ "key": "name", "value": "system" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('name === system', () => pm.expect(body.name).to.eql('system'));",
+            "pm.test('history is array', () => pm.expect(body.history).to.be.an('array'));",
+            "pm.collectionVariables.set('promptCurrentVersion', body.current.version);"
+          ] } }]
+        },
+        {
+          "name": "Get classification (GET /admin/prompts/details?name=classification)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts/details?name=classification", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "details"], "query": [{ "key": "name", "value": "classification" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('content has {{user_message}} placeholder', () => pm.expect(pm.response.json().current.content).to.include('{{user_message}}'));"
+          ] } }]
+        },
+        {
+          "name": "Get refusal (GET /admin/prompts/details?name=refusal)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts/details?name=refusal", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "details"], "query": [{ "key": "name", "value": "refusal" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Get unknown name (GET /admin/prompts/details?name=foo) → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts/details?name=foo", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "details"], "query": [{ "key": "name", "value": "foo" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404', () => pm.response.to.have.status(404));"
+          ] } }]
+        },
+        {
+          "name": "Upsert system draft (PUT /admin/prompts/draft?name=system)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Ты — официант ресторана. Помогай гостям выбирать блюда из меню. В конце ответа всегда добавляй блок ```json {\\\"recommended_dish_ids\\\":[<id>]}``` со списком id рекомендованных блюд. Тестовая правка через postman.\"\n}" },
+            "url": { "raw": "{{baseUrl}}/admin/prompts/draft?name=system", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "draft"], "query": [{ "key": "name", "value": "system" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('draft.name === system', () => pm.expect(pm.response.json().name).to.eql('system'));"
+          ] } }]
+        },
+        {
+          "name": "Upsert draft — 400 короткий контент",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"content\":\"too short\"}" },
+            "url": { "raw": "{{baseUrl}}/admin/prompts/draft?name=system", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "draft"], "query": [{ "key": "name", "value": "system" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
+          ] } }]
+        },
+        {
+          "name": "Publish system (POST /admin/prompts/publish?name=system)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts/publish?name=system", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "publish"], "query": [{ "key": "name", "value": "system" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "const prev = parseInt(pm.collectionVariables.get('promptCurrentVersion'), 10);",
+            "pm.test('version increased', () => pm.expect(body.version).to.be.greaterThan(prev));",
+            "pm.collectionVariables.set('promptPublishedVersion', body.version);"
+          ] } }]
+        },
+        {
+          "name": "Rollback (POST /admin/prompts/rollback?name=system&version=1)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts/rollback?name=system&version=1", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "rollback"], "query": [
+              { "key": "name", "value": "system" },
+              { "key": "version", "value": "1" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "pm.test('new version > previously published', () => pm.expect(pm.response.json().version).to.be.greaterThan(parseInt(pm.collectionVariables.get('promptPublishedVersion'), 10)));"
+          ] } }]
+        },
+        {
+          "name": "Delete draft (DELETE /admin/prompts/draft?name=system) — idempotent",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/prompts/draft?name=system", "host": ["{{baseUrl}}"], "path": ["admin", "prompts", "draft"], "query": [{ "key": "name", "value": "system" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('204', () => pm.response.to.have.status(204));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Admin — audit log",
+      "description": "Лента админских действий: GET /admin/actions с фильтрами + GET /admin/orders/{id}/actions для истории конкретного заказа.\n\nПредусловия:\n- Залогинься admin'ом (Admin — login).\n- Сделай хотя бы одну admin-операцию: смени статус любого заказа (Admin — orders), создай категорию/тег (Admin — categories / tags), опубликуй промпт (Admin — prompts). Эти действия запишутся в admin_actions через delivery-слой.",
+      "item": [
+        {
+          "name": "List all actions (GET /admin/actions)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/actions?limit=20", "host": ["{{baseUrl}}"], "path": ["admin", "actions"], "query": [{ "key": "limit", "value": "20" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('items is array', () => pm.expect(body.items).to.be.an('array'));",
+            "pm.test('total >= items.length', () => pm.expect(body.total).to.be.at.least(body.items.length));",
+            "if (body.items.length > 0) {",
+            "  const a = body.items[0];",
+            "  pm.test('action has admin.display_name', () => pm.expect(a.admin.display_name).to.be.a('string'));",
+            "  pm.test('action has has_namesake bool', () => pm.expect(a.admin.has_namesake).to.be.a('boolean'));",
+            "  pm.test('target is one of enum', () => pm.expect(['order','dish','category','tag','prompt']).to.include(a.target));",
+            "  pm.test('verb is one of enum', () => pm.expect(['create','update','delete','status_change','publish','rollback']).to.include(a.verb));",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "My actions (admin_id=me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/actions?admin_id=me&limit=20", "host": ["{{baseUrl}}"], "path": ["admin", "actions"], "query": [
+              { "key": "admin_id", "value": "me" },
+              { "key": "limit", "value": "20" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));"
+          ] } }]
+        },
+        {
+          "name": "Filter by target=order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/actions?target=order&limit=10", "host": ["{{baseUrl}}"], "path": ["admin", "actions"], "query": [
+              { "key": "target", "value": "order" },
+              { "key": "limit", "value": "10" }
+            ] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "if (body.items.length > 0) {",
+            "  pm.test('all items have target=order', () => body.items.forEach(a => pm.expect(a.target).to.eql('order')));",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "Order history (GET /admin/orders/{id}/actions)",
+          "description": "Берёт orderId из коллекционной переменной (заполняется в Admin — orders → шаг 1).",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/orders/{{orderId}}/actions?limit=20", "host": ["{{baseUrl}}"], "path": ["admin", "orders", "{{orderId}}", "actions"], "query": [{ "key": "limit", "value": "20" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('items is array', () => pm.expect(body.items).to.be.an('array'));",
+            "if (body.items.length > 0) {",
+            "  pm.test('all targets are order', () => body.items.forEach(a => pm.expect(a.target).to.eql('order')));",
+            "  pm.test('all target_id match orderId', () => body.items.forEach(a => pm.expect(a.target_id).to.eql(pm.collectionVariables.get('orderId'))));",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "Bad admin_id (uuid невалидный) → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/actions?admin_id=not-a-uuid", "host": ["{{baseUrl}}"], "path": ["admin", "actions"], "query": [{ "key": "admin_id", "value": "not-a-uuid" }] }
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400', () => pm.response.to.have.status(400));"
           ] } }]
         }
       ]

@@ -36,6 +36,32 @@ func (c Cuisine) IsValid() bool {
 	return false
 }
 
+// CategoryRole роль категории в RAG-пайплайне рекомендаций.
+//
+// Значения должны совпадать со значениями CHECK-constraint в БД (см. 000009_categories_role.up.sql).
+type CategoryRole string
+
+const (
+	// CategoryRoleNone категория не участвует в diversify/companion-логике.
+	CategoryRoleNone CategoryRole = "none"
+	// CategoryRoleMain «основная» категория: на широком запросе сюда добавляем
+	// top-1 из непокрытых, чтобы LLM получал разнообразный контекст.
+	CategoryRoleMain CategoryRole = "main"
+	// CategoryRoleCompanion категория-сопровождение (соус/гарнир/десерт/напиток):
+	// по 1 блюду на запрос, пропускается если main уже содержит эту категорию.
+	CategoryRoleCompanion CategoryRole = "companion"
+)
+
+// Valid возвращает true, если значение роли допустимо в БД (CHECK constraint).
+func (r CategoryRole) Valid() bool {
+	switch r {
+	case CategoryRoleNone, CategoryRoleMain, CategoryRoleCompanion:
+		return true
+	default:
+		return false
+	}
+}
+
 // Category категория меню в доменной форме
 type Category struct {
 	// ID идентификатор
@@ -46,6 +72,8 @@ type Category struct {
 	SortOrder int
 	// IsAvailable доступна ли в публичной выдаче
 	IsAvailable bool
+	// Role роль в RAG-пайплайне: none | main | companion
+	Role CategoryRole
 	// CreatedAt время создания
 	CreatedAt time.Time
 	// UpdatedAt время последнего обновления
@@ -60,6 +88,8 @@ type CategoryCreate struct {
 	SortOrder int
 	// IsAvailable доступна ли в публичной выдаче
 	IsAvailable bool
+	// Role роль в RAG-пайплайне; пусто = "none"
+	Role CategoryRole
 }
 
 // CategoryPatch частичное обновление категории
@@ -70,6 +100,8 @@ type CategoryPatch struct {
 	SortOrder *int
 	// IsAvailable доступна ли в публичной выдаче
 	IsAvailable *bool
+	// Role роль в RAG-пайплайне
+	Role *CategoryRole
 }
 
 // Tag тег блюда в доменной форме
@@ -255,13 +287,20 @@ type DishFilter struct {
 	Offset int
 }
 
-// CategoryFromRepository маппит repository.Category в usecase.Category
+// CategoryFromRepository маппит repository.Category в usecase.Category.
+//
+// Пустая строка из БД (для случаев pre-migration данных без role) маппится в CategoryRoleNone.
 func CategoryFromRepository(r repositorymodels.Category) Category {
+	role := CategoryRole(r.Role)
+	if role == "" {
+		role = CategoryRoleNone
+	}
 	return Category{
 		ID:          r.ID,
 		Name:        r.Name,
 		SortOrder:   r.SortOrder,
 		IsAvailable: r.IsAvailable,
+		Role:        role,
 		CreatedAt:   r.CreatedAt,
 		UpdatedAt:   r.UpdatedAt,
 	}
@@ -276,13 +315,20 @@ func CategoriesFromRepository(rs []repositorymodels.Category) []Category {
 	return out
 }
 
-// CategoryToRepository маппит usecase.Category в repository.Category
+// CategoryToRepository маппит usecase.Category в repository.Category.
+//
+// Пустая Role нормализуется в "none", чтобы не нарушить NOT NULL / CHECK в БД.
 func CategoryToRepository(c *Category) *repositorymodels.Category {
+	role := c.Role
+	if role == "" {
+		role = CategoryRoleNone
+	}
 	return &repositorymodels.Category{
 		ID:          c.ID,
 		Name:        c.Name,
 		SortOrder:   c.SortOrder,
 		IsAvailable: c.IsAvailable,
+		Role:        string(role),
 	}
 }
 

@@ -48,6 +48,17 @@ func (m *mockRepo) DeleteItem(ctx context.Context, cartID uuid.UUID, dishID int)
 func (m *mockRepo) DeleteAllItems(ctx context.Context, cartID uuid.UUID) error {
 	return m.deleteAllItemsFn(ctx, cartID)
 }
+func (m *mockRepo) LogAddition(
+	_ context.Context,
+	_ uuid.UUID,
+	_, _ int,
+	_ usecasemodels.CartSource,
+	_ *uuid.UUID,
+) error {
+	// Аналитика — для cart usecase-тестов несущественна. Возвращаем nil,
+	// чтобы не нагружать каждый тест fn-полем.
+	return nil
+}
 
 // mockMenu ручная реализация menu.Usecase. Используются только GetDish и GetDishesByIDs;
 // остальные методы паникуют — cart.Usecase их не должен дёргать.

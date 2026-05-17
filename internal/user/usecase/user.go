@@ -30,12 +30,32 @@ func (uc *userUsecase) GetProfile(ctx context.Context, userID uuid.UUID) (*useca
 	return u, nil
 }
 
-// UpdateProfile обновляет профиль
+// UpdateProfile обновляет профиль.
+//
+// Валидация allergens/dietary по whitelist кодов критична для безопасности:
+// если в users.allergens попадёт значение, которого нет в dishes.allergens
+// (например, локализованная строка вместо кода), Qdrant-фильтр must_not
+// просто не сматчит ничего и пропустит запрещённые блюда. CHECK constraint
+// в БД дублирует это правило на случай прямой записи в обход usecase.
 func (uc *userUsecase) UpdateProfile(
 	ctx context.Context,
 	userID uuid.UUID,
 	patch usecasemodels.ProfilePatch,
 ) (*usecasemodels.User, error) {
+	if patch.Allergens != nil {
+		for _, a := range *patch.Allergens {
+			if !user.IsAllowedAllergen(a) {
+				return nil, fmt.Errorf("%w: %q", user.ErrInvalidAllergen, a)
+			}
+		}
+	}
+	if patch.Dietary != nil {
+		for _, d := range *patch.Dietary {
+			if !user.IsAllowedDietary(d) {
+				return nil, fmt.Errorf("%w: %q", user.ErrInvalidDietary, d)
+			}
+		}
+	}
 	u, err := uc.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err

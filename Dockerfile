@@ -28,6 +28,10 @@ FROM gcr.io/distroless/static:nonroot
 
 COPY --from=build /out/app /app
 COPY --from=build /src/configs /configs
+# Корневые сертификаты Минцифры (нужны для GigaChat TLS — Минцифры нет в дефолтном
+# trust store distroless/alpine). Подгружаются только в internal/pkg/gigachat,
+# другие HTTPS-вызовы (Cohere, NVIDIA, OpenRouter, MinIO, Qdrant) их не используют.
+COPY --from=build /src/certs /certs
 
 USER nonroot:nonroot
 EXPOSE 8080

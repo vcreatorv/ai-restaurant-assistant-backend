@@ -4,6 +4,7 @@ package http
 import (
 	"context"
 
+	auditusecase "github.com/example/ai-restaurant-assistant-backend/internal/audit/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/order"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/apperrors"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/middleware"
@@ -17,11 +18,12 @@ type OrderHandler struct {
 	cfg     order.DeliveryConfig
 	usecase order.Usecase
 	users   user.Usecase
+	audit   *auditusecase.SafeRecorder
 }
 
-// New создаёт OrderHandler
-func New(cfg order.DeliveryConfig, uc order.Usecase, users user.Usecase) OrderHandler {
-	return OrderHandler{cfg: cfg, usecase: uc, users: users}
+// New создаёт OrderHandler. audit может быть nil — тогда лог не пишется.
+func New(cfg order.DeliveryConfig, uc order.Usecase, users user.Usecase, rec *auditusecase.SafeRecorder) OrderHandler {
+	return OrderHandler{cfg: cfg, usecase: uc, users: users, audit: rec}
 }
 
 // requireUserID возвращает userID из контекстной сессии или ErrUnauthenticated
@@ -35,18 +37,24 @@ func (h OrderHandler) requireUserID(ctx context.Context) (uuid.UUID, error) {
 
 // requireAdmin проверяет, что текущая сессия принадлежит admin'у
 func (h OrderHandler) requireAdmin(ctx context.Context) error {
+	_, err := h.requireAdminID(ctx)
+	return err
+}
+
+// requireAdminID — то же, что и requireAdmin, но возвращает id админа для записи аудита.
+func (h OrderHandler) requireAdminID(ctx context.Context) (uuid.UUID, error) {
 	s := middleware.SessionFromCtx(ctx)
 	if s == nil || s.UserID == nil {
-		return apperrors.ErrUnauthenticated
+		return uuid.Nil, apperrors.ErrUnauthenticated
 	}
 	u, err := h.users.GetByID(ctx, *s.UserID)
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 	if !u.IsAdmin() {
-		return apperrors.ErrForbidden
+		return uuid.Nil, apperrors.ErrForbidden
 	}
-	return nil
+	return *s.UserID, nil
 }
 
 // resolveListPaging применяет дефолты и кэп для GET /orders

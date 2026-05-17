@@ -9,8 +9,13 @@ type Config struct {
 	Cohere CohereConfig `yaml:"cohere"`
 	// Qdrant параметры клиента Qdrant (векторное хранилище)
 	Qdrant QdrantConfig `yaml:"qdrant"`
-	// LLM параметры LLM-провайдера (OpenRouter или NVIDIA NIM)
+	// LLM основной LLM-провайдер для генерации ответа (OpenRouter или NVIDIA NIM).
 	LLM LLMConfig `yaml:"llm"`
+	// Classifier отдельный LLM-провайдер для классификатора намерений.
+	// Если Classifier.Provider == "" — используется LLM (тот же клиент, что и для основного ответа).
+	// Это позволяет посадить классификатор на более лёгкую/дешёвую модель,
+	// сохранив основную качественную для самого ответа.
+	Classifier LLMConfig `yaml:"classifier"`
 	// Search параметры стадии retrieval
 	Search SearchConfig `yaml:"search"`
 	// Chat параметры RAG-стороны чата
@@ -19,7 +24,7 @@ type Config struct {
 
 // LLMConfig переключатель между LLM-провайдерами + общие параметры
 type LLMConfig struct {
-	// Provider активный провайдер: "openrouter" | "nvidia"
+	// Provider активный провайдер: "openrouter" | "nvidia" | "gigachat"
 	Provider string `yaml:"provider"`
 	// Common параметры, общие для всех провайдеров (temperature, max_tokens, timeouts)
 	Common LLMCommonConfig `yaml:"common"`
@@ -27,6 +32,8 @@ type LLMConfig struct {
 	OpenRouter OpenRouterConfig `yaml:"openrouter"`
 	// Nvidia параметры провайдера NVIDIA NIM (build.nvidia.com)
 	Nvidia NvidiaConfig `yaml:"nvidia"`
+	// GigaChat параметры провайдера Сбера (gigachat.devices.sberbank.ru)
+	GigaChat GigaChatConfig `yaml:"gigachat"`
 }
 
 // LLMCommonConfig общие параметры запроса, не зависящие от провайдера
@@ -113,6 +120,30 @@ type NvidiaConfig struct {
 	Model string `yaml:"model"`
 }
 
+// GigaChatConfig параметры провайдера GigaChat от Сбера.
+//
+// Аутентификация двухступенчатая: AuthorizationKey (base64 от client_id:client_secret,
+// выдаётся в личном кабинете developers.sber.ru) меняется на короткоживущий access_token
+// (~30 минут) через OAuth endpoint AuthURL. Клиент сам обновляет токен по мере истечения.
+//
+// TLS — через корневые сертификаты Минцифры (см. certs/russian_trusted_bundle.pem):
+// домены *.devices.sberbank.ru подписаны Минцифры, которой нет в дефолтных trust store.
+type GigaChatConfig struct {
+	// BaseURL базовый URL API чата (https://gigachat.devices.sberbank.ru/api/v1)
+	BaseURL string `yaml:"base_url"`
+	// AuthURL endpoint выдачи OAuth-токена (https://ngw.devices.sberbank.ru:9443/api/v2/oauth)
+	AuthURL string `yaml:"auth_url"`
+	// AuthorizationKey base64-строка client_id:client_secret из ЛК; переопределяется GIGACHAT_AUTHORIZATION_KEY
+	AuthorizationKey string `yaml:"authorization_key"`
+	// Scope область доступа: GIGACHAT_API_PERS (бесплатный для физлиц) | GIGACHAT_API_B2B | GIGACHAT_API_CORP
+	Scope string `yaml:"scope"`
+	// Model имя модели (GigaChat | GigaChat-Pro | GigaChat-Max)
+	Model string `yaml:"model"`
+	// CABundlePath путь к PEM-bundle корневых сертификатов Минцифры. Относительный путь
+	// разрешается от рабочей директории процесса (в docker — /app).
+	CABundlePath string `yaml:"ca_bundle_path"`
+}
+
 // SearchConfig параметры стадии retrieval
 type SearchConfig struct {
 	// TopK сколько кандидатов берём из Qdrant до рерэнкера
@@ -123,18 +154,14 @@ type SearchConfig struct {
 	RerankMinScore float64 `yaml:"rerank_min_score"`
 }
 
-// ChatRAGConfig RAG-параметры чата
+// ChatRAGConfig RAG-параметры чата.
+//
+// Списки main/companion-категорий живут в БД (поле categories.role); см. миграцию
+// 000009_categories_role.up.sql. В конфиге остались только числовые пороги алгоритма.
 type ChatRAGConfig struct {
 	// HistoryRecentPairs сколько последних пар (user, assistant) подаём в LLM
 	// в дополнение к anchor-сообщению (первый user-msg чата).
 	HistoryRecentPairs int `yaml:"history_recent_pairs"`
-	// Companions список имён категорий, из которых тянется по 1 «сопровождающему»
-	// блюду на запрос (для рекомендаций соусов, гарниров, напитков и т.п.).
-	// Если main-блюдо уже из этой категории — companion для неё не запускается.
-	Companions []string `yaml:"companions"`
-	// MainCategories список «основных» категорий блюд (Супы, Горячее, Стейки и т.п.).
-	// Используется для диверсификации main-выдачи на широких запросах.
-	MainCategories []string `yaml:"main_categories"`
 	// MainMinCategories порог количества уникальных main-категорий в reranked top-N;
 	// если покрыто меньше — диверсифицируем добавлением top-1 из непокрытых.
 	MainMinCategories int `yaml:"main_min_categories"`

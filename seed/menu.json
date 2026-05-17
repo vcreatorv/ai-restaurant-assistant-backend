@@ -31,17 +31,17 @@
       "is_available": true
     },
     {
-      "name": "Гриль (хоспер)",
+      "name": "На гриле",
       "sort_order": 70,
       "is_available": true
     },
     {
-      "name": "Горячее — мясо",
+      "name": "Мясное",
       "sort_order": 80,
       "is_available": true
     },
     {
-      "name": "Горячее — рыба и морепродукты",
+      "name": "Морепродукты",
       "sort_order": 90,
       "is_available": true
     },
@@ -61,12 +61,12 @@
       "is_available": true
     },
     {
-      "name": "Напитки безалкогольные",
+      "name": "Напитки",
       "sort_order": 130,
       "is_available": true
     },
     {
-      "name": "Напитки алкогольные",
+      "name": "Алкоголь",
       "sort_order": 140,
       "is_available": true
     }
@@ -1155,7 +1155,7 @@
       "carbs_g": 23.0,
       "portion_weight_g": 270,
       "cuisine": "italian",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "dairy"
       ],
@@ -1180,7 +1180,7 @@
       "carbs_g": 54.0,
       "portion_weight_g": 245,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "mustard"
       ],
@@ -1206,7 +1206,7 @@
       "carbs_g": 43.0,
       "portion_weight_g": 390,
       "cuisine": "asian",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "dairy",
         "eggs",
@@ -1231,7 +1231,7 @@
       "carbs_g": 54.0,
       "portion_weight_g": 245,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "mustard"
       ],
@@ -1257,7 +1257,7 @@
       "carbs_g": 54.0,
       "portion_weight_g": 245,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "mustard"
       ],
@@ -1283,7 +1283,7 @@
       "carbs_g": 43.0,
       "portion_weight_g": 180,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "dairy"
       ],
@@ -1310,7 +1310,7 @@
       "carbs_g": 43.0,
       "portion_weight_g": 180,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "dairy"
       ],
@@ -1337,7 +1337,7 @@
       "carbs_g": 28.0,
       "portion_weight_g": 250,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1361,7 +1361,7 @@
       "carbs_g": 54.0,
       "portion_weight_g": 245,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "mustard"
       ],
@@ -1387,7 +1387,7 @@
       "carbs_g": 18.0,
       "portion_weight_g": 185,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1411,7 +1411,7 @@
       "carbs_g": 28.0,
       "portion_weight_g": 180,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1435,7 +1435,7 @@
       "carbs_g": 27.0,
       "portion_weight_g": 180,
       "cuisine": "american",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1459,7 +1459,7 @@
       "carbs_g": 26.4,
       "portion_weight_g": 200,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "dairy",
         "mustard"
@@ -1485,7 +1485,7 @@
       "carbs_g": 61.0,
       "portion_weight_g": 390,
       "cuisine": "asian",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "peanuts",
         "sesame",
@@ -1515,7 +1515,7 @@
       "carbs_g": 53.0,
       "portion_weight_g": 350,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1539,7 +1539,7 @@
       "carbs_g": 54.9,
       "portion_weight_g": 300,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1563,7 +1563,7 @@
       "carbs_g": 15.0,
       "portion_weight_g": 260,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1587,7 +1587,7 @@
       "carbs_g": 17.0,
       "portion_weight_g": 260,
       "cuisine": "asian",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "sesame"
       ],
@@ -1613,7 +1613,7 @@
       "carbs_g": 8.0,
       "portion_weight_g": 260,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "nuts"
       ],
@@ -1720,7 +1720,7 @@
       "carbs_g": 14.0,
       "portion_weight_g": 45,
       "cuisine": "european",
-      "category": "Горячее — рыба и морепродукты",
+      "category": "Морепродукты",
       "allergens": [
         "fish"
       ],
@@ -1746,7 +1746,7 @@
       "carbs_g": 30.0,
       "portion_weight_g": 300,
       "cuisine": "european",
-      "category": "Горячее — рыба и морепродукты",
+      "category": "Морепродукты",
       "allergens": [
         "dairy",
         "shellfish",
@@ -1856,7 +1856,7 @@
       "carbs_g": 77.0,
       "portion_weight_g": 370,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -1880,7 +1880,7 @@
       "carbs_g": 26.0,
       "portion_weight_g": 100,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -1932,7 +1932,7 @@
       "carbs_g": 14.0,
       "portion_weight_g": 45,
       "cuisine": "european",
-      "category": "Горячее — рыба и морепродукты",
+      "category": "Морепродукты",
       "allergens": [
         "fish"
       ],
@@ -2008,7 +2008,7 @@
       "carbs_g": 0.0,
       "portion_weight_g": 180,
       "cuisine": "european",
-      "category": "Горячее — рыба и морепродукты",
+      "category": "Морепродукты",
       "allergens": [
         "fish"
       ],
@@ -2169,7 +2169,7 @@
       "carbs_g": 21.0,
       "portion_weight_g": 200,
       "cuisine": "european",
-      "category": "Горячее — рыба и морепродукты",
+      "category": "Морепродукты",
       "allergens": [
         "fish",
         "soy",
@@ -2200,7 +2200,7 @@
       "carbs_g": 56.4,
       "portion_weight_g": 300,
       "cuisine": "french",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "dairy",
         "nuts"
@@ -2229,7 +2229,7 @@
       "carbs_g": 24.0,
       "portion_weight_g": 180,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -2253,7 +2253,7 @@
       "carbs_g": 29.0,
       "portion_weight_g": 390,
       "cuisine": "european",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "dairy"
       ],
@@ -3249,7 +3249,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3277,7 +3277,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3305,7 +3305,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3333,7 +3333,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3361,7 +3361,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3389,7 +3389,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3417,7 +3417,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3445,7 +3445,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3473,7 +3473,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3501,7 +3501,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3529,7 +3529,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3557,7 +3557,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3585,7 +3585,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3613,7 +3613,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [
         "dairy"
       ],
@@ -3641,7 +3641,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [
         "dairy"
       ],
@@ -3669,7 +3669,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [
         "dairy"
       ],
@@ -3697,7 +3697,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3725,7 +3725,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3753,7 +3753,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3781,7 +3781,7 @@
       "carbs_g": 0.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3809,7 +3809,7 @@
       "carbs_g": 0.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3837,7 +3837,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3865,7 +3865,7 @@
       "carbs_g": 0.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3893,7 +3893,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3921,7 +3921,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3949,7 +3949,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -3977,7 +3977,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4005,7 +4005,7 @@
       "carbs_g": 5.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4033,7 +4033,7 @@
       "carbs_g": 18.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4061,7 +4061,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [
         "nuts"
       ],
@@ -4091,7 +4091,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4119,7 +4119,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [
         "dairy"
       ],
@@ -4147,7 +4147,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4175,7 +4175,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4203,7 +4203,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4231,7 +4231,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4259,7 +4259,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4287,7 +4287,7 @@
       "carbs_g": 18.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4315,7 +4315,7 @@
       "carbs_g": 18.0,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4343,7 +4343,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4371,7 +4371,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4397,7 +4397,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4425,7 +4425,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4453,7 +4453,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4481,7 +4481,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4509,7 +4509,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4537,7 +4537,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4565,7 +4565,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4593,7 +4593,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4621,7 +4621,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки алкогольные",
+      "category": "Алкоголь",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4649,7 +4649,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4675,7 +4675,7 @@
       "carbs_g": null,
       "portion_weight_g": null,
       "cuisine": "european",
-      "category": "Напитки безалкогольные",
+      "category": "Напитки",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -4763,7 +4763,7 @@
       "carbs_g": 65.0,
       "portion_weight_g": 450,
       "cuisine": "japanese",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "eggs",
         "sesame"
@@ -4853,7 +4853,7 @@
       "carbs_g": 70.0,
       "portion_weight_g": 380,
       "cuisine": "asian",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [
         "eggs",
         "peanuts"
@@ -4998,7 +4998,7 @@
       "carbs_g": 26.0,
       "portion_weight_g": 300,
       "cuisine": "french",
-      "category": "Горячее — мясо",
+      "category": "Мясное",
       "allergens": [],
       "dietary": [
         "vegetarian",
@@ -5089,7 +5089,7 @@
       "carbs_g": 4.0,
       "portion_weight_g": 250,
       "cuisine": "asian",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [],
       "dietary": [
         "gluten_free",
@@ -5116,7 +5116,7 @@
       "carbs_g": 18.0,
       "portion_weight_g": 230,
       "cuisine": "asian",
-      "category": "Гриль (хоспер)",
+      "category": "На гриле",
       "allergens": [
         "soy"
       ],
@@ -5146,7 +5146,7 @@
       "carbs_g": 12.0,
       "portion_weight_g": 280,
       "cuisine": "european",
-      "category": "Горячее — рыба и морепродукты",
+      "category": "Морепродукты",
       "allergens": [
         "fish"
       ],
@@ -5324,7 +5324,7 @@
       "carbs_g": 18.0,
       "portion_weight_g": 800,
       "cuisine": "european",
-      "category": "Горячее — рыба и морепродукты",
+      "category": "Морепродукты",
       "allergens": [
         "shellfish",
         "fish"

@@ -776,40 +776,325 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ===== ADMIN: ANALYTICS =====
+  # Перенесено в /admin/dashboard и /admin/analytics (см. ниже).
 
-  /admin/analytics/overview:
-    get:
-      operationId: adminGetAnalyticsOverview
-      tags: [admin-analytics]
-      summary: Агрегированные показатели
-      parameters:
-        - { in: query, name: from, schema: { type: string, format: date-time } }
-        - { in: query, name: to,   schema: { type: string, format: date-time } }
-      responses:
-        '200':
-          description: Обзор
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/AnalyticsOverview' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+  # ===== ADMIN: AUDIT =====
 
-  /admin/analytics/queries:
+  /admin/actions:
     get:
-      operationId: adminListAnalyticsQueries
-      tags: [admin-analytics]
-      summary: Детальные события запросов к ассистенту
+      operationId: adminListActions
+      tags: [admin-audit]
+      summary: Лента админских действий с фильтрами
+      description: |
+        Возвращает действия в обратном хронологическом порядке. Поддерживает фильтры по админу
+        (id или 'me'), типу объекта и временному диапазону. Лента видна любому админу.
       parameters:
-        - { in: query, name: from, schema: { type: string, format: date-time } }
-        - { in: query, name: to,   schema: { type: string, format: date-time } }
+        - in: query
+          name: admin_id
+          description: "uuid админа или строка 'me'"
+          schema: { type: string }
+        - in: query
+          name: target
+          schema: { type: string, enum: [order, dish, category, tag, prompt] }
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
         - $ref: '#/components/parameters/Limit'
         - $ref: '#/components/parameters/Offset'
       responses:
         '200':
-          description: Список событий
+          description: Лента действий
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/QueryEventList' }
+              schema: { $ref: '#/components/schemas/AdminActionList' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/orders/{id}/actions:
+    get:
+      operationId: adminListOrderActions
+      tags: [admin-audit]
+      summary: История изменений конкретного заказа
+      parameters:
+        - $ref: '#/components/parameters/PathID'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: История по заказу
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminActionList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ===== ADMIN: PROMPTS =====
+
+  /admin/prompts:
+    get:
+      operationId: adminListPrompts
+      tags: [admin-prompts]
+      summary: Список промптов с активными версиями
+      description: Возвращает список именованных промптов. Под каждым — активная версия и (если есть) черновик текущего админа.
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/prompts/details:
+    get:
+      operationId: adminGetPrompt
+      tags: [admin-prompts]
+      summary: Один промпт с историей версий и моим черновиком
+      parameters:
+        - $ref: '#/components/parameters/QueryPromptName'
+      responses:
+        '200':
+          description: Промпт
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptDetails' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/prompts/draft:
+    put:
+      operationId: adminUpsertPromptDraft
+      tags: [admin-prompts]
+      summary: Создать или обновить мой черновик промпта
+      parameters:
+        - $ref: '#/components/parameters/QueryPromptName'
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpsertPromptDraftRequest' }
+      responses:
+        '200':
+          description: Черновик сохранён
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptDraft' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: adminDeletePromptDraft
+      tags: [admin-prompts]
+      summary: Удалить мой черновик
+      parameters:
+        - $ref: '#/components/parameters/QueryPromptName'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Удалено }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/prompts/publish:
+    post:
+      operationId: adminPublishPrompt
+      tags: [admin-prompts]
+      summary: Опубликовать мой черновик как новую активную версию
+      parameters:
+        - $ref: '#/components/parameters/QueryPromptName'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Опубликована новая версия
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersion' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: Нет черновика для публикации
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /admin/prompts/rollback:
+    post:
+      operationId: adminRollbackPrompt
+      tags: [admin-prompts]
+      summary: Откатить промпт к указанной старой версии (создаёт новую запись с тем же content)
+      parameters:
+        - $ref: '#/components/parameters/QueryPromptName'
+        - in: query
+          name: version
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '200':
+          description: Создана новая версия с содержимым старой
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PromptVersion' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------------------
+  # Подсказки чата (chat suggestions)
+  # ---------------------------------------------------------------------------
+  /chat/suggestions:
+    get:
+      operationId: listChatSuggestions
+      tags: [chat]
+      summary: Активные подсказки для чата (заполняются админом)
+      description: |
+        Возвращает только активные (is_active=true) подсказки, отсортированные по sort_order.
+        Используется фронт-чатом для рендера чипов под полем ввода.
+      responses:
+        '200':
+          description: Список подсказок
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatSuggestionList' }
+
+  /chat/suggestions/{id}/click:
+    post:
+      operationId: trackChatSuggestionClick
+      tags: [chat]
+      summary: Зарегистрировать клик по подсказке (для аналитики)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204':
+          description: Клик зарегистрирован
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /admin/suggestions:
+    get:
+      operationId: adminListChatSuggestions
+      tags: [admin-suggestions]
+      summary: Список всех подсказок чата (включая неактивные)
+      responses:
+        '200':
+          description: Список
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminChatSuggestionList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: adminCreateChatSuggestion
+      tags: [admin-suggestions]
+      summary: Создать подсказку
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateChatSuggestionRequest' }
+      responses:
+        '201':
+          description: Создана
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminChatSuggestion' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/suggestions/{id}:
+    patch:
+      operationId: adminUpdateChatSuggestion
+      tags: [admin-suggestions]
+      summary: Обновить подсказку
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatchChatSuggestionRequest' }
+      responses:
+        '200':
+          description: Обновлена
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminChatSuggestion' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: adminDeleteChatSuggestion
+      tags: [admin-suggestions]
+      summary: Удалить подсказку
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204':
+          description: Удалена
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ---------------------------------------------------------------------------
+  # Dashboard и Analytics
+  # ---------------------------------------------------------------------------
+  /admin/dashboard:
+    get:
+      operationId: adminGetDashboard
+      tags: [admin-analytics]
+      summary: Операционные метрики по заказам за период (today | week | month)
+      parameters:
+        - in: query
+          name: period
+          required: true
+          schema: { type: string, enum: [today, week, month] }
+      responses:
+        '200':
+          description: Снимок метрик
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminDashboard' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/analytics:
+    get:
+      operationId: adminGetAnalytics
+      tags: [admin-analytics]
+      summary: Поведенческие метрики ассистента за период
+      parameters:
+        - in: query
+          name: period
+          required: true
+          schema: { type: string, enum: [today, week, month] }
+      responses:
+        '200':
+          description: Снимок метрик
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AdminAnalytics' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
 
@@ -847,7 +1132,7 @@ components:
     Limit:
       in: query
       name: limit
-      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
     Offset:
       in: query
       name: offset
@@ -857,6 +1142,17 @@ components:
       name: X-CSRF-Token
       required: true
       schema: { type: string }
+    QueryPromptName:
+      in: query
+      name: name
+      required: true
+      description: |
+        Имя промпта. Список валидных имён задан в коде (prompts.SupportedNames).
+        Сейчас: system, classification, refusal. Расширение — без правки OpenAPI,
+        проверка идёт в usecase через prompts.IsSupported.
+      schema:
+        type: string
+        minLength: 1
 
   responses:
     BadRequest:
@@ -1016,12 +1312,23 @@ components:
 
     Category:
       type: object
-      required: [id, name, sort_order, is_available]
+      required: [id, name, sort_order, is_available, role]
       properties:
         id:           { type: integer, minimum: 1 }
         name:         { type: string }
         sort_order:   { type: integer }
         is_available: { type: boolean }
+        role:
+          $ref: '#/components/schemas/CategoryRole'
+
+    CategoryRole:
+      type: string
+      enum: [none, main, companion]
+      description: |
+        Роль категории в RAG-пайплайне рекомендаций:
+        * `none`      — не участвует в diversify/companion-логике;
+        * `main`      — основная категория, для диверсификации main-выдачи;
+        * `companion` — сопровождение (соус/гарнир/десерт/напиток), по 1 блюду на запрос.
 
     CategoryList:
       type: object
@@ -1117,6 +1424,22 @@ components:
         dish_id:  { type: integer, minimum: 1 }
         quantity: { type: integer, minimum: 1 }
         note:     { type: string, nullable: true }
+        source:
+          type: string
+          enum: [chat, menu, cart, other]
+          description: |
+            Источник добавления — используется только для аналитики (cart_additions).
+            Не влияет на корзину. Если не передан — считается "other".
+            "chat" — добавление из карточки блюда в ответе ассистента;
+            "menu" — со страницы публичного меню;
+            "cart" — изменение в самой корзине;
+            "other" — fallback для старых клиентов.
+        message_id:
+          type: string
+          format: uuid
+          description: |
+            id assistant-сообщения, из которого взято блюдо (опционально, только при source="chat").
+            Позволяет связать клик с конкретной рекомендацией для аналитики.
 
     PatchCartItemRequest:
       type: object
@@ -1245,6 +1568,8 @@ components:
         name:         { type: string, minLength: 1, maxLength: 100 }
         sort_order:   { type: integer, default: 0 }
         is_available: { type: boolean, default: true }
+        role:
+          $ref: '#/components/schemas/CategoryRole'
 
     PatchCategoryRequest:
       type: object
@@ -1252,6 +1577,8 @@ components:
         name:         { type: string, minLength: 1, maxLength: 100 }
         sort_order:   { type: integer }
         is_available: { type: boolean }
+        role:
+          $ref: '#/components/schemas/CategoryRole'
 
     CreateTagRequest:
       type: object
@@ -1320,54 +1647,236 @@ components:
         status: { $ref: '#/components/schemas/OrderStatus' }
         note:   { type: string, nullable: true }
 
-    # ----- admin analytics -----
+    # ----- prompts -----
 
-    AnalyticsOverview:
+    PromptName:
+      type: string
+      description: "Имя промпта. Валидные значения определены в коде (prompts.SupportedNames)."
+
+    PromptVersion:
       type: object
-      required: [period_from, period_to]
+      required: [version, content, published_at, published_by]
       properties:
-        period_from:       { type: string, format: date-time }
-        period_to:         { type: string, format: date-time }
-        total_queries:     { type: integer }
-        total_users:       { type: integer }
-        total_orders:      { type: integer }
-        conversion_rate:   { type: number, format: float, description: "query → order ratio" }
-        top_dishes:
-          type: array
-          items:
-            type: object
-            required: [dish_id, name, count]
-            properties:
-              dish_id: { type: integer, minimum: 1 }
-              name:    { type: string }
-              count:   { type: integer }
-        top_allergens_excluded:
-          type: array
-          items:
-            type: object
-            required: [code, count]
-            properties:
-              code:  { type: string }
-              count: { type: integer }
+        version:      { type: integer, minimum: 1 }
+        content:      { type: string, minLength: 50, maxLength: 8000 }
+        published_at: { type: string, format: date-time }
+        published_by: { $ref: '#/components/schemas/PromptAuthor' }
 
-    QueryEvent:
+    PromptAuthor:
       type: object
-      required: [id, user_id, created_at, text]
+      required: [id, display_name, email]
       properties:
-        id:                { type: string, format: uuid }
-        user_id:           { type: string, format: uuid }
-        chat_id:           { type: string, format: uuid, nullable: true }
-        created_at:        { type: string, format: date-time }
-        text:              { type: string }
-        detected_allergens: { type: array, items: { type: string } }
-        detected_dietary:  { type: array, items: { type: string } }
-        recommended_ids:   { type: array, items: { type: integer, minimum: 1 } }
+        id:           { type: string, format: uuid }
+        display_name: { type: string }
+        email:        { type: string, format: email }
 
-    QueryEventList:
+    PromptDraft:
+      type: object
+      required: [name, content, updated_at]
+      properties:
+        name:       { $ref: '#/components/schemas/PromptName' }
+        content:    { type: string, minLength: 50, maxLength: 8000 }
+        updated_at: { type: string, format: date-time }
+
+    Prompt:
+      type: object
+      required: [name, current]
+      properties:
+        name:    { $ref: '#/components/schemas/PromptName' }
+        current: { $ref: '#/components/schemas/PromptVersion' }
+        draft:
+          allOf: [{ $ref: '#/components/schemas/PromptDraft' }]
+          nullable: true
+
+    PromptList:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Prompt' } }
+
+    PromptDetails:
+      type: object
+      required: [name, current, history]
+      properties:
+        name:    { $ref: '#/components/schemas/PromptName' }
+        current: { $ref: '#/components/schemas/PromptVersion' }
+        draft:
+          allOf: [{ $ref: '#/components/schemas/PromptDraft' }]
+          nullable: true
+        history:
+          type: array
+          description: "Все версии (включая active) в порядке убывания version"
+          items: { $ref: '#/components/schemas/PromptVersion' }
+
+    UpsertPromptDraftRequest:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 50, maxLength: 8000 }
+
+    # ----- audit -----
+
+    AdminActionTarget:
+      type: string
+      enum: [order, dish, category, tag, prompt]
+
+    AdminActionVerb:
+      type: string
+      enum: [create, update, delete, status_change, publish, rollback]
+
+    AdminActionAuthor:
+      type: object
+      required: [display_name, has_namesake]
+      properties:
+        # nullable: если админ удалён, в логе мы оставляем запись, но автор анонимен
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        display_name: { type: string }
+        email:
+          type: string
+          format: email
+          nullable: true
+        has_namesake:
+          type: boolean
+          description: "true, если в системе есть другой админ с таким же ФИО — фронт показывает email рядом"
+
+    AdminActionChange:
+      type: object
+      required: [field]
+      properties:
+        field: { type: string }
+        from:  { type: string, nullable: true }
+        to:    { type: string, nullable: true }
+
+    AdminAction:
+      type: object
+      required: [id, admin, target, target_id, target_label, verb, changes, created_at]
+      properties:
+        id:           { type: string, description: "стабильный id (bigserial→string)" }
+        admin:        { $ref: '#/components/schemas/AdminActionAuthor' }
+        target:       { $ref: '#/components/schemas/AdminActionTarget' }
+        target_id:    { type: string }
+        target_label: { type: string }
+        verb:         { $ref: '#/components/schemas/AdminActionVerb' }
+        changes:
+          type: array
+          items: { $ref: '#/components/schemas/AdminActionChange' }
+        created_at:   { type: string, format: date-time }
+
+    AdminActionList:
       type: object
       required: [items, total, limit, offset]
       properties:
-        items:  { type: array, items: { $ref: '#/components/schemas/QueryEvent' } }
+        items:  { type: array, items: { $ref: '#/components/schemas/AdminAction' } }
         total:  { type: integer }
         limit:  { type: integer }
         offset: { type: integer }
+
+    # ----- chat suggestions -----
+
+    ChatSuggestion:
+      type: object
+      required: [id, text]
+      properties:
+        id:   { type: integer, minimum: 1 }
+        text: { type: string }
+
+    ChatSuggestionList:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/ChatSuggestion' } }
+
+    AdminChatSuggestion:
+      type: object
+      required: [id, text, sort_order, is_active, clicks_count]
+      properties:
+        id:           { type: integer, minimum: 1 }
+        text:         { type: string }
+        sort_order:   { type: integer }
+        is_active:    { type: boolean }
+        clicks_count: { type: integer, format: int64, description: "Сколько раз гости кликали по подсказке" }
+
+    AdminChatSuggestionList:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/AdminChatSuggestion' } }
+
+    CreateChatSuggestionRequest:
+      type: object
+      required: [text]
+      properties:
+        text:       { type: string, minLength: 1, maxLength: 80 }
+        sort_order: { type: integer, default: 0 }
+        is_active:  { type: boolean, default: true }
+
+    PatchChatSuggestionRequest:
+      type: object
+      properties:
+        text:       { type: string, minLength: 1, maxLength: 80 }
+        sort_order: { type: integer }
+        is_active:  { type: boolean }
+
+    # ----- dashboard / analytics -----
+
+    OrdersByStatusEntry:
+      type: object
+      required: [status, count]
+      properties:
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        count:  { type: integer }
+
+    TopDishEntry:
+      type: object
+      required: [dish_id, dish_name, value]
+      properties:
+        dish_id:   { type: integer, minimum: 1 }
+        dish_name: { type: string }
+        value:     { type: integer, description: "значение метрики (заказано / рекомендовано)" }
+
+    AdminDashboard:
+      type: object
+      required:
+        - period
+        - orders
+        - revenue_minor
+        - average_check_minor
+        - orders_by_status
+        - top_dishes
+        - cart_additions_total
+        - cart_additions_from_chat
+        - cart_additions_from_menu
+      properties:
+        period:              { type: string, enum: [today, week, month] }
+        orders:              { type: integer, description: "количество заказов за период" }
+        revenue_minor:       { type: integer, description: "выручка в копейках" }
+        average_check_minor: { type: integer, description: "средний чек в копейках" }
+        orders_by_status:
+          type: array
+          items: { $ref: '#/components/schemas/OrdersByStatusEntry' }
+        top_dishes:
+          type: array
+          items: { $ref: '#/components/schemas/TopDishEntry' }
+        cart_additions_total:     { type: integer, description: "всего «+» в корзину за период (все источники)" }
+        cart_additions_from_chat: { type: integer, description: "из них — добавлений из карточки в ответе ассистента (source='chat')" }
+        cart_additions_from_menu: { type: integer, description: "из них — добавлений со страницы /menu (source='menu')" }
+
+    AdminAnalytics:
+      type: object
+      required:
+        - period
+        - assistant_messages
+        - avg_ordered_per_message
+        - avg_added_to_cart_per_message
+        - top_recommended_dishes
+      properties:
+        period:                       { type: string, enum: [today, week, month] }
+        assistant_messages:           { type: integer, description: "число assistant-ответов с рекомендациями" }
+        avg_ordered_per_message:      { type: number, format: float, description: "среднее количество рекомендованных блюд, реально заказанных гостем" }
+        avg_added_to_cart_per_message: { type: number, format: float, description: "среднее количество рекомендованных блюд, добавленных в корзину из чата" }
+        top_recommended_dishes:
+          type: array
+          items: { $ref: '#/components/schemas/TopDishEntry' }

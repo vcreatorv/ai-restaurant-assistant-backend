@@ -149,10 +149,15 @@ type FilterCondition struct {
 	Range *FilterRange `json:"range,omitempty"`
 }
 
-// FilterMatch условие на точное значение поля payload
+// FilterMatch условие на точное значение поля payload.
+//
+// Заполняется ОДНО из полей: Value (single eq) ЛИБО Any (in-list).
+// Обоюдное заполнение даёт неопределённое поведение со стороны Qdrant.
 type FilterMatch struct {
 	// Value значение, с которым сравниваем (string | int | bool)
-	Value any `json:"value"`
+	Value any `json:"value,omitempty"`
+	// Any список значений; точка матчится, если её значение совпадает с любым из элементов
+	Any []any `json:"any,omitempty"`
 }
 
 // FilterRange числовой range-фильтр

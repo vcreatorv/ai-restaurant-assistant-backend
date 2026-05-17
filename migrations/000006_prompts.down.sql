@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS prompt_drafts;
+DROP TABLE IF EXISTS prompts;

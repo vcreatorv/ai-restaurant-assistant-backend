@@ -54,11 +54,18 @@ func (h CartHandler) AddCartItem(
 	if request.Body == nil {
 		return nil, apperrors.ErrBadRequest
 	}
-	view, err := h.usecase.AddItem(ctx, userID, usecasemodels.CartItemAdd{
+	add := usecasemodels.CartItemAdd{
 		DishID:   request.Body.DishId,
 		Quantity: request.Body.Quantity,
 		Note:     request.Body.Note,
-	})
+	}
+	if request.Body.Source != nil {
+		add.Source = usecasemodels.CartSource(*request.Body.Source)
+	}
+	if request.Body.MessageId != nil {
+		add.MessageID = request.Body.MessageId
+	}
+	view, err := h.usecase.AddItem(ctx, userID, add)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
+	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/logger"
 
 	"github.com/google/uuid"
 )
@@ -71,6 +72,18 @@ func (uc *cartUsecase) AddItem(
 
 	if _, err := uc.repo.UpsertItem(ctx, c.ID, req.DishID, req.Quantity, req.Note); err != nil {
 		return nil, fmt.Errorf("upsert item: %w", err)
+	}
+	// Логируем событие добавления — для analytics «в корзину из чата vs из меню».
+	// Ошибки лога не валят основную операцию: корзина уже изменена, потеря одного
+	// аналитического события менее важна, чем 500 в ответе на «+».
+	source := req.Source
+	if !source.Valid() {
+		source = usecasemodels.CartSourceOther
+	}
+	if err := uc.repo.LogAddition(ctx, userID, req.DishID, req.Quantity, source, req.MessageID); err != nil {
+		logger.ForCtx(ctx).Warn("cart addition log failed",
+			"user_id", userID, "dish_id", req.DishID, "source", source, "err", err,
+		)
 	}
 	return uc.buildView(ctx, c)
 }

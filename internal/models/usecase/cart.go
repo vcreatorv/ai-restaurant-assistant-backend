@@ -1,6 +1,10 @@
 package usecase
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // CartView представление корзины для API: позиции с актуальной информацией о блюде
 // (имя, цена, доступность) + total + предупреждения по спорным позициям.
@@ -54,6 +58,33 @@ const (
 	CartWarningDishUnavailable = "dish_unavailable"
 )
 
+// CartSource источник добавления блюда в корзину.
+//
+// Влияет только на запись в cart_additions для аналитики; на саму корзину не влияет.
+// Значения должны совпадать с CHECK constraint в БД (см. 000011_suggestions_and_cart_additions).
+type CartSource string
+
+const (
+	// CartSourceChat — добавление со страницы чата (карточка блюда в ответе ассистента).
+	CartSourceChat CartSource = "chat"
+	// CartSourceMenu — добавление со страницы публичного меню.
+	CartSourceMenu CartSource = "menu"
+	// CartSourceCart — изменение со страницы корзины (резерв на будущее).
+	CartSourceCart CartSource = "cart"
+	// CartSourceOther — fallback для запросов без поля source (старые клиенты).
+	CartSourceOther CartSource = "other"
+)
+
+// Valid возвращает true, если значение допустимо в БД.
+func (s CartSource) Valid() bool {
+	switch s {
+	case CartSourceChat, CartSourceMenu, CartSourceCart, CartSourceOther:
+		return true
+	default:
+		return false
+	}
+}
+
 // CartItemAdd параметры добавления позиции в корзину
 type CartItemAdd struct {
 	// DishID id блюда
@@ -62,6 +93,12 @@ type CartItemAdd struct {
 	Quantity int
 	// Note заметка (опц.)
 	Note *string
+	// Source источник добавления (chat | menu | cart | other); пустая → other.
+	// Не влияет на саму корзину, нужен только для аналитики в cart_additions.
+	Source CartSource
+	// MessageID id assistant-сообщения, из которого взято блюдо (если source='chat').
+	// Опционально: помогает связать клик в чате с конкретной рекомендацией.
+	MessageID *uuid.UUID
 }
 
 // CartItemPatch патч позиции; nil-поля не трогаются

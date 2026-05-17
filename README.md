@@ -188,5 +188,3 @@ migrations/       — SQL-миграции
 configs/          — конфиги приложения
 postman/          — Postman-коллекция
 ```
-
-Архитектурные решения описаны в `docs/ARCHITECTURE.md`.
