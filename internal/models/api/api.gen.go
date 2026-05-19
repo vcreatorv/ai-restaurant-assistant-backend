@@ -295,6 +295,30 @@ func (e OrderStatus) Valid() bool {
 	}
 }
 
+// Defines values for PairingAxis.
+const (
+	Drink    PairingAxis = "drink"
+	Occasion PairingAxis = "occasion"
+	Role     PairingAxis = "role"
+	Vibe     PairingAxis = "vibe"
+)
+
+// Valid indicates whether the value is a known member of the PairingAxis enum.
+func (e PairingAxis) Valid() bool {
+	switch e {
+	case Drink:
+		return true
+	case Occasion:
+		return true
+	case Role:
+		return true
+	case Vibe:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PaymentMethod.
 const (
 	OnDelivery PaymentMethod = "on_delivery"
@@ -667,23 +691,26 @@ type CreateChatSuggestionRequest struct {
 
 // CreateDishRequest defines model for CreateDishRequest.
 type CreateDishRequest struct {
-	Allergens      *[]string `json:"allergens,omitempty"`
-	CaloriesKcal   *int      `json:"calories_kcal,omitempty"`
-	CarbsG         *float32  `json:"carbs_g,omitempty"`
-	CategoryId     int       `json:"category_id"`
-	Composition    *string   `json:"composition,omitempty"`
-	Cuisine        Cuisine   `json:"cuisine"`
-	Currency       *string   `json:"currency,omitempty"`
-	Description    *string   `json:"description,omitempty"`
-	Dietary        *[]string `json:"dietary,omitempty"`
-	FatG           *float32  `json:"fat_g,omitempty"`
-	ImageUrl       *string   `json:"image_url,omitempty"`
-	IsAvailable    *bool     `json:"is_available,omitempty"`
-	Name           string    `json:"name"`
-	PortionWeightG *int      `json:"portion_weight_g,omitempty"`
-	PriceMinor     int       `json:"price_minor"`
-	ProteinG       *float32  `json:"protein_g,omitempty"`
-	TagIds         *[]int    `json:"tag_ids,omitempty"`
+	Allergens    *[]string `json:"allergens,omitempty"`
+	CaloriesKcal *int      `json:"calories_kcal,omitempty"`
+	CarbsG       *float32  `json:"carbs_g,omitempty"`
+	CategoryId   int       `json:"category_id"`
+	Composition  *string   `json:"composition,omitempty"`
+	Cuisine      Cuisine   `json:"cuisine"`
+	Currency     *string   `json:"currency,omitempty"`
+	Description  *string   `json:"description,omitempty"`
+	Dietary      *[]string `json:"dietary,omitempty"`
+	FatG         *float32  `json:"fat_g,omitempty"`
+	ImageUrl     *string   `json:"image_url,omitempty"`
+	IsAvailable  *bool     `json:"is_available,omitempty"`
+	Name         string    `json:"name"`
+
+	// PairingTagSlugs Slug'и pairing-тегов из vocabulary GET /admin/pairing-tags
+	PairingTagSlugs *[]string `json:"pairing_tag_slugs,omitempty"`
+	PortionWeightG  *int      `json:"portion_weight_g,omitempty"`
+	PriceMinor      int       `json:"price_minor"`
+	ProteinG        *float32  `json:"protein_g,omitempty"`
+	TagIds          *[]int    `json:"tag_ids,omitempty"`
 }
 
 // CreateOrderRequest defines model for CreateOrderRequest.
@@ -705,26 +732,70 @@ type CreateTagRequest struct {
 // Cuisine defines model for Cuisine.
 type Cuisine string
 
+// DebugSearchRequest defines model for DebugSearchRequest.
+type DebugSearchRequest struct {
+	Limit *int `json:"limit,omitempty"`
+
+	// Query Произвольный текст, который мы эмбедим и ищем top-N
+	Query string `json:"query"`
+}
+
+// DebugSearchResponse defines model for DebugSearchResponse.
+type DebugSearchResponse struct {
+	Items []DishEmbeddingNeighbor `json:"items"`
+}
+
 // Dish defines model for Dish.
 type Dish struct {
-	Allergens      []string `json:"allergens"`
-	CaloriesKcal   *int     `json:"calories_kcal,omitempty"`
-	CarbsG         *float32 `json:"carbs_g,omitempty"`
-	CategoryId     int      `json:"category_id"`
-	Composition    string   `json:"composition"`
-	Cuisine        Cuisine  `json:"cuisine"`
-	Currency       string   `json:"currency"`
-	Description    string   `json:"description"`
-	Dietary        []string `json:"dietary"`
-	FatG           *float32 `json:"fat_g,omitempty"`
-	Id             int      `json:"id"`
-	ImageUrl       string   `json:"image_url"`
-	IsAvailable    bool     `json:"is_available"`
-	Name           string   `json:"name"`
-	PortionWeightG *int     `json:"portion_weight_g,omitempty"`
-	PriceMinor     int      `json:"price_minor"`
-	ProteinG       *float32 `json:"protein_g,omitempty"`
-	Tags           []Tag    `json:"tags"`
+	Allergens    []string `json:"allergens"`
+	CaloriesKcal *int     `json:"calories_kcal,omitempty"`
+	CarbsG       *float32 `json:"carbs_g,omitempty"`
+	CategoryId   int      `json:"category_id"`
+	Composition  string   `json:"composition"`
+	Cuisine      Cuisine  `json:"cuisine"`
+	Currency     string   `json:"currency"`
+	Description  string   `json:"description"`
+	Dietary      []string `json:"dietary"`
+	FatG         *float32 `json:"fat_g,omitempty"`
+	Id           int      `json:"id"`
+	ImageUrl     string   `json:"image_url"`
+	IsAvailable  bool     `json:"is_available"`
+	Name         string   `json:"name"`
+
+	// PairingTags Теги-пейринги для обогащения embed-текста (axis: drink/occasion/role/vibe)
+	PairingTags    []PairingTag `json:"pairing_tags"`
+	PortionWeightG *int         `json:"portion_weight_g,omitempty"`
+	PriceMinor     int          `json:"price_minor"`
+	ProteinG       *float32     `json:"protein_g,omitempty"`
+	Tags           []Tag        `json:"tags"`
+}
+
+// DishEmbeddingNeighbor defines model for DishEmbeddingNeighbor.
+type DishEmbeddingNeighbor struct {
+	CategoryName string `json:"category_name"`
+	DishId       int    `json:"dish_id"`
+	IsAvailable  bool   `json:"is_available"`
+	Name         string `json:"name"`
+
+	// Score Cosine-similarity (выше = ближе). Само блюдо в preview даёт ≈1.
+	Score float32 `json:"score"`
+}
+
+// DishEmbeddingPreview defines model for DishEmbeddingPreview.
+type DishEmbeddingPreview struct {
+	DishId int `json:"dish_id"`
+
+	// EmbedText Финальный текст, который ушёл в Cohere (после indexer.BuildEmbedText)
+	EmbedText string `json:"embed_text"`
+
+	// Neighbors Top-N ближайших точек в Qdrant (включая само блюдо со score≈1)
+	Neighbors []DishEmbeddingNeighbor `json:"neighbors"`
+
+	// VectorDim Размерность embedding-вектора
+	VectorDim int `json:"vector_dim"`
+
+	// VectorSample Первые 8 значений — sanity-check
+	VectorSample []float32 `json:"vector_sample"`
 }
 
 // DishList defines model for DishList.
@@ -733,6 +804,18 @@ type DishList struct {
 	Limit  int    `json:"limit"`
 	Offset int    `json:"offset"`
 	Total  int    `json:"total"`
+}
+
+// DishesReindexResult defines model for DishesReindexResult.
+type DishesReindexResult struct {
+	// Failed Сколько провалилось (логи в warn)
+	Failed int `json:"failed"`
+
+	// Indexed Сколько успешно эмбедированы и upserted
+	Indexed int `json:"indexed"`
+
+	// Total Сколько всего блюд обработано
+	Total int `json:"total"`
 }
 
 // Error defines model for Error.
@@ -865,6 +948,43 @@ type OrdersByStatusEntry struct {
 	Status OrderStatus `json:"status"`
 }
 
+// PairingAxis Ось pairing-тега:
+// - drink — с каким напитком сочетается;
+// - occasion — для какого повода;
+// - role — слот в трапезе (аперитив/основное/гарнир/финал);
+// - vibe — настроение / плотность / температура.
+type PairingAxis string
+
+// PairingTag defines model for PairingTag.
+type PairingTag struct {
+	// Axis Ось pairing-тега:
+	// - drink — с каким напитком сочетается;
+	// - occasion — для какого повода;
+	// - role — слот в трапезе (аперитив/основное/гарнир/финал);
+	// - vibe — настроение / плотность / температура.
+	Axis PairingAxis `json:"axis"`
+
+	// EmbedPhrase Фраза в embed-тексте блюда («белому вину»)
+	EmbedPhrase string `json:"embed_phrase"`
+
+	// IsActive Если false — тег нельзя присваивать, но уже привязанные остаются
+	IsActive bool `json:"is_active"`
+
+	// Label Человекочитаемая метка для админ UI
+	Label string `json:"label"`
+
+	// Slug Машинный идентификатор (PK)
+	Slug string `json:"slug"`
+
+	// SortOrder Порядок в админ UI внутри оси
+	SortOrder int `json:"sort_order"`
+}
+
+// PairingTagList defines model for PairingTagList.
+type PairingTagList struct {
+	Items []PairingTag `json:"items"`
+}
+
 // PatchCartItemRequest defines model for PatchCartItemRequest.
 type PatchCartItemRequest struct {
 	Note      *string `json:"note,omitempty"`
@@ -894,23 +1014,26 @@ type PatchChatSuggestionRequest struct {
 
 // PatchDishRequest defines model for PatchDishRequest.
 type PatchDishRequest struct {
-	Allergens      *[]string `json:"allergens,omitempty"`
-	CaloriesKcal   *int      `json:"calories_kcal,omitempty"`
-	CarbsG         *float32  `json:"carbs_g,omitempty"`
-	CategoryId     *int      `json:"category_id,omitempty"`
-	Composition    *string   `json:"composition,omitempty"`
-	Cuisine        *Cuisine  `json:"cuisine,omitempty"`
-	Currency       *string   `json:"currency,omitempty"`
-	Description    *string   `json:"description,omitempty"`
-	Dietary        *[]string `json:"dietary,omitempty"`
-	FatG           *float32  `json:"fat_g,omitempty"`
-	ImageUrl       *string   `json:"image_url,omitempty"`
-	IsAvailable    *bool     `json:"is_available,omitempty"`
-	Name           *string   `json:"name,omitempty"`
-	PortionWeightG *int      `json:"portion_weight_g,omitempty"`
-	PriceMinor     *int      `json:"price_minor,omitempty"`
-	ProteinG       *float32  `json:"protein_g,omitempty"`
-	TagIds         *[]int    `json:"tag_ids,omitempty"`
+	Allergens    *[]string `json:"allergens,omitempty"`
+	CaloriesKcal *int      `json:"calories_kcal,omitempty"`
+	CarbsG       *float32  `json:"carbs_g,omitempty"`
+	CategoryId   *int      `json:"category_id,omitempty"`
+	Composition  *string   `json:"composition,omitempty"`
+	Cuisine      *Cuisine  `json:"cuisine,omitempty"`
+	Currency     *string   `json:"currency,omitempty"`
+	Description  *string   `json:"description,omitempty"`
+	Dietary      *[]string `json:"dietary,omitempty"`
+	FatG         *float32  `json:"fat_g,omitempty"`
+	ImageUrl     *string   `json:"image_url,omitempty"`
+	IsAvailable  *bool     `json:"is_available,omitempty"`
+	Name         *string   `json:"name,omitempty"`
+
+	// PairingTagSlugs Slug'и pairing-тегов; nil — не менять связи, [] — очистить все
+	PairingTagSlugs *[]string `json:"pairing_tag_slugs,omitempty"`
+	PortionWeightG  *int      `json:"portion_weight_g,omitempty"`
+	PriceMinor      *int      `json:"price_minor,omitempty"`
+	ProteinG        *float32  `json:"protein_g,omitempty"`
+	TagIds          *[]int    `json:"tag_ids,omitempty"`
 }
 
 // PatchOrderStatusRequest defines model for PatchOrderStatusRequest.
@@ -1010,6 +1133,12 @@ type PromptVersion struct {
 type RegisterRequest struct {
 	Email    openapi_types.Email `json:"email"`
 	Password string              `json:"password"`
+}
+
+// ReindexAllDishesRequest defines model for ReindexAllDishesRequest.
+type ReindexAllDishesRequest struct {
+	// IncludeUnavailable Включать ли блюда с is_available=false (нужно, если хочешь иметь embedding под будущее переключение)
+	IncludeUnavailable *bool `json:"include_unavailable,omitempty"`
 }
 
 // SendMessageRequest defines model for SendMessageRequest.
@@ -1139,8 +1268,18 @@ type AdminGetDashboardParams struct {
 // AdminGetDashboardParamsPeriod defines parameters for AdminGetDashboard.
 type AdminGetDashboardParamsPeriod string
 
+// AdminDebugSearchByQueryParams defines parameters for AdminDebugSearchByQuery.
+type AdminDebugSearchByQueryParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
 // AdminCreateDishParams defines parameters for AdminCreateDish.
 type AdminCreateDishParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminReindexAllDishesParams defines parameters for AdminReindexAllDishes.
+type AdminReindexAllDishesParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
@@ -1154,6 +1293,12 @@ type AdminUpdateDishParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
+// AdminPreviewDishEmbeddingParams defines parameters for AdminPreviewDishEmbedding.
+type AdminPreviewDishEmbeddingParams struct {
+	// Neighbors Сколько ближайших точек вернуть (по умолчанию 10)
+	Neighbors *int `form:"neighbors,omitempty" json:"neighbors,omitempty"`
+}
+
 // AdminUploadDishImageMultipartBody defines parameters for AdminUploadDishImage.
 type AdminUploadDishImageMultipartBody struct {
 	File openapi_types.File `json:"file"`
@@ -1161,6 +1306,11 @@ type AdminUploadDishImageMultipartBody struct {
 
 // AdminUploadDishImageParams defines parameters for AdminUploadDishImage.
 type AdminUploadDishImageParams struct {
+	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
+}
+
+// AdminReindexDishParams defines parameters for AdminReindexDish.
+type AdminReindexDishParams struct {
 	XCSRFToken CSRFToken `json:"X-CSRF-Token"`
 }
 
@@ -1373,8 +1523,14 @@ type AdminCreateCategoryJSONRequestBody = CreateCategoryRequest
 // AdminUpdateCategoryJSONRequestBody defines body for AdminUpdateCategory for application/json ContentType.
 type AdminUpdateCategoryJSONRequestBody = PatchCategoryRequest
 
+// AdminDebugSearchByQueryJSONRequestBody defines body for AdminDebugSearchByQuery for application/json ContentType.
+type AdminDebugSearchByQueryJSONRequestBody = DebugSearchRequest
+
 // AdminCreateDishJSONRequestBody defines body for AdminCreateDish for application/json ContentType.
 type AdminCreateDishJSONRequestBody = CreateDishRequest
+
+// AdminReindexAllDishesJSONRequestBody defines body for AdminReindexAllDishes for application/json ContentType.
+type AdminReindexAllDishesJSONRequestBody = ReindexAllDishesRequest
 
 // AdminUpdateDishJSONRequestBody defines body for AdminUpdateDish for application/json ContentType.
 type AdminUpdateDishJSONRequestBody = PatchDishRequest

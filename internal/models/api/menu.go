@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/example/ai-restaurant-assistant-backend/internal/menu"
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 )
 
@@ -117,6 +118,7 @@ func DishFromUsecase(d *usecasemodels.Dish) Dish {
 		CaloriesKcal:   d.CaloriesKcal,
 		PortionWeightG: d.PortionWeightG,
 		Tags:           tagsToAPI(d.Tags),
+		PairingTags:    pairingTagsToAPI(d.PairingTags),
 	}
 	if d.ProteinG != nil {
 		v := float32(*d.ProteinG)
@@ -195,25 +197,29 @@ func CreateDishRequestToUsecase(req CreateDishRequest) usecasemodels.DishCreate 
 	if req.TagIds != nil {
 		d.TagIDs = *req.TagIds
 	}
+	if req.PairingTagSlugs != nil {
+		d.PairingTagSlugs = *req.PairingTagSlugs
+	}
 	return d
 }
 
 // PatchDishRequestToUsecase маппит api.PatchDishRequest в usecase.DishPatch
 func PatchDishRequestToUsecase(req PatchDishRequest) usecasemodels.DishPatch {
 	p := usecasemodels.DishPatch{
-		Name:           req.Name,
-		Description:    req.Description,
-		Composition:    req.Composition,
-		ImageURL:       req.ImageUrl,
-		PriceMinor:     req.PriceMinor,
-		Currency:       req.Currency,
-		CategoryID:     req.CategoryId,
-		CaloriesKcal:   req.CaloriesKcal,
-		PortionWeightG: req.PortionWeightG,
-		Allergens:      req.Allergens,
-		Dietary:        req.Dietary,
-		TagIDs:         req.TagIds,
-		IsAvailable:    req.IsAvailable,
+		Name:            req.Name,
+		Description:     req.Description,
+		Composition:     req.Composition,
+		ImageURL:        req.ImageUrl,
+		PriceMinor:      req.PriceMinor,
+		Currency:        req.Currency,
+		CategoryID:      req.CategoryId,
+		CaloriesKcal:    req.CaloriesKcal,
+		PortionWeightG:  req.PortionWeightG,
+		Allergens:       req.Allergens,
+		Dietary:         req.Dietary,
+		TagIDs:          req.TagIds,
+		PairingTagSlugs: req.PairingTagSlugs,
+		IsAvailable:     req.IsAvailable,
 	}
 	if req.Cuisine != nil {
 		c := usecasemodels.Cuisine(*req.Cuisine)
@@ -266,6 +272,72 @@ func tagsToAPI(ts []usecasemodels.Tag) []Tag {
 	out := make([]Tag, len(ts))
 	for i, t := range ts {
 		out[i] = TagFromUsecase(t)
+	}
+	return out
+}
+
+// PairingTagFromUsecase маппит usecase.PairingTag в api.PairingTag.
+func PairingTagFromUsecase(t usecasemodels.PairingTag) PairingTag {
+	return PairingTag{
+		Slug:        t.Slug,
+		Axis:        PairingAxis(t.Axis),
+		Label:       t.Label,
+		EmbedPhrase: t.EmbedPhrase,
+		SortOrder:   t.SortOrder,
+		IsActive:    t.IsActive,
+	}
+}
+
+// PairingTagListFromUsecase собирает PairingTagList для админ-эндпоинта.
+func PairingTagListFromUsecase(ts []usecasemodels.PairingTag) PairingTagList {
+	return PairingTagList{Items: pairingTagsToAPI(ts)}
+}
+
+func pairingTagsToAPI(ts []usecasemodels.PairingTag) []PairingTag {
+	out := make([]PairingTag, len(ts))
+	for i, t := range ts {
+		out[i] = PairingTagFromUsecase(t)
+	}
+	return out
+}
+
+// DishesReindexResultFromUsecase маппит результат массового реиндекса.
+func DishesReindexResultFromUsecase(r menu.DishesReindexResult) DishesReindexResult {
+	return DishesReindexResult{
+		Total:   r.Total,
+		Indexed: r.Indexed,
+		Failed:  r.Failed,
+	}
+}
+
+// DishEmbeddingPreviewFromUsecase маппит превью эмбеддинга для админ UI.
+func DishEmbeddingPreviewFromUsecase(p *menu.DishEmbeddingPreview) DishEmbeddingPreview {
+	sample := make([]float32, len(p.VectorSample))
+	copy(sample, p.VectorSample)
+	return DishEmbeddingPreview{
+		DishId:       p.DishID,
+		EmbedText:    p.EmbedText,
+		VectorDim:    p.VectorDim,
+		VectorSample: sample,
+		Neighbors:    dishNeighborsToAPI(p.Neighbors),
+	}
+}
+
+// DebugSearchResponseFromUsecase обёртка над списком соседей для /admin/embed/search.
+func DebugSearchResponseFromUsecase(ns []menu.DishEmbeddingNeighbor) DebugSearchResponse {
+	return DebugSearchResponse{Items: dishNeighborsToAPI(ns)}
+}
+
+func dishNeighborsToAPI(ns []menu.DishEmbeddingNeighbor) []DishEmbeddingNeighbor {
+	out := make([]DishEmbeddingNeighbor, len(ns))
+	for i, n := range ns {
+		out[i] = DishEmbeddingNeighbor{
+			DishId:       n.DishID,
+			Name:         n.Name,
+			CategoryName: n.CategoryName,
+			Score:        float32(n.Score),
+			IsAvailable:  n.IsAvailable,
+		}
 	}
 	return out
 }

@@ -143,3 +143,14 @@ func isUniqueViolation(err error, constraint string) bool {
 	}
 	return pgErr.ConstraintName == constraint
 }
+
+// isForeignKeyViolation true, если err — это PG-ошибка нарушения внешнего ключа.
+// Используется, чтобы переводить unknown FK reference (например, несуществующий
+// pairing_tags.slug при вставке в dish_pairing_tags) в доменную ошибку not-found.
+func isForeignKeyViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		return false
+	}
+	return pgErr.Code == pgerrcode.ForeignKeyViolation
+}

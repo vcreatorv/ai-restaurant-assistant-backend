@@ -223,7 +223,13 @@ func (uc *chatUsecase) SendMessage(
 		if hist.anchor != nil {
 			anchorText = hist.anchor.Content
 		}
-		rag, ragErr = uc.runRAG(ctx, content, anchorText, profile, hist.priorRecommended)
+		intent, intentErr := uc.buildRetrievalIntent(ctx, cls)
+		if intentErr != nil {
+			log.Warn("build retrieval intent failed, using empty",
+				"stage", "rag.intent", "err", intentErr)
+			intent = retrievalIntent{}
+		}
+		rag, ragErr = uc.runRAG(ctx, content, anchorText, profile, hist.priorRecommended, intent)
 		if ragErr != nil {
 			log.Error("chat rag stage failed", "stage", "rag", "err", ragErr)
 			return ragErr
@@ -234,6 +240,11 @@ func (uc *chatUsecase) SendMessage(
 			"retrieved_ids", rag.retrievedIDs,
 			"reranked_ids", rag.rerankedIDs,
 			"companion_ids", companionIDs(rag.companions),
+			"restricted_ids", restrictedIDs(rag.restricted),
+			"intent_pairing", intent.pairingDrinkSlug,
+			"intent_occasion", intent.occasionSlug,
+			"intent_target_category", intent.targetCategoryID,
+			"intent_price", intent.priceIntent,
 		)
 		systemContent, sysErr := uc.prompts.GetActive(ctx, prompts.NameSystem, userID)
 		if sysErr != nil {
@@ -241,14 +252,16 @@ func (uc *chatUsecase) SendMessage(
 			systemContent = ""
 		}
 		prompt = buildPrompt(promptInput{
-			systemContent:    systemContent,
-			profile:          profile,
-			retrieved:        rag.main,
-			companions:       rag.companions,
-			priorRecommended: hist.priorRecommended,
-			anchor:           hist.anchor,
-			history:          hist.recent,
-			currentUserText:  content,
+			systemContent:      systemContent,
+			profile:            profile,
+			retrieved:          rag.main,
+			companions:         rag.companions,
+			restricted:         rag.restricted,
+			priorRecommended:   hist.priorRecommended,
+			anchor:             hist.anchor,
+			history:            hist.recent,
+			currentUserText:    content,
+			targetCategoryName: targetCategoryToName(cls.targetCategorySlug),
 		})
 	}
 
@@ -401,6 +414,10 @@ type ragResult struct {
 	main []retrievedDish
 	// companions по 1 блюду из каждой companion-категории (соус/гарнир/десерт/напиток/...)
 	companions []retrievedDish
+	// restricted блюда, семантически близкие к запросу, но отрезанные аллерген/диета
+	// фильтром гостя. Передаются в prompt отдельным блоком — LLM упоминает их,
+	// только если гость прямо спросил про конкретное блюдо. См. computeRestricted.
+	restricted []retrievedDish
 	// retrievedIDs все id, поднятые primary-search'ем (для аналитики)
 	retrievedIDs []int
 	// rerankedIDs id после rerank, в порядке убывания релевантности
@@ -430,6 +447,7 @@ func (uc *chatUsecase) runRAG(
 	anchorMessage string,
 	profile *usecasemodels.User,
 	priorRecommendedIDs []int,
+	intent retrievalIntent,
 ) (ragResult, error) {
 	log := logger.ForCtx(ctx)
 
@@ -455,16 +473,51 @@ func (uc *chatUsecase) runRAG(
 		"dim", len(embed),
 	)
 
+	// Поток A: vector-search с базовым prefilter (user/prior) + intent-hard-фильтры
+	// (target_category, price) — НО без pairing/occasion тегов. Это «семантика +
+	// hard-constraints»; страхует от провалов pairing-разметки.
 	prefilter := buildPrefilter(profile, priorRecommendedIDs)
-	hits, err := uc.qdrant.Search(ctx, embed, prefilter, uc.ragCfg.Search.TopK, true)
+	applyIntentFilters(prefilter, intent, false)
+	hitsA, err := uc.qdrant.Search(ctx, embed, prefilter, uc.ragCfg.Search.TopK, true)
 	if err != nil {
 		return ragResult{}, fmt.Errorf("%w: search: %s", chat.ErrUpstreamFailure, err.Error())
 	}
-	log.Debug("rag primary search done",
+	log.Debug("rag primary search done (stream A: semantic)",
 		"stage", "rag.search.primary",
-		"hits", len(hits),
-		"top_score", topScore(hits),
+		"hits", len(hitsA),
+		"top_score", topScore(hitsA),
+		"target_category_id", intent.targetCategoryID,
+		"price_intent", intent.priceIntent,
 	)
+
+	// Поток B: vector-search внутри pairing/occasion подмножества (теги в must).
+	// Запускаем ТОЛЬКО при hybrid-режиме: если есть pairing/occasion И нет
+	// hard-category-filter (category уже сузила всё). См. retrievalIntent.hasHybrid.
+	hits := hitsA
+	if intent.hasHybrid() {
+		filterB := buildPrefilter(profile, priorRecommendedIDs)
+		applyIntentFilters(filterB, intent, true)
+		hitsB, errB := uc.qdrant.Search(ctx, embed, filterB, uc.ragCfg.Search.TopK, true)
+		switch {
+		case errB != nil:
+			log.Warn("rag search (stream B) failed, falling back to single-stream",
+				"stage", "rag.search.pairing", "err", errB,
+				"pairing", intent.pairingDrinkSlug, "occasion", intent.occasionSlug)
+		case len(hitsB) < rrfMinStreamHits:
+			log.Warn("rag tag stream too thin, ignoring",
+				"stage", "rag.search.pairing",
+				"pairing", intent.pairingDrinkSlug, "occasion", intent.occasionSlug,
+				"hits", len(hitsB), "min", rrfMinStreamHits)
+		default:
+			hits = mergeHitsRRF(hitsA, hitsB, uc.ragCfg.Search.TopK)
+			log.Info("rag hybrid retrieval (RRF)",
+				"stage", "rag.search.hybrid",
+				"pairing", intent.pairingDrinkSlug, "occasion", intent.occasionSlug,
+				"hits_a", len(hitsA), "hits_b", len(hitsB),
+				"merged", len(hits), "top_score_a", topScore(hitsA), "top_score_b", topScore(hitsB),
+			)
+		}
+	}
 
 	categories, err := uc.menu.ListCategories(ctx)
 	if err != nil {
@@ -502,6 +555,40 @@ func (uc *chatUsecase) runRAG(
 		dishesByID[d.ID] = d
 	}
 
+	// Cross-sell режим: гость явно попросил блюдо конкретной категории
+	// («гарнир к стейку», «соус к мясу»). Primary уже отдал нам только эту
+	// категорию (max ~10 блюд). Rerank/diversify/companions здесь только
+	// мешают:
+	//  - rerank относительно «гарнир к стейку» внутри Гарниров даёт scores
+	//    ~0.001-0.013 (все близки), порог 0.01 выкосит 7 из 8 → LLM остаётся
+	//    с одним блюдом и галлюцинирует, чтобы дать 2-3 (наблюдали в логе).
+	//  - diversify пробует добавить top-1 из других main-категорий, но фильтр
+	//    AND по category_id всегда возвращает 0 (блюдо не может быть в двух
+	//    категориях). Пустая трата запросов.
+	//  - companions добавили бы соус/гарнир/десерт/напиток — гость о них не
+	//    просил, шум в prompt'е.
+	//
+	// Поэтому: отдаём все primary-hits в main как есть, без rerank/diversify/companions.
+	if intent.targetCategoryID > 0 {
+		main := buildRetrievedDishes(retrievedIDs, dishesByID, catName)
+		mainSet := make(map[int]struct{}, len(retrievedIDs))
+		for _, id := range retrievedIDs {
+			mainSet[id] = struct{}{}
+		}
+		restricted := uc.runRestricted(ctx, embed, profile, mainSet, priorRecommendedIDs, catName)
+		log.Info("rag cross-sell mode",
+			"stage", "rag.cross_sell",
+			"target_category_id", intent.targetCategoryID,
+			"main_count", len(main),
+		)
+		return ragResult{
+			main:         main,
+			restricted:   restricted,
+			retrievedIDs: retrievedIDs,
+			rerankedIDs:  retrievedIDs,
+		}, nil
+	}
+
 	rerankInput := make([]string, 0, len(hits))
 	rerankIDs := make([]int, 0, len(hits))
 	for _, h := range hits {
@@ -534,21 +621,146 @@ func (uc *chatUsecase) runRAG(
 
 	// Диверсификация main по категориям (если в reranked top-N покрыто мало
 	// разных main-категорий — добавляем top-1 из непокрытых).
-	diversified := uc.runMainDiversification(ctx, embed, prefilter, mainSet, mainCatSet, mainCats, catName)
-	for _, d := range diversified {
-		main = append(main, d)
-		mainSet[d.id] = struct{}{}
-		mainCatSet[d.categoryID] = struct{}{}
+	//
+	// Для clarify-запросов («что входит в X», «а напиток к этому?») diversify
+	// пропускаем: гость не просил разнообразия, а уточнил что-то узкое. Без
+	// этого guard primary-search может вернуть 8 напитков → diversify добавит
+	// Пастрами salad / Том-ям / Ризотто «для main-категорий», и LLM соблазнится
+	// рекомендовать салат вместо напитка (наблюдали в логе).
+	if !intent.isClarify {
+		diversified := uc.runMainDiversification(ctx, embed, prefilter, mainSet, mainCatSet, mainCats, catName)
+		for _, d := range diversified {
+			main = append(main, d)
+			mainSet[d.id] = struct{}{}
+			mainCatSet[d.categoryID] = struct{}{}
+		}
 	}
 
-	companions := uc.runCompanions(ctx, embed, prefilter, mainSet, mainCatSet, companionCats, catName)
+	// Companions добавляем только когда основной поток ≠ узкий clarify-вопрос.
+	// На «расскажи про X» / «а напиток к этому?» лишние блюда из других
+	// companion-категорий — шум.
+	var companions []retrievedDish
+	if !intent.isClarify {
+		companions = uc.runCompanions(ctx, embed, prefilter, mainSet, mainCatSet, companionCats, catName)
+	}
+
+	// Restricted: блюда, попавшие бы в выдачу по семантике, но отрезанные фильтром
+	// профиля гостя (аллергены/диета). Идут отдельным блоком в prompt — LLM может
+	// их упомянуть только если гость прямо спросил про конкретное блюдо.
+	// См. computeRestricted и computeRestrictionReason.
+	restricted := uc.runRestricted(ctx, embed, profile, mainSet, priorRecommendedIDs, catName)
 
 	return ragResult{
 		main:         main,
 		companions:   companions,
+		restricted:   restricted,
 		retrievedIDs: retrievedIDs,
 		rerankedIDs:  rerankedIDs,
 	}, nil
+}
+
+// runRestricted ищет блюда, отрезанные аллерген/диета-фильтром гостя.
+//
+// Алгоритм: ещё один Qdrant.Search тем же вектором запроса, но БЕЗ
+// аллерген/диета условий (см. buildPrefilterLoose); сравниваем с уже
+// найденными в primary search (mainSet) — разница и есть «есть в меню, но не
+// для гостя». Берём top-N с заполненной причиной (computeRestrictionReason).
+//
+// Лимит — restrictedMaxItems, чтобы не раздувать prompt-context.
+func (uc *chatUsecase) runRestricted(
+	ctx context.Context,
+	embed []float32,
+	profile *usecasemodels.User,
+	mainSet map[int]struct{},
+	priorRecommendedIDs []int,
+	catName map[int]string,
+) []retrievedDish {
+	log := logger.ForCtx(ctx)
+	// Нет ограничений у гостя — пропускаем целый стейдж, экономим Qdrant-вызов.
+	if profile == nil || (len(profile.Allergens) == 0 && len(profile.Dietary) == 0) {
+		return nil
+	}
+	looseFilter := buildPrefilterLoose(priorRecommendedIDs)
+	looseHits, err := uc.qdrant.Search(ctx, embed, looseFilter, uc.ragCfg.Search.TopK, false)
+	if err != nil {
+		log.Warn("rag restricted search failed (non-fatal)",
+			"stage", "rag.search.restricted", "err", err)
+		return nil
+	}
+
+	candidateIDs := make([]int, 0, restrictedMaxItems)
+	for _, h := range looseHits {
+		id := int(h.ID) //nolint:gosec // dish_id fits in int
+		if _, inMain := mainSet[id]; inMain {
+			continue
+		}
+		candidateIDs = append(candidateIDs, id)
+		if len(candidateIDs) >= restrictedMaxItems {
+			break
+		}
+	}
+	if len(candidateIDs) == 0 {
+		log.Debug("rag restricted: no diff between loose and primary",
+			"stage", "rag.search.restricted",
+			"loose_hits", len(looseHits))
+		return nil
+	}
+
+	dishes, err := uc.menu.GetDishesByIDs(ctx, candidateIDs)
+	if err != nil {
+		log.Warn("rag restricted load dishes failed",
+			"stage", "rag.search.restricted", "err", err)
+		return nil
+	}
+	dishesByID := make(map[int]usecasemodels.Dish, len(dishes))
+	for _, d := range dishes {
+		dishesByID[d.ID] = d
+	}
+
+	out := make([]retrievedDish, 0, len(candidateIDs))
+	for _, id := range candidateIDs {
+		d, ok := dishesByID[id]
+		if !ok {
+			continue
+		}
+		reason := computeRestrictionReason(retrievedDishRaw{
+			allergens: d.Allergens,
+			dietary:   d.Dietary,
+		}, profile)
+		if reason == "" {
+			// Блюдо в diff, но конфликта по аллерген/диета не нашлось — значит,
+			// его отрезал какой-то другой must (например, dish_id в priorIDs).
+			// Сюда не дойдёт по построению, но защищаемся.
+			continue
+		}
+		out = append(out, retrievedDish{
+			id:                d.ID,
+			name:              d.Name,
+			categoryID:        d.CategoryID,
+			categoryName:      catName[d.CategoryID],
+			restrictionReason: reason,
+		})
+	}
+	log.Info("rag restricted",
+		"stage", "rag.search.restricted",
+		"count", len(out),
+		"ids", restrictedIDs(out),
+	)
+	return out
+}
+
+// restrictedMaxItems лимит блюд в restricted-блоке (чтобы не раздувать prompt).
+// 8 — это покрывает «у гостя аллергия на рыбу, он спросил рыбу» и видны все
+// морепродукты с причинами; больше LLM уже не использует осмысленно.
+const restrictedMaxItems = 8
+
+// restrictedIDs выдёргивает id из retrievedDish'ей — для лога.
+func restrictedIDs(rs []retrievedDish) []int {
+	out := make([]int, len(rs))
+	for i, r := range rs {
+		out[i] = r.id
+	}
+	return out
 }
 
 // runMainDiversification на широких запросах добавляет в main top-1 из тех
@@ -983,6 +1195,311 @@ func buildPrefilter(u *usecasemodels.User, priorRecommendedIDs []int) *qdrant.Fi
 		})
 	}
 	return f
+}
+
+// retrievalIntent — структурированное намерение, извлечённое classifier'ом
+// и используемое для построения фильтров и hybrid-выбора в runRAG.
+//
+// Поля независимы и комбинируются:
+//   - targetCategoryID — HARD-фильтр Stream A (cross-sell вроде «гарнир к стейку»).
+//     Сужает поиск до одной категории; при наличии этого поля hybrid отключается.
+//   - priceIntent — range-фильтр по price_minor (cheap/premium).
+//   - pairingDrinkSlug / occasionSlug — теги для Stream B + RRF.
+//     Когда хотя бы один задан и targetCategoryID не задан → hybrid retrieval.
+type retrievalIntent struct {
+	pairingDrinkSlug string
+	occasionSlug     string
+	targetCategoryID int
+	priceIntent      string
+	// isClarify — это follow-up-уточнение («что входит в X», «а напиток к этому?»).
+	// Запросы такого типа всегда узкие. Diversify здесь — шум: гость не просил
+	// «разнообразия», а спросил про конкретное. Поэтому при isClarify=true мы
+	// пропускаем runMainDiversification (см. runRAG).
+	isClarify bool
+}
+
+// buildRetrievalIntent резолвит classifier-результат в retrievalIntent:
+//   - pairingDrink («white_wine») → pair_white_wine (готовый slug в pairing_tags)
+//   - occasion («date») → occasion_date
+//   - targetCategorySlug («side») → имя категории «Гарниры» → category_id через ListCategories
+//   - priceIntent — пробрасывается как есть
+//
+// Если не удалось загрузить категории (PG недоступен) — возвращает intent без
+// targetCategoryID. Остальные поля независимы от БД и заполняются в любом случае.
+func (uc *chatUsecase) buildRetrievalIntent(
+	ctx context.Context,
+	cls classifyResult,
+) (retrievalIntent, error) {
+	intent := retrievalIntent{
+		pairingDrinkSlug: pairingDrinkToSlug(cls.pairingDrink),
+		occasionSlug:     occasionToSlug(cls.occasion),
+		priceIntent:      cls.priceIntent,
+		isClarify:        cls.intent == intentClarify,
+	}
+	if cls.targetCategorySlug != "" {
+		targetName := targetCategoryToName(cls.targetCategorySlug)
+		if targetName != "" {
+			categories, err := uc.menu.ListCategories(ctx)
+			if err != nil {
+				return intent, fmt.Errorf("list categories for target_category: %w", err)
+			}
+			for _, c := range categories {
+				if c.Name == targetName {
+					intent.targetCategoryID = c.ID
+					break
+				}
+			}
+		}
+	}
+	return intent, nil
+}
+
+// hasHybrid возвращает true, если есть pairing/occasion И при этом нет hard-фильтра
+// по category. В таком случае runRAG запускает Stream B + RRF. Если category
+// задана — она уже сужает результат, hybrid избыточен и может смазать ранжирование.
+func (i retrievalIntent) hasHybrid() bool {
+	if i.targetCategoryID > 0 {
+		return false
+	}
+	return i.pairingDrinkSlug != "" || i.occasionSlug != ""
+}
+
+// hasTagFilter true, если в intent есть хоть один pairing/occasion тег.
+// Используется только применительно к Stream B (см. applyIntentFilters).
+func (i retrievalIntent) hasTagFilter() bool {
+	return i.pairingDrinkSlug != "" || i.occasionSlug != ""
+}
+
+// cheapPriceMaxMinor — верхняя граница price_minor для intent «cheap».
+// 1500 ₽ — эмпирически между «закусками/гарнирами/напитками» (300-1500 ₽)
+// и основными горячими (1500-5000 ₽). Можно подкрутить позже.
+const cheapPriceMaxMinor = 150000
+
+// premiumPriceMinMinor — нижняя граница price_minor для intent «premium».
+// 2500 ₽ — выше среднего main, отсекает гарниры/закуски/лимонады.
+const premiumPriceMinMinor = 250000
+
+// priceRangeFor возвращает Qdrant range-фильтр для price_minor или nil,
+// если price_intent не задан.
+func priceRangeFor(priceIntent string) *qdrant.FilterRange {
+	switch priceIntent {
+	case "cheap":
+		v := float64(cheapPriceMaxMinor)
+		return &qdrant.FilterRange{LTE: &v}
+	case "premium":
+		v := float64(premiumPriceMinMinor)
+		return &qdrant.FilterRange{GTE: &v}
+	}
+	return nil
+}
+
+// applyIntentFilters добавляет в готовый фильтр условия из intent.
+// applyTags=true означает «добавь pairing/occasion-теги» — это нужно только
+// для Stream B (vector-поиск внутри тегированного подмножества). category_id
+// и price range применяются всегда — это hard-фильтры, релевантные обоим потокам.
+func applyIntentFilters(f *qdrant.Filter, intent retrievalIntent, applyTags bool) {
+	if intent.targetCategoryID > 0 {
+		f.Must = append(f.Must, qdrant.FilterCondition{
+			Key:   "category_id",
+			Match: &qdrant.FilterMatch{Value: intent.targetCategoryID},
+		})
+	}
+	if r := priceRangeFor(intent.priceIntent); r != nil {
+		f.Must = append(f.Must, qdrant.FilterCondition{Key: "price_minor", Range: r})
+	}
+	if applyTags {
+		if intent.pairingDrinkSlug != "" {
+			f.Must = append(f.Must, qdrant.FilterCondition{
+				Key:   "pairing_tags",
+				Match: &qdrant.FilterMatch{Value: intent.pairingDrinkSlug},
+			})
+		}
+		if intent.occasionSlug != "" {
+			f.Must = append(f.Must, qdrant.FilterCondition{
+				Key:   "pairing_tags",
+				Match: &qdrant.FilterMatch{Value: intent.occasionSlug},
+			})
+		}
+	}
+}
+
+// rrfMinStreamHits — минимальный размер потока B (pairing-search), при котором
+// мы доверяем hybrid retrieval. Меньшее значит, что наша pairing-разметка слишком
+// разрежена для этого запроса; чище отвалиться на single-stream A, чем подтащить
+// 1-2 случайных блюда с весами RRF и сломать ранжирование.
+const rrfMinStreamHits = 3
+
+// rrfK — константа сглаживания в Reciprocal Rank Fusion: score = 1/(k + rank).
+// 60 — каноническое значение из оригинальной статьи Cormack et al. (2009);
+// смещает влияние одного потока для top-ranked документов и сглаживает разницу
+// между потоками с разным числом hits.
+const rrfK = 60
+
+// mergeHitsRRF сливает два списка кандидатов через Reciprocal Rank Fusion.
+// Каждый hit получает score = 1/(rrfK + rank_in_stream + 1); если hit попал в оба
+// потока — score'ы суммируются. Результат сортируется по убыванию суммарного score,
+// возвращается topN. Если topN ≤ 0 — без ограничения.
+//
+// Поле SearchHit.Score в merged-выдаче перетирается на rrf-score (для дальнейших
+// логов и rerank). Payload берётся из A (если hit есть в обоих), иначе из B.
+func mergeHitsRRF(a, b []qdrant.SearchHit, topN int) []qdrant.SearchHit {
+	type acc struct {
+		score   float64
+		fromA   *qdrant.SearchHit
+		fromB   *qdrant.SearchHit
+		firstAt int // позиция в первом потоке, где встретился — для стабильной сортировки
+	}
+	bucket := make(map[uint64]*acc, len(a)+len(b))
+	add := func(stream []qdrant.SearchHit, isA bool) {
+		for rank, h := range stream {
+			entry, ok := bucket[h.ID]
+			if !ok {
+				entry = &acc{firstAt: rank}
+				bucket[h.ID] = entry
+			}
+			entry.score += 1.0 / float64(rrfK+rank+1)
+			if isA {
+				hh := h
+				entry.fromA = &hh
+			} else {
+				hh := h
+				entry.fromB = &hh
+			}
+		}
+	}
+	add(a, true)
+	add(b, false)
+
+	out := make([]qdrant.SearchHit, 0, len(bucket))
+	for _, e := range bucket {
+		base := e.fromA
+		if base == nil {
+			base = e.fromB
+		}
+		out = append(out, qdrant.SearchHit{
+			ID:      base.ID,
+			Score:   e.score,
+			Payload: base.Payload,
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Score > out[j].Score
+	})
+	if topN > 0 && len(out) > topN {
+		out = out[:topN]
+	}
+	return out
+}
+
+// buildPrefilterLoose собирает фильтр БЕЗ ограничений профиля гостя
+// (аллергены/диета снимаются), но с is_available и priorRecommended.
+// Используется в runRAG для расчёта restricted-set: блюда, которые есть в меню
+// и попали бы в выдачу по семантике, но были отрезаны фильтром гостя.
+func buildPrefilterLoose(priorRecommendedIDs []int) *qdrant.Filter {
+	f := &qdrant.Filter{
+		Must: []qdrant.FilterCondition{
+			{Key: "is_available", Match: &qdrant.FilterMatch{Value: true}},
+		},
+	}
+	if len(priorRecommendedIDs) > 0 {
+		anyVals := make([]any, len(priorRecommendedIDs))
+		for i, id := range priorRecommendedIDs {
+			anyVals[i] = id
+		}
+		f.MustNot = append(f.MustNot, qdrant.FilterCondition{
+			Key:   "dish_id",
+			Match: &qdrant.FilterMatch{Any: anyVals},
+		})
+	}
+	return f
+}
+
+// allergenRU и dietaryRU — короткие русские формулировки для restriction-reason.
+// Берутся в винительном для allergens («содержит рыбу») и в номинативе для dietary
+// («не вегетарианское»). Неизвестный код фоллбэчится на сам код.
+//
+// shellfish переводим как «морепродукты» — общий термин, который для гостя
+// покрывает и креветки (ракообразные), и устрицы/мидии (моллюски). Если
+// захотим точнее — нужно разделить seed-код на crustaceans / mollusks
+// (отдельный шаг, требует переразметки данных).
+var allergenRU = map[string]string{
+	"fish":      "рыбу",
+	"shellfish": "морепродукты",
+	"gluten":    "глютен",
+	"nuts":      "орехи",
+	"eggs":      "яйца",
+	"dairy":     "молочное",
+	"lactose":   "лактозу",
+	"soy":       "сою",
+	"sesame":    "кунжут",
+	"mustard":   "горчицу",
+	"celery":    "сельдерей",
+	"peanuts":   "арахис",
+}
+
+var dietaryRU = map[string]string{
+	"vegan":        "веганское",
+	"vegetarian":   "вегетарианское",
+	"gluten_free":  "без глютена",
+	"lactose_free": "без лактозы",
+	"halal":        "халяль",
+	"kosher":       "кошер",
+}
+
+// computeRestrictionReason для блюда d и профиля гостя возвращает короткую
+// человеко-читаемую причину, почему блюдо не подходит. Пустая строка означает,
+// что конфликта нет (на всякий случай — теоретически такого быть не должно,
+// если блюдо попало в restricted-set).
+func computeRestrictionReason(d retrievedDishRaw, profile *usecasemodels.User) string {
+	if profile == nil {
+		return ""
+	}
+	dishAllergens := make(map[string]struct{}, len(d.allergens))
+	for _, a := range d.allergens {
+		dishAllergens[a] = struct{}{}
+	}
+	dishDietary := make(map[string]struct{}, len(d.dietary))
+	for _, x := range d.dietary {
+		dishDietary[x] = struct{}{}
+	}
+
+	var conflictAllergens []string
+	for _, ua := range profile.Allergens {
+		if _, has := dishAllergens[ua]; has {
+			label := allergenRU[ua]
+			if label == "" {
+				label = ua
+			}
+			conflictAllergens = append(conflictAllergens, label)
+		}
+	}
+
+	var missingDietary []string
+	for _, ud := range profile.Dietary {
+		if _, has := dishDietary[ud]; !has {
+			label := dietaryRU[ud]
+			if label == "" {
+				label = ud
+			}
+			missingDietary = append(missingDietary, label)
+		}
+	}
+
+	parts := []string{}
+	if len(conflictAllergens) > 0 {
+		parts = append(parts, "содержит "+strings.Join(conflictAllergens, ", "))
+	}
+	if len(missingDietary) > 0 {
+		parts = append(parts, "не "+strings.Join(missingDietary, ", "))
+	}
+	return strings.Join(parts, "; ")
+}
+
+// retrievedDishRaw минимальный набор полей блюда, нужный для computeRestrictionReason.
+// Отдельный тип, чтобы не тащить полный usecasemodels.Dish в чисто RAG-функцию.
+type retrievedDishRaw struct {
+	allergens []string
+	dietary   []string
 }
 
 // dishToText собирает текст блюда для рерэнкера

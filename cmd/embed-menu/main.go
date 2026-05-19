@@ -51,6 +51,8 @@ type dishRow struct {
 	isAvailable bool
 	// tagIDs идентификаторы тегов
 	tagIDs []int
+	// pairingTags pairing-теги для обогащения embed-текста (только активные)
+	pairingTags []indexer.PairingTagView
 }
 
 // listAllDishesQuery читает все блюда с category name и tag ids одним запросом
@@ -170,6 +172,7 @@ func payloadIndexes() []qdrant.PayloadIndex {
 		{Field: "allergens", Type: qdrant.FieldTypeKeyword},
 		{Field: "dietary", Type: qdrant.FieldTypeKeyword},
 		{Field: "tag_ids", Type: qdrant.FieldTypeInteger},
+		{Field: "pairing_tags", Type: qdrant.FieldTypeKeyword},
 		{Field: "price_minor", Type: qdrant.FieldTypeInteger},
 		{Field: "calories_kcal", Type: qdrant.FieldTypeInteger},
 		{Field: "portion_weight_g", Type: qdrant.FieldTypeInteger},
@@ -177,7 +180,12 @@ func payloadIndexes() []qdrant.PayloadIndex {
 	}
 }
 
-// loadDishes читает все блюда из PG с category name и tag ids одним запросом.
+// loadDishes читает все блюда из PG с category name и tag ids одним запросом,
+// плюс отдельным проходом подгружает активные pairing-теги по dish_id.
+//
+// Pairing-теги отдельным запросом, а не JOIN в listAllDishesQuery, потому что
+// два LEFT JOIN'а с aggregate (dish_tags + dish_pairing_tags) дают cartesian-
+// взрыв и дубликаты в array_agg. Простой второй проход чище.
 func loadDishes(ctx context.Context, pool *pgxpool.Pool) ([]dishRow, error) {
 	rows, err := pool.Query(ctx, listAllDishesQuery)
 	if err != nil {
@@ -202,6 +210,45 @@ func loadDishes(ctx context.Context, pool *pgxpool.Pool) ([]dishRow, error) {
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows dishes: %w", err)
+	}
+
+	pairings, err := loadPairingTagsByDish(ctx, pool)
+	if err != nil {
+		return nil, err
+	}
+	for i := range out {
+		out[i].pairingTags = pairings[out[i].id]
+	}
+	return out, nil
+}
+
+// loadPairingTagsByDish возвращает map dish_id → []PairingTagView (только активные
+// теги). Один запрос на всю таблицу — для меню в ~200 блюд / 20 тегов это копейки,
+// группировка в Go.
+func loadPairingTagsByDish(ctx context.Context, pool *pgxpool.Pool) (map[int][]indexer.PairingTagView, error) {
+	const q = `
+		SELECT dpt.dish_id, pt.slug, pt.axis, pt.embed_phrase
+		FROM dish_pairing_tags dpt
+		JOIN pairing_tags pt ON pt.slug = dpt.tag_slug
+		WHERE pt.is_active
+		ORDER BY dpt.dish_id, pt.axis, pt.sort_order, pt.slug`
+	rows, err := pool.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("query pairing_tags by dish: %w", err)
+	}
+	defer rows.Close()
+
+	out := map[int][]indexer.PairingTagView{}
+	for rows.Next() {
+		var dishID int
+		var v indexer.PairingTagView
+		if err := rows.Scan(&dishID, &v.Slug, &v.Axis, &v.EmbedPhrase); err != nil {
+			return nil, fmt.Errorf("scan pairing: %w", err)
+		}
+		out[dishID] = append(out[dishID], v)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows pairing: %w", err)
 	}
 	return out, nil
 }
@@ -260,5 +307,6 @@ func dishRowToView(d dishRow) indexer.DishView {
 		CaloriesKcal:   d.caloriesKcal,
 		PortionWeightG: d.portionWeightG,
 		IsAvailable:    d.isAvailable,
+		PairingTags:    d.pairingTags,
 	}
 }

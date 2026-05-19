@@ -57,12 +57,49 @@ type DishView struct {
 	PortionWeightG *int
 	// IsAvailable доступность (для must-фильтра).
 	IsAvailable bool
+	// PairingTags pairing-теги для обогащения embed-текста.
+	// Каждый тег — {axis, embed_phrase}; в payload Qdrant не попадают.
+	PairingTags []PairingTagView
 }
+
+// PairingTagView минимальный набор полей pairing-тега, нужный индексеру:
+// slug (для payload Qdrant, по нему фильтруем при hybrid retrieval),
+// ось (для группировки в блоки «Подходит к / Подаётся как / Хорошо для / Тип»)
+// и фраза, которая физически попадает в embed-текст.
+type PairingTagView struct {
+	// Slug машинный идентификатор тега (попадает в payload Qdrant как элемент массива pairing_tags)
+	Slug string
+	// Axis ось: drink | occasion | role | vibe (используется для группировки)
+	Axis string
+	// EmbedPhrase фраза в embed-тексте («белому вину»)
+	EmbedPhrase string
+}
+
+// axisPrefix маппит ось pairing-тега в префикс блока в embed-тексте.
+// Источник истины оси — миграция 000012_pairing_tags.up.sql (CHECK).
+var axisPrefix = map[string]string{
+	"drink":    "Подходит к",
+	"role":     "Подаётся как",
+	"occasion": "Хорошо для",
+	"vibe":     "Тип",
+}
+
+// axisOrder фиксирует порядок блоков в embed-тексте, чтобы при одинаковых
+// тегах две одинаковые DishView давали побайтно один embed (важно для прогнозируемого
+// префикс-кэша на стороне Cohere — кэша префиксов нет, но детерминированность всё равно полезна
+// для воспроизводимости тестов и дебага embed-preview).
+var axisOrder = []string{"drink", "role", "occasion", "vibe"}
 
 // BuildEmbedText собирает текст блюда для эмбеддинга.
 //
 // Имя категории и название кухни попадают сюда — поэтому переименование категории
 // требует переиндексации всех блюд этой категории.
+//
+// Дальше — опциональные блоки по pairing-тегам, сгруппированные по оси
+// (drink/role/occasion/vibe). Цель: дать эмбеддингу явные семантические якоря
+// под пользовательские intent'ы («под белое вино», «на свидание», «накормите»).
+// Cohere multilingual-v3 хорошо матчит запрос «белое вино» с фразой «белому вину»
+// в embed-тексте — нормализация падежей у него встроена. Если тегов нет — блок не пишется.
 func BuildEmbedText(d DishView) string {
 	cuisine := cuisineRU[d.Cuisine]
 	if cuisine == "" {
@@ -76,6 +113,50 @@ func BuildEmbedText(d DishView) string {
 		out += " Состав: " + d.Composition + "."
 	}
 	out += " Кухня: " + cuisine + ". Категория: " + d.CategoryName + "."
+
+	if len(d.PairingTags) > 0 {
+		out += buildPairingBlocks(d.PairingTags)
+	}
+	return out
+}
+
+// buildPairingBlocks группирует pairing-теги по оси и склеивает блоки вида
+// «Подходит к: белому вину, игристому. Подаётся как: основное горячее.».
+// Порядок осей фиксирован (axisOrder), внутри оси — порядок прихода тегов
+// (предполагается, что repository отдаёт их отсортированными по sort_order).
+func buildPairingBlocks(tags []PairingTagView) string {
+	byAxis := make(map[string][]string, len(axisOrder))
+	for _, t := range tags {
+		if t.EmbedPhrase == "" {
+			continue
+		}
+		byAxis[t.Axis] = append(byAxis[t.Axis], t.EmbedPhrase)
+	}
+	var sb string
+	for _, axis := range axisOrder {
+		phrases := byAxis[axis]
+		if len(phrases) == 0 {
+			continue
+		}
+		prefix := axisPrefix[axis]
+		if prefix == "" {
+			continue
+		}
+		sb += " " + prefix + ": " + joinComma(phrases) + "."
+	}
+	return sb
+}
+
+// joinComma склеивает фразы через «, » без подключения strings.Join — функция
+// внутри indexer и вызывается на ~4 элемента, импорт лишнего пакета избыточен.
+func joinComma(xs []string) string {
+	out := ""
+	for i, x := range xs {
+		if i > 0 {
+			out += ", "
+		}
+		out += x
+	}
 	return out
 }
 
@@ -88,6 +169,7 @@ func BuildPayload(d DishView) map[string]any {
 		"allergens":    coalesceStrings(d.Allergens),
 		"dietary":      coalesceStrings(d.Dietary),
 		"tag_ids":      coalesceInts(d.TagIDs),
+		"pairing_tags": pairingTagSlugs(d.PairingTags),
 		"price_minor":  d.PriceMinor,
 		"is_available": d.IsAvailable,
 	}
@@ -160,6 +242,22 @@ func coalesceStrings(s []string) []string {
 		return []string{}
 	}
 	return s
+}
+
+// pairingTagSlugs извлекает slug'и из pairing-тегов для payload Qdrant.
+// Используется как ключ массива «pairing_tags» в payload, по которому идёт
+// hybrid retrieval: filter must=pairing_tags contains pair_white_wine.
+// Пустой массив (не nil) — чтобы JSON-payload всегда имел поле, даже у блюд
+// без pairing-тегов (упрощает контроль покрытия через Qdrant scroll).
+func pairingTagSlugs(tags []PairingTagView) []string {
+	out := make([]string, 0, len(tags))
+	for _, t := range tags {
+		if t.Slug == "" {
+			continue
+		}
+		out = append(out, t.Slug)
+	}
+	return out
 }
 
 func coalesceInts(s []int) []int {

@@ -85,6 +85,34 @@ type Dish struct {
 
 	// Tags теги, связанные с блюдом
 	Tags []Tag
+
+	// PairingTags теги-пейринги (с чем сочетается, повод, слот в трапезе, vibe).
+	// Используются для обогащения embed-текста (см. indexer.BuildEmbedText), а
+	// не для пользовательских фильтров. На уровне фронта показываются только в
+	// админке.
+	PairingTags []PairingTag
+}
+
+// PairingTag тег-пейринг из контролируемой vocabulary (таблица pairing_tags).
+// Slug — стабильный идентификатор, axis — ось ('drink' | 'occasion' | 'role'
+// | 'vibe'), EmbedPhrase — короткая фраза, попадающая в embed-текст блюда.
+type PairingTag struct {
+	// Slug машинный идентификатор (PK), на него ссылается dish_pairing_tags.tag_slug
+	Slug string
+	// Axis ось: drink | occasion | role | vibe
+	Axis string
+	// Label человекочитаемая метка для админ UI
+	Label string
+	// EmbedPhrase фраза, попадающая в embed-текст блюда («белому вину»)
+	EmbedPhrase string
+	// SortOrder порядок в админ UI внутри своей оси
+	SortOrder int
+	// IsActive если false — тег нельзя присваивать (но уже привязанные остаются)
+	IsActive bool
+	// CreatedAt время создания
+	CreatedAt time.Time
+	// UpdatedAt время последнего обновления
+	UpdatedAt time.Time
 }
 
 // DishFilter фильтр и пагинация для выборки блюд

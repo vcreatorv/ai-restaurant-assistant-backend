@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 
 	v1 "github.com/example/ai-restaurant-assistant-backend/cmd/app/app/v1"
 	"github.com/example/ai-restaurant-assistant-backend/internal/audit"
@@ -311,6 +312,122 @@ func (h MenuHandler) AdminDeleteDish(
 		Verb:        audit.VerbDelete,
 	})
 	return v1.AdminDeleteDish204Response{}, nil
+}
+
+// AdminListPairingTags реализует GET /admin/pairing-tags.
+// Vocabulary всегда отдаём целиком (включая неактивные) — админ UI сам решает,
+// показывать ли неактивные с пометкой.
+func (h MenuHandler) AdminListPairingTags(
+	ctx context.Context,
+	_ v1.AdminListPairingTagsRequestObject,
+) (v1.AdminListPairingTagsResponseObject, error) {
+	if _, err := h.requireAdminID(ctx); err != nil {
+		return nil, err
+	}
+	ts, err := h.usecase.ListPairingTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return v1.AdminListPairingTags200JSONResponse(apimodels.PairingTagListFromUsecase(ts)), nil
+}
+
+// AdminReindexDish реализует POST /admin/menu/{id}/reindex.
+// Force-реиндекс одного блюда. Используется, когда CRUD-триггер не сработал бы
+// (например, поменялась vocabulary pairing-тегов, а само блюдо не редактировали).
+func (h MenuHandler) AdminReindexDish(
+	ctx context.Context,
+	request v1.AdminReindexDishRequestObject,
+) (v1.AdminReindexDishResponseObject, error) {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := h.usecase.ReindexDish(ctx, request.Id); err != nil {
+		return nil, err
+	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetDish,
+		TargetID:    intStr(request.Id),
+		TargetLabel: "(reindex)",
+		Verb:        audit.VerbUpdate,
+		Changes:     []audit.Change{{Field: "qdrant_index", To: "reindexed"}},
+	})
+	return v1.AdminReindexDish204Response{}, nil
+}
+
+// AdminReindexAllDishes реализует POST /admin/menu/reindex.
+// Массовый реиндекс. Body опционален: если nil — include_unavailable=false.
+func (h MenuHandler) AdminReindexAllDishes(
+	ctx context.Context,
+	request v1.AdminReindexAllDishesRequestObject,
+) (v1.AdminReindexAllDishesResponseObject, error) {
+	adminID, err := h.requireAdminID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	includeUnavailable := false
+	if request.Body != nil && request.Body.IncludeUnavailable != nil {
+		includeUnavailable = *request.Body.IncludeUnavailable
+	}
+	res, err := h.usecase.ReindexAllDishes(ctx, includeUnavailable)
+	if err != nil {
+		return nil, err
+	}
+	h.audit.Record(ctx, audit.Entry{
+		AdminID:     adminID,
+		Target:      audit.TargetDish,
+		TargetID:    "(all)",
+		TargetLabel: "(reindex-all)",
+		Verb:        audit.VerbUpdate,
+		Changes: []audit.Change{
+			{Field: "qdrant_index", To: fmt.Sprintf("total=%d indexed=%d failed=%d", res.Total, res.Indexed, res.Failed)},
+		},
+	})
+	return v1.AdminReindexAllDishes200JSONResponse(apimodels.DishesReindexResultFromUsecase(res)), nil
+}
+
+// AdminPreviewDishEmbedding реализует GET /admin/menu/{id}/embed-preview.
+// Возвращает embed-текст и top-N ближайших соседей. Эмбеддит на лету.
+func (h MenuHandler) AdminPreviewDishEmbedding(
+	ctx context.Context,
+	request v1.AdminPreviewDishEmbeddingRequestObject,
+) (v1.AdminPreviewDishEmbeddingResponseObject, error) {
+	if _, err := h.requireAdminID(ctx); err != nil {
+		return nil, err
+	}
+	neighbors := 0
+	if request.Params.Neighbors != nil {
+		neighbors = *request.Params.Neighbors
+	}
+	preview, err := h.usecase.PreviewDishEmbedding(ctx, request.Id, neighbors)
+	if err != nil {
+		return nil, err
+	}
+	return v1.AdminPreviewDishEmbedding200JSONResponse(apimodels.DishEmbeddingPreviewFromUsecase(preview)), nil
+}
+
+// AdminDebugSearchByQuery реализует POST /admin/embed/search.
+// Голый вектор-поиск по произвольному тексту, без классификатора/rerank/companion-логики.
+func (h MenuHandler) AdminDebugSearchByQuery(
+	ctx context.Context,
+	request v1.AdminDebugSearchByQueryRequestObject,
+) (v1.AdminDebugSearchByQueryResponseObject, error) {
+	if _, err := h.requireAdminID(ctx); err != nil {
+		return nil, err
+	}
+	if request.Body == nil {
+		return nil, apperrors.ErrBadRequest
+	}
+	limit := 0
+	if request.Body.Limit != nil {
+		limit = *request.Body.Limit
+	}
+	items, err := h.usecase.DebugSearchByQuery(ctx, request.Body.Query, limit)
+	if err != nil {
+		return nil, err
+	}
+	return v1.AdminDebugSearchByQuery200JSONResponse(apimodels.DebugSearchResponseFromUsecase(items)), nil
 }
 
 // AdminUploadDishImage реализует POST /admin/menu/{id}/image

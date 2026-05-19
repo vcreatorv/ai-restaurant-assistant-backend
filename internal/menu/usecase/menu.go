@@ -204,8 +204,21 @@ func (uc *menuUsecase) CreateDish(ctx context.Context, d usecasemodels.DishCreat
 	if err := uc.repo.CreateDish(ctx, repo, d.TagIDs); err != nil {
 		return nil, fmt.Errorf("create dish: %w", err)
 	}
+	// Pairing-теги — отдельным шагом после CreateDish, потому что они требуют
+	// уже существующего dish_id (FK в dish_pairing_tags). Один INSERT не падает
+	// длиной — у нас ≤ 22 slug'а на блюдо. Если slug'ов не дали — отдаём dish сразу
+	// без дополнительного round-trip за GetDish'ем.
+	hasPairings := len(d.PairingTagSlugs) > 0
+	if hasPairings {
+		if err := uc.repo.SetDishPairingTags(ctx, repo.ID, dedupSlugs(d.PairingTagSlugs)); err != nil {
+			return nil, fmt.Errorf("set pairing tags: %w", err)
+		}
+	}
 	uc.reindexDish(ctx, repo.ID)
-	return usecasemodels.DishFromRepository(repo), nil
+	if !hasPairings {
+		return usecasemodels.DishFromRepository(repo), nil
+	}
+	return uc.GetDish(ctx, repo.ID)
 }
 
 // UpdateDish обновляет блюдо
@@ -228,6 +241,13 @@ func (uc *menuUsecase) UpdateDish(ctx context.Context, id int, p usecasemodels.D
 	}
 	if err := uc.repo.UpdateDish(ctx, repo, tagIDs); err != nil {
 		return nil, fmt.Errorf("update dish: %w", err)
+	}
+	// Pairing-теги: nil → не трогаем; [] → удалить всё; len>0 → перезаписать.
+	// Repository.SetDishPairingTags выполняет delete-all + insert в одной транзакции.
+	if p.PairingTagSlugs != nil {
+		if err := uc.repo.SetDishPairingTags(ctx, id, dedupSlugs(*p.PairingTagSlugs)); err != nil {
+			return nil, fmt.Errorf("set pairing tags: %w", err)
+		}
 	}
 	after, err := uc.GetDish(ctx, id)
 	if err != nil {

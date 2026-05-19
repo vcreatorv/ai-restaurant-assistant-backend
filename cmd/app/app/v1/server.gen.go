@@ -46,18 +46,30 @@ type ServerInterface interface {
 	// Операционные метрики по заказам за период (today | week | month)
 	// (GET /admin/dashboard)
 	AdminGetDashboard(w http.ResponseWriter, r *http.Request, params AdminGetDashboardParams)
+	// Debug-поиск блюд по произвольному текстовому запросу
+	// (POST /admin/embed/search)
+	AdminDebugSearchByQuery(w http.ResponseWriter, r *http.Request, params AdminDebugSearchByQueryParams)
 	// Создать блюдо
 	// (POST /admin/menu)
 	AdminCreateDish(w http.ResponseWriter, r *http.Request, params AdminCreateDishParams)
+	// Массовый реиндекс всех блюд
+	// (POST /admin/menu/reindex)
+	AdminReindexAllDishes(w http.ResponseWriter, r *http.Request, params AdminReindexAllDishesParams)
 	// Снять блюдо со стоп-листа (soft delete — is_available=false)
 	// (DELETE /admin/menu/{id})
 	AdminDeleteDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminDeleteDishParams)
 	// Обновить блюдо
 	// (PATCH /admin/menu/{id})
 	AdminUpdateDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUpdateDishParams)
+	// Превью embed-текста блюда и его ближайших соседей в Qdrant
+	// (GET /admin/menu/{id}/embed-preview)
+	AdminPreviewDishEmbedding(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminPreviewDishEmbeddingParams)
 	// Загрузить картинку блюда (multipart) в S3 и сохранить URL
 	// (POST /admin/menu/{id}/image)
 	AdminUploadDishImage(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUploadDishImageParams)
+	// Форсированно переиндексировать одно блюдо в Qdrant
+	// (POST /admin/menu/{id}/reindex)
+	AdminReindexDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminReindexDishParams)
 	// Список всех заказов с фильтрами
 	// (GET /admin/orders)
 	AdminListOrders(w http.ResponseWriter, r *http.Request, params AdminListOrdersParams)
@@ -70,6 +82,9 @@ type ServerInterface interface {
 	// Сменить статус заказа
 	// (PATCH /admin/orders/{id}/status)
 	AdminUpdateOrderStatus(w http.ResponseWriter, r *http.Request, id PathID, params AdminUpdateOrderStatusParams)
+	// Vocabulary pairing-тегов (для формы редактирования блюда)
+	// (GET /admin/pairing-tags)
+	AdminListPairingTags(w http.ResponseWriter, r *http.Request)
 	// Список промптов с активными версиями
 	// (GET /admin/prompts)
 	AdminListPrompts(w http.ResponseWriter, r *http.Request)
@@ -522,6 +537,56 @@ func (siw *ServerInterfaceWrapper) AdminGetDashboard(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// AdminDebugSearchByQuery operation middleware
+func (siw *ServerInterfaceWrapper) AdminDebugSearchByQuery(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminDebugSearchByQueryParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminDebugSearchByQuery(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AdminCreateDish operation middleware
 func (siw *ServerInterfaceWrapper) AdminCreateDish(w http.ResponseWriter, r *http.Request) {
 
@@ -563,6 +628,56 @@ func (siw *ServerInterfaceWrapper) AdminCreateDish(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminCreateDish(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminReindexAllDishes operation middleware
+func (siw *ServerInterfaceWrapper) AdminReindexAllDishes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminReindexAllDishesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminReindexAllDishes(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -690,6 +805,48 @@ func (siw *ServerInterfaceWrapper) AdminUpdateDish(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// AdminPreviewDishEmbedding operation middleware
+func (siw *ServerInterfaceWrapper) AdminPreviewDishEmbedding(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id PathIntID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminPreviewDishEmbeddingParams
+
+	// ------------- Optional query parameter "neighbors" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "neighbors", r.URL.Query(), &params.Neighbors, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "neighbors", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminPreviewDishEmbedding(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AdminUploadDishImage operation middleware
 func (siw *ServerInterfaceWrapper) AdminUploadDishImage(w http.ResponseWriter, r *http.Request) {
 
@@ -740,6 +897,65 @@ func (siw *ServerInterfaceWrapper) AdminUploadDishImage(w http.ResponseWriter, r
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminUploadDishImage(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminReindexDish operation middleware
+func (siw *ServerInterfaceWrapper) AdminReindexDish(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id PathIntID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AdminReindexDishParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "X-CSRF-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-CSRF-Token")]; found {
+		var XCSRFToken CSRFToken
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-CSRF-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "X-CSRF-Token", valueList[0], &XCSRFToken, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-CSRF-Token", Err: err})
+			return
+		}
+
+		params.XCSRFToken = XCSRFToken
+
+	} else {
+		err := fmt.Errorf("Header parameter X-CSRF-Token is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "X-CSRF-Token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminReindexDish(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -953,6 +1169,26 @@ func (siw *ServerInterfaceWrapper) AdminUpdateOrderStatus(w http.ResponseWriter,
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AdminUpdateOrderStatus(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AdminListPairingTags operation middleware
+func (siw *ServerInterfaceWrapper) AdminListPairingTags(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, CookieAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AdminListPairingTags(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2919,14 +3155,19 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/admin/categories/{id}", wrapper.AdminDeleteCategory)
 	m.HandleFunc("PATCH "+options.BaseURL+"/admin/categories/{id}", wrapper.AdminUpdateCategory)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/dashboard", wrapper.AdminGetDashboard)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/embed/search", wrapper.AdminDebugSearchByQuery)
 	m.HandleFunc("POST "+options.BaseURL+"/admin/menu", wrapper.AdminCreateDish)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/menu/reindex", wrapper.AdminReindexAllDishes)
 	m.HandleFunc("DELETE "+options.BaseURL+"/admin/menu/{id}", wrapper.AdminDeleteDish)
 	m.HandleFunc("PATCH "+options.BaseURL+"/admin/menu/{id}", wrapper.AdminUpdateDish)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/menu/{id}/embed-preview", wrapper.AdminPreviewDishEmbedding)
 	m.HandleFunc("POST "+options.BaseURL+"/admin/menu/{id}/image", wrapper.AdminUploadDishImage)
+	m.HandleFunc("POST "+options.BaseURL+"/admin/menu/{id}/reindex", wrapper.AdminReindexDish)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/orders", wrapper.AdminListOrders)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/orders/{id}", wrapper.AdminGetOrder)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/orders/{id}/actions", wrapper.AdminListOrderActions)
 	m.HandleFunc("PATCH "+options.BaseURL+"/admin/orders/{id}/status", wrapper.AdminUpdateOrderStatus)
+	m.HandleFunc("GET "+options.BaseURL+"/admin/pairing-tags", wrapper.AdminListPairingTags)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/prompts", wrapper.AdminListPrompts)
 	m.HandleFunc("GET "+options.BaseURL+"/admin/prompts/details", wrapper.AdminGetPrompt)
 	m.HandleFunc("DELETE "+options.BaseURL+"/admin/prompts/draft", wrapper.AdminDeletePromptDraft)
@@ -3257,6 +3498,60 @@ func (response AdminGetDashboard403JSONResponse) VisitAdminGetDashboardResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type AdminDebugSearchByQueryRequestObject struct {
+	Params AdminDebugSearchByQueryParams
+	Body   *AdminDebugSearchByQueryJSONRequestBody
+}
+
+type AdminDebugSearchByQueryResponseObject interface {
+	VisitAdminDebugSearchByQueryResponse(w http.ResponseWriter) error
+}
+
+type AdminDebugSearchByQuery200JSONResponse DebugSearchResponse
+
+func (response AdminDebugSearchByQuery200JSONResponse) VisitAdminDebugSearchByQueryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDebugSearchByQuery400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response AdminDebugSearchByQuery400JSONResponse) VisitAdminDebugSearchByQueryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDebugSearchByQuery401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminDebugSearchByQuery401JSONResponse) VisitAdminDebugSearchByQueryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDebugSearchByQuery403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminDebugSearchByQuery403JSONResponse) VisitAdminDebugSearchByQueryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminDebugSearchByQuery503JSONResponse Error
+
+func (response AdminDebugSearchByQuery503JSONResponse) VisitAdminDebugSearchByQueryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type AdminCreateDishRequestObject struct {
 	Params AdminCreateDishParams
 	Body   *AdminCreateDishJSONRequestBody
@@ -3307,6 +3602,51 @@ type AdminCreateDish409JSONResponse struct{ ConflictJSONResponse }
 func (response AdminCreateDish409JSONResponse) VisitAdminCreateDishResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexAllDishesRequestObject struct {
+	Params AdminReindexAllDishesParams
+	Body   *AdminReindexAllDishesJSONRequestBody
+}
+
+type AdminReindexAllDishesResponseObject interface {
+	VisitAdminReindexAllDishesResponse(w http.ResponseWriter) error
+}
+
+type AdminReindexAllDishes200JSONResponse DishesReindexResult
+
+func (response AdminReindexAllDishes200JSONResponse) VisitAdminReindexAllDishesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexAllDishes401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminReindexAllDishes401JSONResponse) VisitAdminReindexAllDishesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexAllDishes403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminReindexAllDishes403JSONResponse) VisitAdminReindexAllDishesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexAllDishes503JSONResponse Error
+
+func (response AdminReindexAllDishes503JSONResponse) VisitAdminReindexAllDishesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -3410,6 +3750,60 @@ func (response AdminUpdateDish404JSONResponse) VisitAdminUpdateDishResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
+type AdminPreviewDishEmbeddingRequestObject struct {
+	Id     PathIntID `json:"id"`
+	Params AdminPreviewDishEmbeddingParams
+}
+
+type AdminPreviewDishEmbeddingResponseObject interface {
+	VisitAdminPreviewDishEmbeddingResponse(w http.ResponseWriter) error
+}
+
+type AdminPreviewDishEmbedding200JSONResponse DishEmbeddingPreview
+
+func (response AdminPreviewDishEmbedding200JSONResponse) VisitAdminPreviewDishEmbeddingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPreviewDishEmbedding401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminPreviewDishEmbedding401JSONResponse) VisitAdminPreviewDishEmbeddingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPreviewDishEmbedding403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminPreviewDishEmbedding403JSONResponse) VisitAdminPreviewDishEmbeddingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPreviewDishEmbedding404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminPreviewDishEmbedding404JSONResponse) VisitAdminPreviewDishEmbeddingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminPreviewDishEmbedding503JSONResponse Error
+
+func (response AdminPreviewDishEmbedding503JSONResponse) VisitAdminPreviewDishEmbeddingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type AdminUploadDishImageRequestObject struct {
 	Id     PathIntID `json:"id"`
 	Params AdminUploadDishImageParams
@@ -3479,6 +3873,59 @@ type AdminUploadDishImage415JSONResponse Error
 func (response AdminUploadDishImage415JSONResponse) VisitAdminUploadDishImageResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(415)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexDishRequestObject struct {
+	Id     PathIntID `json:"id"`
+	Params AdminReindexDishParams
+}
+
+type AdminReindexDishResponseObject interface {
+	VisitAdminReindexDishResponse(w http.ResponseWriter) error
+}
+
+type AdminReindexDish204Response struct {
+}
+
+func (response AdminReindexDish204Response) VisitAdminReindexDishResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type AdminReindexDish401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminReindexDish401JSONResponse) VisitAdminReindexDishResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexDish403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminReindexDish403JSONResponse) VisitAdminReindexDishResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexDish404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response AdminReindexDish404JSONResponse) VisitAdminReindexDishResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminReindexDish503JSONResponse Error
+
+func (response AdminReindexDish503JSONResponse) VisitAdminReindexDishResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -3658,6 +4105,40 @@ type AdminUpdateOrderStatus404JSONResponse struct{ NotFoundJSONResponse }
 func (response AdminUpdateOrderStatus404JSONResponse) VisitAdminUpdateOrderStatusResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListPairingTagsRequestObject struct {
+}
+
+type AdminListPairingTagsResponseObject interface {
+	VisitAdminListPairingTagsResponse(w http.ResponseWriter) error
+}
+
+type AdminListPairingTags200JSONResponse PairingTagList
+
+func (response AdminListPairingTags200JSONResponse) VisitAdminListPairingTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListPairingTags401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response AdminListPairingTags401JSONResponse) VisitAdminListPairingTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AdminListPairingTags403JSONResponse struct{ ForbiddenJSONResponse }
+
+func (response AdminListPairingTags403JSONResponse) VisitAdminListPairingTagsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -5179,18 +5660,30 @@ type StrictServerInterface interface {
 	// Операционные метрики по заказам за период (today | week | month)
 	// (GET /admin/dashboard)
 	AdminGetDashboard(ctx context.Context, request AdminGetDashboardRequestObject) (AdminGetDashboardResponseObject, error)
+	// Debug-поиск блюд по произвольному текстовому запросу
+	// (POST /admin/embed/search)
+	AdminDebugSearchByQuery(ctx context.Context, request AdminDebugSearchByQueryRequestObject) (AdminDebugSearchByQueryResponseObject, error)
 	// Создать блюдо
 	// (POST /admin/menu)
 	AdminCreateDish(ctx context.Context, request AdminCreateDishRequestObject) (AdminCreateDishResponseObject, error)
+	// Массовый реиндекс всех блюд
+	// (POST /admin/menu/reindex)
+	AdminReindexAllDishes(ctx context.Context, request AdminReindexAllDishesRequestObject) (AdminReindexAllDishesResponseObject, error)
 	// Снять блюдо со стоп-листа (soft delete — is_available=false)
 	// (DELETE /admin/menu/{id})
 	AdminDeleteDish(ctx context.Context, request AdminDeleteDishRequestObject) (AdminDeleteDishResponseObject, error)
 	// Обновить блюдо
 	// (PATCH /admin/menu/{id})
 	AdminUpdateDish(ctx context.Context, request AdminUpdateDishRequestObject) (AdminUpdateDishResponseObject, error)
+	// Превью embed-текста блюда и его ближайших соседей в Qdrant
+	// (GET /admin/menu/{id}/embed-preview)
+	AdminPreviewDishEmbedding(ctx context.Context, request AdminPreviewDishEmbeddingRequestObject) (AdminPreviewDishEmbeddingResponseObject, error)
 	// Загрузить картинку блюда (multipart) в S3 и сохранить URL
 	// (POST /admin/menu/{id}/image)
 	AdminUploadDishImage(ctx context.Context, request AdminUploadDishImageRequestObject) (AdminUploadDishImageResponseObject, error)
+	// Форсированно переиндексировать одно блюдо в Qdrant
+	// (POST /admin/menu/{id}/reindex)
+	AdminReindexDish(ctx context.Context, request AdminReindexDishRequestObject) (AdminReindexDishResponseObject, error)
 	// Список всех заказов с фильтрами
 	// (GET /admin/orders)
 	AdminListOrders(ctx context.Context, request AdminListOrdersRequestObject) (AdminListOrdersResponseObject, error)
@@ -5203,6 +5696,9 @@ type StrictServerInterface interface {
 	// Сменить статус заказа
 	// (PATCH /admin/orders/{id}/status)
 	AdminUpdateOrderStatus(ctx context.Context, request AdminUpdateOrderStatusRequestObject) (AdminUpdateOrderStatusResponseObject, error)
+	// Vocabulary pairing-тегов (для формы редактирования блюда)
+	// (GET /admin/pairing-tags)
+	AdminListPairingTags(ctx context.Context, request AdminListPairingTagsRequestObject) (AdminListPairingTagsResponseObject, error)
 	// Список промптов с активными версиями
 	// (GET /admin/prompts)
 	AdminListPrompts(ctx context.Context, request AdminListPromptsRequestObject) (AdminListPromptsResponseObject, error)
@@ -5526,6 +6022,39 @@ func (sh *strictHandler) AdminGetDashboard(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// AdminDebugSearchByQuery operation middleware
+func (sh *strictHandler) AdminDebugSearchByQuery(w http.ResponseWriter, r *http.Request, params AdminDebugSearchByQueryParams) {
+	var request AdminDebugSearchByQueryRequestObject
+
+	request.Params = params
+
+	var body AdminDebugSearchByQueryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminDebugSearchByQuery(ctx, request.(AdminDebugSearchByQueryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminDebugSearchByQuery")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminDebugSearchByQueryResponseObject); ok {
+		if err := validResponse.VisitAdminDebugSearchByQueryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // AdminCreateDish operation middleware
 func (sh *strictHandler) AdminCreateDish(w http.ResponseWriter, r *http.Request, params AdminCreateDishParams) {
 	var request AdminCreateDishRequestObject
@@ -5552,6 +6081,42 @@ func (sh *strictHandler) AdminCreateDish(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminCreateDishResponseObject); ok {
 		if err := validResponse.VisitAdminCreateDishResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminReindexAllDishes operation middleware
+func (sh *strictHandler) AdminReindexAllDishes(w http.ResponseWriter, r *http.Request, params AdminReindexAllDishesParams) {
+	var request AdminReindexAllDishesRequestObject
+
+	request.Params = params
+
+	var body AdminReindexAllDishesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminReindexAllDishes(ctx, request.(AdminReindexAllDishesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminReindexAllDishes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminReindexAllDishesResponseObject); ok {
+		if err := validResponse.VisitAdminReindexAllDishesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5620,6 +6185,33 @@ func (sh *strictHandler) AdminUpdateDish(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// AdminPreviewDishEmbedding operation middleware
+func (sh *strictHandler) AdminPreviewDishEmbedding(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminPreviewDishEmbeddingParams) {
+	var request AdminPreviewDishEmbeddingRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminPreviewDishEmbedding(ctx, request.(AdminPreviewDishEmbeddingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminPreviewDishEmbedding")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminPreviewDishEmbeddingResponseObject); ok {
+		if err := validResponse.VisitAdminPreviewDishEmbeddingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // AdminUploadDishImage operation middleware
 func (sh *strictHandler) AdminUploadDishImage(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminUploadDishImageParams) {
 	var request AdminUploadDishImageRequestObject
@@ -5647,6 +6239,33 @@ func (sh *strictHandler) AdminUploadDishImage(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminUploadDishImageResponseObject); ok {
 		if err := validResponse.VisitAdminUploadDishImageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminReindexDish operation middleware
+func (sh *strictHandler) AdminReindexDish(w http.ResponseWriter, r *http.Request, id PathIntID, params AdminReindexDishParams) {
+	var request AdminReindexDishRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminReindexDish(ctx, request.(AdminReindexDishRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminReindexDish")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminReindexDishResponseObject); ok {
+		if err := validResponse.VisitAdminReindexDishResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5760,6 +6379,30 @@ func (sh *strictHandler) AdminUpdateOrderStatus(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(AdminUpdateOrderStatusResponseObject); ok {
 		if err := validResponse.VisitAdminUpdateOrderStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AdminListPairingTags operation middleware
+func (sh *strictHandler) AdminListPairingTags(w http.ResponseWriter, r *http.Request) {
+	var request AdminListPairingTagsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AdminListPairingTags(ctx, request.(AdminListPairingTagsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AdminListPairingTags")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AdminListPairingTagsResponseObject); ok {
+		if err := validResponse.VisitAdminListPairingTagsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -6903,163 +7546,196 @@ func (sh *strictHandler) UpdateProfile(w http.ResponseWriter, r *http.Request, p
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

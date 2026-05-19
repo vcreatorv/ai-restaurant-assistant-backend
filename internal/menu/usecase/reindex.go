@@ -27,6 +27,20 @@ func (uc *menuUsecase) dishViewFor(ctx context.Context, d usecasemodels.Dish) (i
 	for i, t := range d.Tags {
 		tagIDs[i] = t.ID
 	}
+	pairingTags := make([]indexer.PairingTagView, 0, len(d.PairingTags))
+	for _, pt := range d.PairingTags {
+		// Неактивные теги пропускаем — если админ деактивировал тег, новые
+		// embed-тексты его не должны содержать. Старые векторы в Qdrant
+		// перетрут на следующем реиндексе блюда.
+		if !pt.IsActive {
+			continue
+		}
+		pairingTags = append(pairingTags, indexer.PairingTagView{
+			Slug:        pt.Slug,
+			Axis:        pt.Axis,
+			EmbedPhrase: pt.EmbedPhrase,
+		})
+	}
 	return indexer.DishView{
 		ID:             d.ID,
 		Name:           d.Name,
@@ -42,6 +56,7 @@ func (uc *menuUsecase) dishViewFor(ctx context.Context, d usecasemodels.Dish) (i
 		CaloriesKcal:   d.CaloriesKcal,
 		PortionWeightG: d.PortionWeightG,
 		IsAvailable:    d.IsAvailable,
+		PairingTags:    pairingTags,
 	}, nil
 }
 
@@ -142,7 +157,28 @@ func dishNeedsReindex(oldDish, newDish *usecasemodels.Dish) bool {
 	if !equalTagIDs(oldDish.Tags, newDish.Tags) {
 		return true
 	}
+	if !equalPairingSlugs(oldDish.PairingTags, newDish.PairingTags) {
+		return true
+	}
 	return false
+}
+
+// equalPairingSlugs возвращает true, если набор slug'ов pairing-тегов идентичен.
+// Порядок не важен, дубликатов быть не должно (PK в dish_pairing_tags не пустит).
+func equalPairingSlugs(a, b []usecasemodels.PairingTag) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	seen := make(map[string]struct{}, len(a))
+	for _, t := range a {
+		seen[t.Slug] = struct{}{}
+	}
+	for _, t := range b {
+		if _, ok := seen[t.Slug]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func equalIntPtr(a, b *int) bool {

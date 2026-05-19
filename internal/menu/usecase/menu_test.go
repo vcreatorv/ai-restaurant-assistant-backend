@@ -25,7 +25,7 @@ func TestCreateCategory_HappyPath(t *testing.T) {
 			return nil
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	got, err := uc.CreateCategory(context.Background(), usecasemodels.CategoryCreate{
 		Name:        "Супы",
@@ -43,7 +43,7 @@ func TestCreateCategory_NameTaken(t *testing.T) {
 			return menu.ErrCategoryNameTaken
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	_, err := uc.CreateCategory(context.Background(), usecasemodels.CategoryCreate{Name: "Супы"})
 	require.ErrorIs(t, err, menu.ErrCategoryNameTaken)
@@ -63,7 +63,7 @@ func TestUpdateCategory_PartialPatch(t *testing.T) {
 			return nil
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	out, err := uc.UpdateCategory(context.Background(), 1, usecasemodels.CategoryPatch{
 		SortOrder:   ptr(5),
@@ -80,7 +80,7 @@ func TestUpdateCategory_NotFound(t *testing.T) {
 			return nil, menu.ErrCategoryNotFound
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	_, err := uc.UpdateCategory(context.Background(), 999, usecasemodels.CategoryPatch{Name: ptr("X")})
 	require.ErrorIs(t, err, menu.ErrCategoryNotFound)
@@ -90,7 +90,7 @@ func TestDeleteCategory_BlockedByDishes(t *testing.T) {
 	repo := &mockRepo{
 		deleteCategoryFn: func(context.Context, int) error { return menu.ErrCategoryHasDishes },
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	err := uc.DeleteCategory(context.Background(), 1)
 	require.ErrorIs(t, err, menu.ErrCategoryHasDishes)
@@ -108,7 +108,7 @@ func TestCreateDish_HappyPathItalianPasta(t *testing.T) {
 			return nil
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	got, err := uc.CreateDish(context.Background(), usecasemodels.DishCreate{
 		Name:        "Карбонара",
@@ -128,7 +128,7 @@ func TestCreateDish_HappyPathItalianPasta(t *testing.T) {
 
 func TestCreateDish_InvalidCuisine(t *testing.T) {
 	repo := &mockRepo{} // не должны попасть в repo
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	_, err := uc.CreateDish(context.Background(), usecasemodels.DishCreate{
 		Name:    "Хинкали",
@@ -146,7 +146,7 @@ func TestCreateDish_DefaultCurrency(t *testing.T) {
 			return nil
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	_, err := uc.CreateDish(context.Background(), usecasemodels.DishCreate{
 		Name:       "Эспрессо",
@@ -177,7 +177,7 @@ func TestUpdateDish_PriceOnly_PreservesRest(t *testing.T) {
 			return nil
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	out, err := uc.UpdateDish(context.Background(), 5, usecasemodels.DishPatch{
 		PriceMinor: ptr(59000),
@@ -197,7 +197,7 @@ func TestUpdateDish_RetagsWhenTagIDsProvided(t *testing.T) {
 			return nil
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	_, err := uc.UpdateDish(context.Background(), 5, usecasemodels.DishPatch{TagIDs: ptr([]int{1, 2})})
 	require.NoError(t, err)
@@ -209,7 +209,7 @@ func TestUpdateDish_NotFound(t *testing.T) {
 			return nil, menu.ErrDishNotFound
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 	_, err := uc.UpdateDish(context.Background(), 999, usecasemodels.DishPatch{Name: ptr("x")})
 	require.ErrorIs(t, err, menu.ErrDishNotFound)
 }
@@ -223,7 +223,7 @@ func TestDeleteDish_SoftDeleteCalls(t *testing.T) {
 			return nil
 		},
 	}
-	uc := New(repo, nil, nil)
+	uc := New(Deps{Repo: repo})
 
 	require.NoError(t, uc.DeleteDish(context.Background(), 5))
 	require.Equal(t, 5, capturedID)
@@ -263,7 +263,7 @@ func TestUploadDishImage_HappyPath(t *testing.T) {
 			return "http://localhost:9000/restaurant/" + key, nil
 		},
 	}
-	uc := New(repo, storage, nil)
+	uc := New(Deps{Repo: repo, Storage: storage})
 
 	out, err := uc.UploadDishImage(context.Background(), 5, menu.DishImageSource{
 		Body: bytes.NewReader([]byte{0xff, 0xd8, 0xff}), ContentType: "image/jpeg", Size: 3, Ext: "jpg",
@@ -285,7 +285,7 @@ func TestUploadDishImage_DishNotFound_NoUpload(t *testing.T) {
 			return nil, menu.ErrDishNotFound
 		},
 	}
-	uc := New(repo, storage, nil)
+	uc := New(Deps{Repo: repo, Storage: storage})
 
 	_, err := uc.UploadDishImage(context.Background(), 999, menu.DishImageSource{
 		Body: bytes.NewReader(nil), ContentType: "image/jpeg", Ext: "jpg",
@@ -312,7 +312,7 @@ func TestUploadDishImage_StorageError_PropagatesNoUpdate(t *testing.T) {
 			return "", errors.New("s3 connection refused")
 		},
 	}
-	uc := New(repo, storage, nil)
+	uc := New(Deps{Repo: repo, Storage: storage})
 
 	_, err := uc.UploadDishImage(context.Background(), 5, menu.DishImageSource{
 		Body: bytes.NewReader(nil), ContentType: "image/jpeg", Ext: "jpg",

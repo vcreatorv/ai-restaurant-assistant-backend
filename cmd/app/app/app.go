@@ -201,7 +201,13 @@ func buildAPI(
 	userUsecase := userusecase.New(userRepository)
 	authUsecase := authusecase.New(userRepository, sessionUsecase, bcryptHasher, uuidGen)
 	menuIndexer := indexer.New(cohereClient, qdrantClient)
-	menuUsecase := menuusecase.New(menuRepository, s3Storage, menuIndexer)
+	menuUsecase := menuusecase.New(menuusecase.Deps{
+		Repo:    menuRepository,
+		Storage: s3Storage,
+		Indexer: menuIndexer,
+		Cohere:  cohereClient,
+		Qdrant:  qdrantClient,
+	})
 	promptsUsecase := promptsusecase.New(promptsRepository)
 	chatUsecase := chatusecase.New(chatusecase.Deps{
 		Repo:       chatRepository,
@@ -366,6 +372,10 @@ func responseErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, http.StatusRequestEntityTooLarge, "image_too_large", "Image exceeds maximum allowed size")
 	case errors.Is(err, menu.ErrImageUnsupportedType):
 		writeError(w, http.StatusUnsupportedMediaType, "image_unsupported_type", "Unsupported image content type")
+	case errors.Is(err, menu.ErrPairingTagNotFound):
+		writeError(w, http.StatusBadRequest, "pairing_tag_not_found", "One or more pairing tag slugs do not exist")
+	case errors.Is(err, menu.ErrIndexerNotConfigured):
+		writeError(w, http.StatusServiceUnavailable, "indexer_not_configured", "Embedding index is not configured in this environment")
 
 	case errors.Is(err, chat.ErrChatNotFound):
 		writeError(w, http.StatusNotFound, "chat_not_found", "Chat not found")

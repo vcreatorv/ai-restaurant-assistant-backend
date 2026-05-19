@@ -30,6 +30,13 @@ var (
 	ErrDishNameTaken = errors.New("dish name already taken")
 	// ErrInvalidCuisine недопустимое значение cuisine
 	ErrInvalidCuisine = errors.New("invalid cuisine")
+
+	// ErrPairingTagNotFound один или несколько pairing-тегов не существуют в vocabulary
+	ErrPairingTagNotFound = errors.New("pairing tag not found")
+	// ErrIndexerNotConfigured admin-операция (reindex / embed-preview / debug-search) запрошена
+	// в окружении, где Cohere/Qdrant/Indexer не выставлены (типично — dev-режим без RAG).
+	// HTTP-слой маппит в 503.
+	ErrIndexerNotConfigured = errors.New("indexer not configured")
 )
 
 // Usecase сценарии работы с меню
@@ -66,6 +73,67 @@ type Usecase interface {
 	DeleteDish(ctx context.Context, id int) error
 	// UploadDishImage заливает картинку блюда в S3 и сохраняет URL
 	UploadDishImage(ctx context.Context, id int, src DishImageSource) (*usecasemodels.Dish, error)
+
+	// ListPairingTags возвращает все pairing-теги (включая неактивные) — для админ UI
+	ListPairingTags(ctx context.Context) ([]usecasemodels.PairingTag, error)
+	// SetDishPairingTags переписывает связи блюда с pairing-тегами (delete-all + insert)
+	// и запускает реиндекс блюда.
+	SetDishPairingTags(ctx context.Context, dishID int, slugs []string) (*usecasemodels.Dish, error)
+
+	// ReindexDish форсированно переиндексирует одно блюдо в Qdrant. Возвращает ошибку,
+	// если индексер не настроен (admin контекст должен это знать).
+	ReindexDish(ctx context.Context, dishID int) error
+	// ReindexAllDishes переиндексирует все блюда. Включать недоступные опционально —
+	// они нужны для будущих фильтров (например, если админ снимет недоступность,
+	// блюдо сразу окажется в индексе с актуальным эмбеддингом).
+	ReindexAllDishes(ctx context.Context, includeUnavailable bool) (DishesReindexResult, error)
+
+	// PreviewDishEmbedding возвращает: embed-текст блюда, размерность вектора,
+	// сэмпл первых значений, top-N ближайших соседей в Qdrant. neighborsLimit ≤ 0
+	// → дефолт 10. Не требует, чтобы блюдо было предварительно проиндексировано.
+	PreviewDishEmbedding(ctx context.Context, dishID, neighborsLimit int) (*DishEmbeddingPreview, error)
+	// DebugSearchByQuery эмбеддит произвольный текст и возвращает top-N блюд из Qdrant
+	// (без классификатора, без rerank, без companion-логики — голый вектор-поиск).
+	// Полезно для отладки RAG-промахов: «как retrieval отрабатывает на этот запрос».
+	DebugSearchByQuery(ctx context.Context, query string, limit int) ([]DishEmbeddingNeighbor, error)
+}
+
+// DishesReindexResult сводка по массовой переиндексации.
+type DishesReindexResult struct {
+	// Total сколько всего блюд было обработано (попало в батчи)
+	Total int
+	// Indexed сколько успешно прошло Cohere+Qdrant
+	Indexed int
+	// Failed сколько провалилось (логи в warn, ошибки не возвращаются индивидуально)
+	Failed int
+}
+
+// DishEmbeddingPreview ответ PreviewDishEmbedding для админ UI.
+type DishEmbeddingPreview struct {
+	// DishID идентификатор исходного блюда
+	DishID int
+	// EmbedText финальный текст, который ушёл в Cohere (после BuildEmbedText)
+	EmbedText string
+	// VectorDim размерность embedding-вектора
+	VectorDim int
+	// VectorSample первые 8 значений вектора — для sanity-check, что Cohere вернул осмысленный
+	VectorSample []float32
+	// Neighbors top-N ближайших точек в Qdrant (включая само блюдо со score≈1)
+	Neighbors []DishEmbeddingNeighbor
+}
+
+// DishEmbeddingNeighbor одна точка в выдаче PreviewDishEmbedding / DebugSearchByQuery.
+type DishEmbeddingNeighbor struct {
+	// DishID id блюда в PG
+	DishID int
+	// Name название блюда
+	Name string
+	// CategoryName категория (русское имя)
+	CategoryName string
+	// Score cosine-similarity (выше = ближе)
+	Score float64
+	// IsAvailable доступно ли блюдо (полезно при дебаге — показать «выключенные»)
+	IsAvailable bool
 }
 
 // DishImageSource исходные данные картинки блюда
@@ -125,4 +193,18 @@ type Repository interface {
 	UpdateDish(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error
 	// SetDishAvailability обновляет is_available
 	SetDishAvailability(ctx context.Context, id int, available bool) error
+
+	// ListPairingTags возвращает все pairing-теги (включая неактивные) — для админ UI
+	ListPairingTags(ctx context.Context) ([]repositorymodels.PairingTag, error)
+	// ListActivePairingTags возвращает только активные (для валидации и формы редактирования)
+	ListActivePairingTags(ctx context.Context) ([]repositorymodels.PairingTag, error)
+	// FindPairingTagsBySlugs возвращает теги по списку slug'ов (порядок не гарантирован)
+	FindPairingTagsBySlugs(ctx context.Context, slugs []string) ([]repositorymodels.PairingTag, error)
+	// PairingTagsForDish возвращает pairing-теги одного блюда
+	PairingTagsForDish(ctx context.Context, dishID int) ([]repositorymodels.PairingTag, error)
+	// SetDishPairingTags переписывает связи блюда с pairing-тегами (delete-all + insert).
+	// При несуществующем slug возвращает ErrPairingTagNotFound.
+	SetDishPairingTags(ctx context.Context, dishID int, slugs []string) error
+	// DishIDsByPairingTag id блюд с конкретным тегом (для каскадного реиндекса)
+	DishIDsByPairingTag(ctx context.Context, slug string) ([]int, error)
 }

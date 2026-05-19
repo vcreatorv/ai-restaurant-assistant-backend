@@ -118,6 +118,22 @@ func (*mockMenu) DeleteDish(context.Context, int) error { panic("DeleteDish not 
 func (*mockMenu) UploadDishImage(context.Context, int, menu.DishImageSource) (*usecasemodels.Dish, error) {
 	panic("UploadDishImage not expected")
 }
+func (*mockMenu) ListPairingTags(context.Context) ([]usecasemodels.PairingTag, error) {
+	panic("ListPairingTags not expected")
+}
+func (*mockMenu) SetDishPairingTags(context.Context, int, []string) (*usecasemodels.Dish, error) {
+	panic("SetDishPairingTags not expected")
+}
+func (*mockMenu) ReindexDish(context.Context, int) error { panic("ReindexDish not expected") }
+func (*mockMenu) ReindexAllDishes(context.Context, bool) (menu.DishesReindexResult, error) {
+	panic("ReindexAllDishes not expected")
+}
+func (*mockMenu) PreviewDishEmbedding(context.Context, int, int) (*menu.DishEmbeddingPreview, error) {
+	panic("PreviewDishEmbedding not expected")
+}
+func (*mockMenu) DebugSearchByQuery(context.Context, string, int) ([]menu.DishEmbeddingNeighbor, error) {
+	panic("DebugSearchByQuery not expected")
+}
 
 // mockUsers ручная реализация user.Usecase — order трогает только GetByID
 type mockUsers struct {

@@ -28,6 +28,13 @@ type mockRepo struct {
 	createDishFn          func(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error
 	updateDishFn          func(ctx context.Context, d *repositorymodels.Dish, tagIDs []int) error
 	setDishAvailabilityFn func(ctx context.Context, id int, available bool) error
+
+	listPairingTagsFn        func(ctx context.Context) ([]repositorymodels.PairingTag, error)
+	listActivePairingTagsFn  func(ctx context.Context) ([]repositorymodels.PairingTag, error)
+	findPairingTagsBySlugsFn func(ctx context.Context, slugs []string) ([]repositorymodels.PairingTag, error)
+	pairingTagsForDishFn     func(ctx context.Context, dishID int) ([]repositorymodels.PairingTag, error)
+	setDishPairingTagsFn     func(ctx context.Context, dishID int, slugs []string) error
+	dishIDsByPairingTagFn    func(ctx context.Context, slug string) ([]int, error)
 }
 
 func (m *mockRepo) ListCategories(ctx context.Context) ([]repositorymodels.Category, error) {
@@ -83,6 +90,48 @@ func (m *mockRepo) UpdateDish(ctx context.Context, d *repositorymodels.Dish, tag
 }
 func (m *mockRepo) SetDishAvailability(ctx context.Context, id int, available bool) error {
 	return m.setDishAvailabilityFn(ctx, id, available)
+}
+func (m *mockRepo) ListPairingTags(ctx context.Context) ([]repositorymodels.PairingTag, error) {
+	if m.listPairingTagsFn == nil {
+		return nil, nil
+	}
+	return m.listPairingTagsFn(ctx)
+}
+func (m *mockRepo) ListActivePairingTags(ctx context.Context) ([]repositorymodels.PairingTag, error) {
+	if m.listActivePairingTagsFn == nil {
+		return nil, nil
+	}
+	return m.listActivePairingTagsFn(ctx)
+}
+func (m *mockRepo) FindPairingTagsBySlugs(
+	ctx context.Context,
+	slugs []string,
+) ([]repositorymodels.PairingTag, error) {
+	if m.findPairingTagsBySlugsFn == nil {
+		return nil, nil
+	}
+	return m.findPairingTagsBySlugsFn(ctx, slugs)
+}
+func (m *mockRepo) PairingTagsForDish(
+	ctx context.Context,
+	dishID int,
+) ([]repositorymodels.PairingTag, error) {
+	if m.pairingTagsForDishFn == nil {
+		return nil, nil
+	}
+	return m.pairingTagsForDishFn(ctx, dishID)
+}
+func (m *mockRepo) SetDishPairingTags(ctx context.Context, dishID int, slugs []string) error {
+	if m.setDishPairingTagsFn == nil {
+		return nil
+	}
+	return m.setDishPairingTagsFn(ctx, dishID, slugs)
+}
+func (m *mockRepo) DishIDsByPairingTag(ctx context.Context, slug string) ([]int, error) {
+	if m.dishIDsByPairingTagFn == nil {
+		return nil, nil
+	}
+	return m.dishIDsByPairingTagFn(ctx, slug)
 }
 
 // mockStorage ручная реализация s3.Storage

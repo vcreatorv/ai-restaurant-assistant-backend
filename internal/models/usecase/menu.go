@@ -189,7 +189,43 @@ type Dish struct {
 
 	// Tags теги, связанные с блюдом
 	Tags []Tag
+
+	// PairingTags теги-пейринги (с чем сочетается, повод, слот, vibe).
+	// Используются для обогащения embed-текста при индексации в Qdrant.
+	PairingTags []PairingTag
 }
+
+// PairingTag тег-пейринг из контролируемой vocabulary (таблица pairing_tags).
+type PairingTag struct {
+	// Slug машинный идентификатор (PK)
+	Slug string
+	// Axis ось: drink | occasion | role | vibe
+	Axis string
+	// Label человекочитаемая метка для админ UI
+	Label string
+	// EmbedPhrase фраза, попадающая в embed-текст блюда
+	EmbedPhrase string
+	// SortOrder порядок в админ UI внутри своей оси
+	SortOrder int
+	// IsActive если false — тег нельзя присваивать
+	IsActive bool
+}
+
+// PairingAxis допустимые оси pairing-тегов. Источник истины — CHECK в миграции
+// 000012_pairing_tags.up.sql; здесь дублируем как const для валидации в usecase.
+type PairingAxis string
+
+// Допустимые значения PairingAxis.
+const (
+	// PairingAxisDrink — с чем сочетается из напитков (pair_white_wine, …).
+	PairingAxisDrink PairingAxis = "drink"
+	// PairingAxisOccasion — для какого повода (occasion_date, …).
+	PairingAxisOccasion PairingAxis = "occasion"
+	// PairingAxisRole — слот в трапезе (role_aperitif, role_main, …).
+	PairingAxisRole PairingAxis = "role"
+	// PairingAxisVibe — настроение / плотность / температура (vibe_warming, …).
+	PairingAxisVibe PairingAxis = "vibe"
+)
 
 // DishCreate данные для создания блюда
 type DishCreate struct {
@@ -225,6 +261,8 @@ type DishCreate struct {
 	Dietary []string
 	// TagIDs идентификаторы тегов
 	TagIDs []int
+	// PairingTagSlugs идентификаторы pairing-тегов (slug'и из pairing_tags)
+	PairingTagSlugs []string
 	// IsAvailable доступно ли блюдо
 	IsAvailable bool
 }
@@ -263,6 +301,8 @@ type DishPatch struct {
 	Dietary *[]string
 	// TagIDs идентификаторы тегов; nil — не менять связи
 	TagIDs *[]int
+	// PairingTagSlugs идентификаторы pairing-тегов; nil — не менять связи
+	PairingTagSlugs *[]string
 	// IsAvailable доступно ли блюдо
 	IsAvailable *bool
 }
@@ -389,7 +429,32 @@ func DishFromRepository(r *repositorymodels.Dish) *Dish {
 		CreatedAt:      r.CreatedAt,
 		UpdatedAt:      r.UpdatedAt,
 		Tags:           TagsFromRepository(r.Tags),
+		PairingTags:    PairingTagsFromRepository(r.PairingTags),
 	}
+}
+
+// PairingTagFromRepository маппит repository.PairingTag в usecase.PairingTag
+func PairingTagFromRepository(r repositorymodels.PairingTag) PairingTag {
+	return PairingTag{
+		Slug:        r.Slug,
+		Axis:        r.Axis,
+		Label:       r.Label,
+		EmbedPhrase: r.EmbedPhrase,
+		SortOrder:   r.SortOrder,
+		IsActive:    r.IsActive,
+	}
+}
+
+// PairingTagsFromRepository маппит slice repository.PairingTag в usecase.PairingTag
+func PairingTagsFromRepository(rs []repositorymodels.PairingTag) []PairingTag {
+	if len(rs) == 0 {
+		return nil
+	}
+	out := make([]PairingTag, len(rs))
+	for i, r := range rs {
+		out[i] = PairingTagFromRepository(r)
+	}
+	return out
 }
 
 // DishesFromRepository маппит slice

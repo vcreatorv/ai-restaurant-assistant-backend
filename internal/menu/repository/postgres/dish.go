@@ -128,6 +128,9 @@ func (r *Repository) ListDishes(
 	if err := r.attachTags(ctx, dishes, dishIDs); err != nil {
 		return nil, 0, err
 	}
+	if err := r.attachPairingTags(ctx, dishes, dishIDs); err != nil {
+		return nil, 0, err
+	}
 
 	countQuery := `SELECT COUNT(*) FROM dishes ` + where
 	var total int
@@ -153,6 +156,11 @@ func (r *Repository) FindDishByID(ctx context.Context, id int) (*repositorymodel
 		return nil, err
 	}
 	d.Tags = tags
+	pairings, err := r.PairingTagsForDish(ctx, d.ID)
+	if err != nil {
+		return nil, err
+	}
+	d.PairingTags = pairings
 	return d, nil
 }
 
@@ -186,6 +194,9 @@ func (r *Repository) FindDishesByIDs(
 	}
 
 	if err := r.attachTags(ctx, dishes, dishIDs); err != nil {
+		return nil, err
+	}
+	if err := r.attachPairingTags(ctx, dishes, dishIDs); err != nil {
 		return nil, err
 	}
 	return dishes, nil

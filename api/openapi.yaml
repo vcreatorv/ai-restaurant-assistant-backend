@@ -636,6 +636,137 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
+  /admin/pairing-tags:
+    get:
+      operationId: adminListPairingTags
+      tags: [admin-menu]
+      summary: Vocabulary pairing-тегов (для формы редактирования блюда)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PairingTagList' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /admin/menu/{id}/reindex:
+    post:
+      operationId: adminReindexDish
+      tags: [admin-menu]
+      summary: Форсированно переиндексировать одно блюдо в Qdrant
+      description: |
+        Эмбеддит блюдо через Cohere и обновляет точку в Qdrant. Нужно, когда
+        админ хочет применить изменения vocabulary pairing-тегов без правки
+        самого блюда (CRUD-триггер тогда не сработал бы — dishNeedsReindex
+        вернул бы false).
+      parameters:
+        - $ref: '#/components/parameters/PathIntID'
+        - $ref: '#/components/parameters/CSRFToken'
+      responses:
+        '204': { description: Переиндексировано }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503':
+          description: Индексер (Cohere/Qdrant) не настроен в этом окружении
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /admin/menu/reindex:
+    post:
+      operationId: adminReindexAllDishes
+      tags: [admin-menu]
+      summary: Массовый реиндекс всех блюд
+      description: |
+        Прогоняет ListDishes → Cohere embed → Qdrant upsert батчами по 50.
+        Может занять до минуты на 200 блюд. По умолчанию реиндексируются только
+        доступные блюда; include_unavailable=true добавляет недоступные тоже.
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReindexAllDishesRequest' }
+      responses:
+        '200':
+          description: Сводка по реиндексу
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DishesReindexResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503':
+          description: Индексер не настроен
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /admin/menu/{id}/embed-preview:
+    get:
+      operationId: adminPreviewDishEmbedding
+      tags: [admin-menu]
+      summary: Превью embed-текста блюда и его ближайших соседей в Qdrant
+      description: |
+        Возвращает: финальный embed-текст (после indexer.BuildEmbedText),
+        размерность вектора, сэмпл первых 8 значений, top-N ближайших точек
+        в Qdrant (включая само блюдо со score≈1). Эмбеддит блюдо на лету —
+        не требует, чтобы оно уже было проиндексировано.
+      parameters:
+        - $ref: '#/components/parameters/PathIntID'
+        - in: query
+          name: neighbors
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+          description: Сколько ближайших точек вернуть (по умолчанию 10)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DishEmbeddingPreview' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503':
+          description: Индексер не настроен
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /admin/embed/search:
+    post:
+      operationId: adminDebugSearchByQuery
+      tags: [admin-menu]
+      summary: Debug-поиск блюд по произвольному текстовому запросу
+      description: |
+        Эмбеддит свободный текст и возвращает top-N ближайших блюд из Qdrant.
+        Без классификатора, без rerank, без companion-логики — чистый
+        вектор-поиск. Полезно для отладки: «почему ассистент не нашёл такое-то
+        блюдо по запросу X».
+      parameters:
+        - $ref: '#/components/parameters/CSRFToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DebugSearchRequest' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DebugSearchResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503':
+          description: Индексер не настроен
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
   /admin/tags:
     post:
       operationId: adminCreateTag
@@ -1355,7 +1486,7 @@ components:
       type: object
       required:
         [id, category_id, name, description, composition, image_url,
-         price_minor, currency, cuisine, allergens, dietary, tags, is_available]
+         price_minor, currency, cuisine, allergens, dietary, tags, pairing_tags, is_available]
       properties:
         id:               { type: integer, minimum: 1 }
         category_id:      { type: integer, minimum: 1 }
@@ -1374,7 +1505,35 @@ components:
         allergens:        { type: array, items: { type: string } }
         dietary:          { type: array, items: { type: string } }
         tags:             { type: array, items: { $ref: '#/components/schemas/Tag' } }
+        pairing_tags:     { type: array, items: { $ref: '#/components/schemas/PairingTag' }, description: "Теги-пейринги для обогащения embed-текста (axis: drink/occasion/role/vibe)" }
         is_available:     { type: boolean }
+
+    PairingAxis:
+      type: string
+      enum: [drink, occasion, role, vibe]
+      description: |
+        Ось pairing-тега:
+        - drink — с каким напитком сочетается;
+        - occasion — для какого повода;
+        - role — слот в трапезе (аперитив/основное/гарнир/финал);
+        - vibe — настроение / плотность / температура.
+
+    PairingTag:
+      type: object
+      required: [slug, axis, label, embed_phrase, sort_order, is_active]
+      properties:
+        slug:         { type: string, description: "Машинный идентификатор (PK)" }
+        axis:         { $ref: '#/components/schemas/PairingAxis' }
+        label:        { type: string, description: "Человекочитаемая метка для админ UI" }
+        embed_phrase: { type: string, description: "Фраза в embed-тексте блюда («белому вину»)" }
+        sort_order:   { type: integer, description: "Порядок в админ UI внутри оси" }
+        is_active:    { type: boolean, description: "Если false — тег нельзя присваивать, но уже привязанные остаются" }
+
+    PairingTagList:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/PairingTag' } }
 
     DishList:
       type: object
@@ -1615,6 +1774,7 @@ components:
         allergens:        { type: array, items: { type: string } }
         dietary:          { type: array, items: { type: string } }
         tag_ids:          { type: array, items: { type: integer, minimum: 1 } }
+        pairing_tag_slugs: { type: array, items: { type: string }, description: "Slug'и pairing-тегов из vocabulary GET /admin/pairing-tags" }
         is_available:     { type: boolean, default: true }
 
     PatchDishRequest:
@@ -1636,7 +1796,59 @@ components:
         allergens:        { type: array, items: { type: string } }
         dietary:          { type: array, items: { type: string } }
         tag_ids:          { type: array, items: { type: integer, minimum: 1 } }
+        pairing_tag_slugs: { type: array, items: { type: string }, description: "Slug'и pairing-тегов; nil — не менять связи, [] — очистить все" }
         is_available:     { type: boolean }
+
+    # ----- pairing tags vocabulary -----
+
+    DishesReindexResult:
+      type: object
+      required: [total, indexed, failed]
+      properties:
+        total:   { type: integer, minimum: 0, description: "Сколько всего блюд обработано" }
+        indexed: { type: integer, minimum: 0, description: "Сколько успешно эмбедированы и upserted" }
+        failed:  { type: integer, minimum: 0, description: "Сколько провалилось (логи в warn)" }
+
+    ReindexAllDishesRequest:
+      type: object
+      properties:
+        include_unavailable:
+          type: boolean
+          default: false
+          description: "Включать ли блюда с is_available=false (нужно, если хочешь иметь embedding под будущее переключение)"
+
+    DishEmbeddingNeighbor:
+      type: object
+      required: [dish_id, name, category_name, score, is_available]
+      properties:
+        dish_id:       { type: integer, minimum: 1 }
+        name:          { type: string }
+        category_name: { type: string }
+        score:         { type: number, format: float, description: "Cosine-similarity (выше = ближе). Само блюдо в preview даёт ≈1." }
+        is_available:  { type: boolean }
+
+    DishEmbeddingPreview:
+      type: object
+      required: [dish_id, embed_text, vector_dim, vector_sample, neighbors]
+      properties:
+        dish_id:       { type: integer, minimum: 1 }
+        embed_text:    { type: string, description: "Финальный текст, который ушёл в Cohere (после indexer.BuildEmbedText)" }
+        vector_dim:    { type: integer, description: "Размерность embedding-вектора" }
+        vector_sample: { type: array, items: { type: number, format: float }, description: "Первые 8 значений — sanity-check" }
+        neighbors:     { type: array, items: { $ref: '#/components/schemas/DishEmbeddingNeighbor' }, description: "Top-N ближайших точек в Qdrant (включая само блюдо со score≈1)" }
+
+    DebugSearchRequest:
+      type: object
+      required: [query]
+      properties:
+        query: { type: string, minLength: 1, maxLength: 500, description: "Произвольный текст, который мы эмбедим и ищем top-N" }
+        limit: { type: integer, minimum: 1, maximum: 50, default: 10 }
+
+    DebugSearchResponse:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/DishEmbeddingNeighbor' } }
 
     # ----- admin orders -----
 
