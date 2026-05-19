@@ -50,16 +50,31 @@ type classifyResult struct {
 	// При непустом значении runRAG добавляет в Stream B фильтр по occasion_<value>.
 	// Совместим с pairingDrink (можно запросить «на свидание под белое вино»).
 	occasion string
-	// targetCategorySlug категория-цель cross-sell-запроса («гарнир к стейку» → side).
-	// Один из validTargetCategorySlugs или пусто. ПРИ НЕПУСТОМ ЗНАЧЕНИИ runRAG
-	// делает HARD-фильтр по category_id (без hybrid RRF — поиск ведётся внутри
-	// этой категории по семантике). Это самый сильный сигнал — гость явно
-	// указал, какую категорию ему нужно.
-	targetCategorySlug string
+	// targetCategorySlugs — массив категорий-целей. Заполняется, если гость
+	// явно назвал одну или несколько категорий («гарнир к стейку» → ["side"];
+	// «пицца с бургером» → ["pasta", "burger"]; «мясное из закусок» → ["starter"]).
+	// При len==1 в runRAG срабатывает category-restricted mode по одной категории,
+	// при len>1 — фильтр match.Any (Qdrant IN) по всем (см. applyIntentFilters).
+	// Источник — JSON-classifier (миграция 000013): поле `target_categories`
+	// (массив) или legacy `target_category` (single string, конвертится в массив
+	// из одного элемента в parseClassifierResponse для совместимости).
+	targetCategorySlugs []string
 	// priceIntent ценовой фокус. Один из validPriceIntents или пусто.
 	// «cheap» — фильтр price_minor <= cheapPriceMaxMinor;
 	// «premium» — фильтр price_minor >= premiumPriceMinMinor.
 	priceIntent string
+	// mealStructure — паттерн трапезы, который гость подразумевает в запросе.
+	// Новое поле classifier-промпта v3 (миграция 000013); до этого его в БД не было,
+	// поэтому ни одна retrieval-стратегия на него не опиралась.
+	// «full_dinner» / «full_lunch» — runRAG форсирует каркасный сбор по main-категориям
+	// (закуска/салат → горячее → десерт), отключая порог MainDiversifyMinScore — иначе
+	// на «сытный ужин» embed подтягивает 3 салата (лексический оверлап «сытный»),
+	// и diversify не добивает суп/горячее из-за низкого cosine score.
+	// «fastfood_set» — hard-filter по category_id ∈ (Бургеры, Гарниры, Закуски, Напитки) —
+	// «фастфуд» в embed не матчится с «бургер» в описаниях меню, поэтому семантика не помогает.
+	// «breakfast» / «snack» — пока без специальной логики retrieval, но сохраняем для логов.
+	// Один из validMealStructures или пусто.
+	mealStructure string
 	// rawResponse сырой ответ модели (для отладки в meta)
 	rawResponse string
 	// latency сколько занял classifier-вызов
@@ -147,6 +162,18 @@ func targetCategoryToName(v string) string {
 	return validTargetCategorySlugs[strings.ToLower(strings.TrimSpace(v))]
 }
 
+// singleTargetCategoryName возвращает русское имя категории, ТОЛЬКО если в
+// массиве ровно один slug. Используется для tail-reminder в prompt'е («Гость
+// спросил конкретно про категорию X — дай 2-3 варианта на выбор»): на multi-
+// target запросе «пицца с бургером» формулировка «про категорию Пицца и паста, Бургеры»
+// звучит криво и не несёт смысла, проще оставить общее поведение system-промпта.
+func singleTargetCategoryName(slugs []string) string {
+	if len(slugs) != 1 {
+		return ""
+	}
+	return targetCategoryToName(slugs[0])
+}
+
 // validPriceIntents — допустимые значения price_intent.
 //
 // cheap — гость явно хочет недорогое («что подешевле», «бюджетное»).
@@ -156,6 +183,41 @@ func targetCategoryToName(v string) string {
 var validPriceIntents = map[string]struct{}{
 	"cheap":   {},
 	"premium": {},
+}
+
+// validMealStructures — допустимые значения meal_structure.
+//
+// full_dinner / full_lunch — гость хочет полноценный приём пищи. runRAG форсирует
+// каркасный сбор: top-1 из каждой непокрытой main-категории (см. runMainDiversification),
+// порог MainDiversifyMinScore временно отключён.
+//
+// fastfood_set — гость явно сказал «фастфуд» / «как в Макдональдсе». В embed это
+// плохо матчится с «бургер»/«крылышки» из описаний меню (описания маркетинговые,
+// слово «фастфуд» в них не появляется). Поэтому переключаемся в multi-category
+// mode с set'ом (Бургеры, Гарниры, Закуски, Напитки).
+//
+// breakfast / snack — пока без специальной retrieval-логики, сохраняем для логов
+// и аналитики (можно подключить позже).
+var validMealStructures = map[string]struct{}{
+	"full_dinner":  {},
+	"full_lunch":   {},
+	"fastfood_set": {},
+	"breakfast":    {},
+	"snack":        {},
+}
+
+// fastfoodCategorySlugs — какие target-категории разворачивает meal_structure="fastfood_set".
+// Сюда не входят Стейки/Гриль/Мясное/Пицца и паста — они «полноценное горячее», не fastfood.
+// Алкоголь / Десерты / Салаты / Супы / Соусы тоже не fastfood.
+var fastfoodCategorySlugs = []string{"burger", "side", "starter", "drink"}
+
+// normalizeMealStructure — фильтр против невалидных значений.
+func normalizeMealStructure(v string) string {
+	v = strings.ToLower(strings.TrimSpace(v))
+	if _, ok := validMealStructures[v]; ok {
+		return v
+	}
+	return ""
 }
 
 // normalizePriceIntent — фильтр против невалидных значений.
@@ -223,15 +285,17 @@ func (uc *chatUsecase) classify(ctx context.Context, userText string, userID uui
 	res.intent = parsed.intent
 	res.pairingDrink = parsed.pairingDrink
 	res.occasion = parsed.occasion
-	res.targetCategorySlug = parsed.targetCategorySlug
+	res.targetCategorySlugs = parsed.targetCategorySlugs
 	res.priceIntent = parsed.priceIntent
+	res.mealStructure = parsed.mealStructure
 
 	log.Info("classified",
 		"intent", string(res.intent),
 		"pairing_drink", res.pairingDrink,
 		"occasion", res.occasion,
-		"target_category", res.targetCategorySlug,
+		"target_categories", res.targetCategorySlugs,
 		"price_intent", res.priceIntent,
+		"meal_structure", res.mealStructure,
 		"latency_ms", res.latency.Milliseconds(),
 		"raw", res.rawResponse)
 	return res
@@ -239,37 +303,49 @@ func (uc *chatUsecase) classify(ctx context.Context, userText string, userID uui
 
 // jsonObjectRe ловит первый JSON-объект в ответе классификатора.
 // Толерантен к мусору вокруг (приветствие/обёрточные backticks/markdown).
+// `[^{}]*` НЕ исключает квадратные скобки, поэтому массивы строк
+// (target_categories: ["x","y"]) и null-значения попадают в матч корректно.
 var jsonObjectRe = regexp.MustCompile(`(?s)\{[^{}]*\}`)
 
 // parsedClassification — структурированный выход parseClassifierResponse.
 // Все поля кроме intent опциональны; невалидные значения вычищаются на этапе
-// парсинга (defensive — невалидный slug = поле "", retrieval не активирует
-// соответствующий механизм).
+// парсинга (defensive — невалидный slug = поле "" / пустой массив, retrieval
+// не активирует соответствующий механизм).
 type parsedClassification struct {
-	intent             intent
-	pairingDrink       string
-	occasion           string
-	targetCategorySlug string
-	priceIntent        string
+	intent              intent
+	pairingDrink        string
+	occasion            string
+	targetCategorySlugs []string
+	priceIntent         string
+	mealStructure       string
 }
 
 // parseClassifierResponse разбирает ответ классификатора в parsedClassification + ok.
 //
 // Поддерживает два формата:
 //
-//  1. JSON:
+//  1. JSON (актуальный промпт; миграция 000008 ввела JSON-формат, 000013 расширила
+//     схему массивом target_categories + meal_structure):
 //     {
 //       "intent": "recommend",
-//       "pairing_drink": "white_wine",       // опц., из validPairingDrinks
-//       "occasion": "date",                  // опц., из validOccasions
-//       "target_category": "side",           // опц., из validTargetCategorySlugs
-//       "price_intent": "cheap"              // опц., из validPriceIntents
+//       "pairing_drink":     "white_wine",       // опц., из validPairingDrinks
+//       "occasion":          "date",             // опц., из validOccasions
+//       "target_categories": ["pasta","burger"], // опц., массив из validTargetCategorySlugs
+//       "target_category":   "side",             // опц., legacy single-value
+//                                                //       (для совместимости со старыми
+//                                                //       версиями prompt''а)
+//       "price_intent":      "cheap",            // опц., из validPriceIntents
+//       "meal_structure":    "full_dinner"       // опц., из validMealStructures
 //     }
-//     Поля могут быть null/отсутствовать. Невалидное значение → "" (fall-open),
+//     Поля могут быть null/отсутствовать. Невалидные значения отбрасываются,
 //     intent сохраняется. Если intent невалиден — fall-back на word-format.
+//     При наличии и target_categories, и target_category — берётся target_categories
+//     (он более выразителен и появился позже).
 //
 //  2. Голое слово: «recommend» / «clarify» / «chitchat» / «off_topic».
-//     Для обратной совместимости с админ-промптом, который не обновляли.
+//     Для обратной совместимости с самым ранним вариантом промпта (миграция 000008
+//     до её правки через админ-UI). На практике сейчас не встречается, но защищает
+//     от регрессии при ручном откате prompt'а.
 //
 // Сначала пробуем JSON (если есть {...} в ответе), потом fallback на слово.
 func parseClassifierResponse(raw string) (parsedClassification, bool) {
@@ -279,11 +355,13 @@ func parseClassifierResponse(raw string) (parsedClassification, bool) {
 	// 1. JSON-формат
 	if loc := jsonObjectRe.FindStringIndex(raw); loc != nil {
 		var payload struct {
-			Intent         string `json:"intent"`
-			PairingDrink   string `json:"pairing_drink"`
-			Occasion       string `json:"occasion"`
-			TargetCategory string `json:"target_category"`
-			PriceIntent    string `json:"price_intent"`
+			Intent           string   `json:"intent"`
+			PairingDrink     string   `json:"pairing_drink"`
+			Occasion         string   `json:"occasion"`
+			TargetCategories []string `json:"target_categories"`
+			TargetCategory   string   `json:"target_category"` // legacy single-value
+			PriceIntent      string   `json:"price_intent"`
+			MealStructure    string   `json:"meal_structure"`
 		}
 		if err := json.Unmarshal([]byte(raw[loc[0]:loc[1]]), &payload); err == nil {
 			if v, ok := validIntents[strings.ToLower(payload.Intent)]; ok {
@@ -298,12 +376,9 @@ func parseClassifierResponse(raw string) (parsedClassification, bool) {
 						out.occasion = occ
 					}
 				}
-				if cat := strings.ToLower(strings.TrimSpace(payload.TargetCategory)); cat != "" {
-					if _, valid := validTargetCategorySlugs[cat]; valid {
-						out.targetCategorySlug = cat
-					}
-				}
+				out.targetCategorySlugs = normalizeTargetCategorySlugs(payload.TargetCategories, payload.TargetCategory)
 				out.priceIntent = normalizePriceIntent(payload.PriceIntent)
+				out.mealStructure = normalizeMealStructure(payload.MealStructure)
 				return out, true
 			}
 		}
@@ -315,6 +390,43 @@ func parseClassifierResponse(raw string) (parsedClassification, bool) {
 		return parsedClassification{}, false
 	}
 	return parsedClassification{intent: v}, true
+}
+
+// normalizeTargetCategorySlugs нормализует target_categories (массив) + legacy
+// target_category (один slug) в один отсортированный по приходу uniq-массив
+// валидных slug'ов. Невалидные значения тихо отбрасываются (fall-open).
+//
+// Если modern и legacy поля оба заполнены — modern (array) выигрывает целиком,
+// legacy игнорируется. Это намеренно: если новый prompt вернул массив, его и
+// слушаем; путаница «и то и то» — это, скорее всего, баг prompt'а.
+func normalizeTargetCategorySlugs(arr []string, legacy string) []string {
+	src := arr
+	if len(src) == 0 && strings.TrimSpace(legacy) != "" {
+		src = []string{legacy}
+	}
+	if len(src) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(src))
+	out := make([]string, 0, len(src))
+	for _, raw := range src {
+		v := strings.ToLower(strings.TrimSpace(raw))
+		if v == "" {
+			continue
+		}
+		if _, valid := validTargetCategorySlugs[v]; !valid {
+			continue
+		}
+		if _, dup := seen[v]; dup {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 // parseIntent ищет в ответе классификатора любое из четырёх валидных слов
