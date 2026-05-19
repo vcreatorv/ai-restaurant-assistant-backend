@@ -53,17 +53,19 @@ type classifyResult struct {
 	// targetCategorySlugs — массив категорий-целей. Заполняется, если гость
 	// явно назвал одну или несколько категорий («гарнир к стейку» → ["side"];
 	// «пицца с бургером» → ["pasta", "burger"]; «мясное из закусок» → ["starter"]).
-	// При len(targetCategoryIDs)==1 в runRAG срабатывает cross-sell mode (HARD-фильтр
-	// по одной категории, без rerank/diversify). При len>1 — multi-category mode:
-	// раздельные Qdrant.Search'и по каждой категории, top-N из каждой объединяется.
-	// До v2 classifier-промпта в БД это поле всегда пустое — модель отвечала
-	// одним словом intent и не возвращала структурированный JSON.
+	// При len==1 в runRAG срабатывает category-restricted mode по одной категории,
+	// при len>1 — фильтр match.Any (Qdrant IN) по всем (см. applyIntentFilters).
+	// Источник — JSON-classifier (миграция 000013): поле `target_categories`
+	// (массив) или legacy `target_category` (single string, конвертится в массив
+	// из одного элемента в parseClassifierResponse для совместимости).
 	targetCategorySlugs []string
 	// priceIntent ценовой фокус. Один из validPriceIntents или пусто.
 	// «cheap» — фильтр price_minor <= cheapPriceMaxMinor;
 	// «premium» — фильтр price_minor >= premiumPriceMinMinor.
 	priceIntent string
 	// mealStructure — паттерн трапезы, который гость подразумевает в запросе.
+	// Новое поле classifier-промпта v3 (миграция 000013); до этого его в БД не было,
+	// поэтому ни одна retrieval-стратегия на него не опиралась.
 	// «full_dinner» / «full_lunch» — runRAG форсирует каркасный сбор по main-категориям
 	// (закуска/салат → горячее → десерт), отключая порог MainDiversifyMinScore — иначе
 	// на «сытный ужин» embed подтягивает 3 салата (лексический оверлап «сытный»),
@@ -322,15 +324,16 @@ type parsedClassification struct {
 //
 // Поддерживает два формата:
 //
-//  1. JSON (v2 промпта, миграция 000013):
+//  1. JSON (актуальный промпт; миграция 000008 ввела JSON-формат, 000013 расширила
+//     схему массивом target_categories + meal_structure):
 //     {
 //       "intent": "recommend",
 //       "pairing_drink":     "white_wine",       // опц., из validPairingDrinks
 //       "occasion":          "date",             // опц., из validOccasions
 //       "target_categories": ["pasta","burger"], // опц., массив из validTargetCategorySlugs
-//       "target_category":   "side",             // опц., legacy v1.5 — одиночное значение
+//       "target_category":   "side",             // опц., legacy single-value
 //                                                //       (для совместимости со старыми
-//                                                //       администраторскими черновиками)
+//                                                //       версиями prompt''а)
 //       "price_intent":      "cheap",            // опц., из validPriceIntents
 //       "meal_structure":    "full_dinner"       // опц., из validMealStructures
 //     }
@@ -340,7 +343,9 @@ type parsedClassification struct {
 //     (он более выразителен и появился позже).
 //
 //  2. Голое слово: «recommend» / «clarify» / «chitchat» / «off_topic».
-//     Для обратной совместимости с v1 промпта (миграция 000008).
+//     Для обратной совместимости с самым ранним вариантом промпта (миграция 000008
+//     до её правки через админ-UI). На практике сейчас не встречается, но защищает
+//     от регрессии при ручном откате prompt'а.
 //
 // Сначала пробуем JSON (если есть {...} в ответе), потом fallback на слово.
 func parseClassifierResponse(raw string) (parsedClassification, bool) {
