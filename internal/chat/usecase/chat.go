@@ -244,8 +244,9 @@ func (uc *chatUsecase) SendMessage(
 			"restricted_ids", restrictedIDs(rag.restricted),
 			"intent_pairing", intent.pairingDrinkSlug,
 			"intent_occasion", intent.occasionSlug,
-			"intent_target_category", intent.targetCategoryID,
+			"intent_target_categories", intent.targetCategoryIDs,
 			"intent_price", intent.priceIntent,
+			"intent_meal_structure", intent.mealStructure,
 		)
 		systemContent, sysErr := uc.prompts.GetActive(ctx, prompts.NameSystem, userID)
 		if sysErr != nil {
@@ -262,7 +263,7 @@ func (uc *chatUsecase) SendMessage(
 			anchor:             hist.anchor,
 			history:            hist.recent,
 			currentUserText:    content,
-			targetCategoryName: targetCategoryToName(cls.targetCategorySlug),
+			targetCategoryName: singleTargetCategoryName(cls.targetCategorySlugs),
 		})
 	}
 
@@ -487,8 +488,9 @@ func (uc *chatUsecase) runRAG(
 		"stage", "rag.search.primary",
 		"hits", len(hitsA),
 		"top_score", topScore(hitsA),
-		"target_category_id", intent.targetCategoryID,
+		"target_category_ids", intent.targetCategoryIDs,
 		"price_intent", intent.priceIntent,
+		"meal_structure", intent.mealStructure,
 	)
 
 	// Поток B: vector-search внутри pairing/occasion подмножества (теги в must).
@@ -556,30 +558,29 @@ func (uc *chatUsecase) runRAG(
 		dishesByID[d.ID] = d
 	}
 
-	// Cross-sell режим: гость явно попросил блюдо конкретной категории
-	// («гарнир к стейку», «соус к мясу»). Primary уже отдал нам только эту
-	// категорию (max ~10 блюд). Rerank/diversify/companions здесь только
-	// мешают:
-	//  - rerank относительно «гарнир к стейку» внутри Гарниров даёт scores
-	//    ~0.001-0.013 (все близки), порог 0.01 выкосит 7 из 8 → LLM остаётся
-	//    с одним блюдом и галлюцинирует, чтобы дать 2-3 (наблюдали в логе).
+	// Category-restricted mode: гость явно назвал одну или несколько категорий.
+	// Primary уже отдал блюда только из них (фильтр Must.category_id Value или Any).
+	// Rerank/diversify/companions в этом режиме мешают:
+	//  - rerank внутри одной узкой категории даёт scores ~0.001-0.013 (все близки),
+	//    порог 0.01 выкосит 7 из 8 → LLM остаётся с одним блюдом и галлюцинирует.
 	//  - diversify пробует добавить top-1 из других main-категорий, но фильтр
-	//    AND по category_id всегда возвращает 0 (блюдо не может быть в двух
-	//    категориях). Пустая трата запросов.
-	//  - companions добавили бы соус/гарнир/десерт/напиток — гость о них не
-	//    просил, шум в prompt'е.
+	//    AND по category_id всегда даёт 0 (блюдо не может быть в двух категориях).
+	//  - companions добавили бы соус/гарнир/десерт/напиток — гость о них не просил.
 	//
-	// Поэтому: отдаём все primary-hits в main как есть, без rerank/diversify/companions.
-	if intent.targetCategoryID > 0 {
+	// На multi-target («пицца с бургером», len>1) тот же подход тоже верный:
+	// primary с match.Any вернул блюда из ОБЕИХ категорий, дальше пусть LLM выбирает.
+	//
+	// Отдаём все primary-hits в main как есть, без rerank/diversify/companions.
+	if len(intent.targetCategoryIDs) > 0 {
 		main := buildRetrievedDishes(retrievedIDs, dishesByID, catName)
 		mainSet := make(map[int]struct{}, len(retrievedIDs))
 		for _, id := range retrievedIDs {
 			mainSet[id] = struct{}{}
 		}
 		restricted := uc.runRestricted(ctx, embed, profile, mainSet, priorRecommendedIDs, catName)
-		log.Info("rag cross-sell mode",
+		log.Info("rag category-restricted mode",
 			"stage", "rag.cross_sell",
-			"target_category_id", intent.targetCategoryID,
+			"target_category_ids", intent.targetCategoryIDs,
 			"main_count", len(main),
 		)
 		return ragResult{
@@ -628,8 +629,17 @@ func (uc *chatUsecase) runRAG(
 	// этого guard primary-search может вернуть 8 напитков → diversify добавит
 	// Пастрами salad / Том-ям / Ризотто «для main-категорий», и LLM соблазнится
 	// рекомендовать салат вместо напитка (наблюдали в логе).
+	//
+	// При meal_structure ∈ {full_dinner, full_lunch} включается forceFullCoverage:
+	// пороги обнуляются и каркас (закуска/салат → горячее → десерт) добивается
+	// принудительно. Без этого «сытный ужин» возвращает 3 салата (lexical overlap
+	// «сытный салат-бургер»), supplier-категории не добираются — cosine score у
+	// супов/стейков относительно «сытный ужин» обычно ниже MainDiversifyMinScore=0.4.
 	if !intent.isClarify {
-		diversified := uc.runMainDiversification(ctx, embed, prefilter, mainSet, mainCatSet, mainCats, catName)
+		diversified := uc.runMainDiversification(
+			ctx, embed, prefilter, mainSet, mainCatSet, mainCats, catName,
+			intent.hasFullMealStructure(),
+		)
 		for _, d := range diversified {
 			main = append(main, d)
 			mainSet[d.id] = struct{}{}
@@ -769,6 +779,12 @@ func restrictedIDs(rs []retrievedDish) []int {
 // Срабатывает только если: (а) в main < cfg.MainMinCategories разных main-категорий,
 // (б) score top-1 >= cfg.MainDiversifyMinScore (на узком запросе нерелевантное не подсосётся).
 // Лимит cfg.MainMaxAdded.
+//
+// При forceFullCoverage=true пороги обнуляются: minRequired = len(mainCats),
+// minScore=0, maxAdded=len(mainCats). Это нужно при meal_structure="full_dinner"/
+// "full_lunch": гость хочет полную трапезу (закуска→горячее→десерт), и порог
+// 0.4 ронял бы supplier-категории из-за низкого cosine score у запроса вроде
+// «сытный ужин», который лексически близок только к одной-двум категориям.
 func (uc *chatUsecase) runMainDiversification(
 	ctx context.Context,
 	embed []float32,
@@ -777,11 +793,17 @@ func (uc *chatUsecase) runMainDiversification(
 	mainCatSet map[int]struct{},
 	mainCats []usecasemodels.Category,
 	catName map[int]string,
+	forceFullCoverage bool,
 ) []retrievedDish {
 	log := logger.ForCtx(ctx)
 	minCats := uc.ragCfg.Chat.MainMinCategories
 	maxAdded := uc.ragCfg.Chat.MainMaxAdded
 	minScore := uc.ragCfg.Chat.MainDiversifyMinScore
+	if forceFullCoverage {
+		minCats = len(mainCats)
+		maxAdded = len(mainCats)
+		minScore = 0
+	}
 	if len(mainCats) == 0 || maxAdded <= 0 {
 		return nil
 	}
@@ -1202,16 +1224,23 @@ func buildPrefilter(u *usecasemodels.User, priorRecommendedIDs []int) *qdrant.Fi
 // и используемое для построения фильтров и hybrid-выбора в runRAG.
 //
 // Поля независимы и комбинируются:
-//   - targetCategoryID — HARD-фильтр Stream A (cross-sell вроде «гарнир к стейку»).
-//     Сужает поиск до одной категории; при наличии этого поля hybrid отключается.
+//   - targetCategoryIDs — HARD-фильтр Stream A. При len==1 это cross-sell вроде
+//     «гарнир к стейку» (внутри одной категории по семантике). При len>1 — multi-
+//     category запрос вроде «пицца с бургером» (фильтр category_id IN (X,Y) через
+//     match.Any). При len>0 hybrid отключается.
 //   - priceIntent — range-фильтр по price_minor (cheap/premium).
 //   - pairingDrinkSlug / occasionSlug — теги для Stream B + RRF.
-//     Когда хотя бы один задан и targetCategoryID не задан → hybrid retrieval.
+//     Когда хотя бы один задан и targetCategoryIDs пуст → hybrid retrieval.
+//   - mealStructure — паттерн трапезы (см. validMealStructures). full_dinner/full_lunch
+//     включают принудительный каркасный сбор в runMainDiversification (без порога
+//     MainDiversifyMinScore). fastfood_set разворачивается в buildRetrievalIntent
+//     в targetCategoryIDs из fastfoodCategorySlugs.
 type retrievalIntent struct {
-	pairingDrinkSlug string
-	occasionSlug     string
-	targetCategoryID int
-	priceIntent      string
+	pairingDrinkSlug  string
+	occasionSlug      string
+	targetCategoryIDs []int
+	priceIntent       string
+	mealStructure     string
 	// isClarify — это follow-up-уточнение («что входит в X», «а напиток к этому?»).
 	// Запросы такого типа всегда узкие. Diversify здесь — шум: гость не просил
 	// «разнообразия», а спросил про конкретное. Поэтому при isClarify=true мы
@@ -1222,11 +1251,14 @@ type retrievalIntent struct {
 // buildRetrievalIntent резолвит classifier-результат в retrievalIntent:
 //   - pairingDrink («white_wine») → pair_white_wine (готовый slug в pairing_tags)
 //   - occasion («date») → occasion_date
-//   - targetCategorySlug («side») → имя категории «Гарниры» → category_id через ListCategories
+//   - targetCategorySlugs (["side", "burger"]) → имена категорий → category_id через ListCategories
 //   - priceIntent — пробрасывается как есть
+//   - mealStructure — пробрасывается как есть; "fastfood_set" разворачивается в
+//     targetCategoryIDs через fastfoodCategorySlugs, если classifier сам не дал
+//     явный список категорий.
 //
 // Если не удалось загрузить категории (PG недоступен) — возвращает intent без
-// targetCategoryID. Остальные поля независимы от БД и заполняются в любом случае.
+// targetCategoryIDs. Остальные поля независимы от БД и заполняются в любом случае.
 func (uc *chatUsecase) buildRetrievalIntent(
 	ctx context.Context,
 	cls classifyResult,
@@ -1235,22 +1267,38 @@ func (uc *chatUsecase) buildRetrievalIntent(
 		pairingDrinkSlug: pairingDrinkToSlug(cls.pairingDrink),
 		occasionSlug:     occasionToSlug(cls.occasion),
 		priceIntent:      cls.priceIntent,
+		mealStructure:    cls.mealStructure,
 		isClarify:        cls.intent == intentClarify,
 	}
-	if cls.targetCategorySlug != "" {
-		targetName := targetCategoryToName(cls.targetCategorySlug)
-		if targetName != "" {
-			categories, err := uc.menu.ListCategories(ctx)
-			if err != nil {
-				return intent, fmt.Errorf("list categories for target_category: %w", err)
-			}
-			for _, c := range categories {
-				if c.Name == targetName {
-					intent.targetCategoryID = c.ID
-					break
-				}
-			}
+
+	// Резолв slug → имя категории → category_id. Для fastfood_set без явного
+	// списка категорий разворачиваем дефолтный set (бургеры/гарниры/закуски/напитки).
+	slugs := cls.targetCategorySlugs
+	if len(slugs) == 0 && cls.mealStructure == "fastfood_set" {
+		slugs = fastfoodCategorySlugs
+	}
+	if len(slugs) == 0 {
+		return intent, nil
+	}
+
+	categories, err := uc.menu.ListCategories(ctx)
+	if err != nil {
+		return intent, fmt.Errorf("list categories for target_categories: %w", err)
+	}
+	nameToID := make(map[string]int, len(categories))
+	for _, c := range categories {
+		nameToID[c.Name] = c.ID
+	}
+	for _, slug := range slugs {
+		name := targetCategoryToName(slug)
+		if name == "" {
+			continue
 		}
+		id, ok := nameToID[name]
+		if !ok {
+			continue
+		}
+		intent.targetCategoryIDs = append(intent.targetCategoryIDs, id)
 	}
 	return intent, nil
 }
@@ -1259,10 +1307,18 @@ func (uc *chatUsecase) buildRetrievalIntent(
 // по category. В таком случае runRAG запускает Stream B + RRF. Если category
 // задана — она уже сужает результат, hybrid избыточен и может смазать ранжирование.
 func (i retrievalIntent) hasHybrid() bool {
-	if i.targetCategoryID > 0 {
+	if len(i.targetCategoryIDs) > 0 {
 		return false
 	}
 	return i.pairingDrinkSlug != "" || i.occasionSlug != ""
+}
+
+// hasFullMealStructure true, если гость хочет полноценный приём пищи (ужин/обед).
+// Включает каркасный сбор в runMainDiversification без порога MainDiversifyMinScore —
+// иначе на «сытный ужин» supplied embed-семантикой 3 салата (лексический оверлап
+// «сытный») остаются без супа/горячего/десерта.
+func (i retrievalIntent) hasFullMealStructure() bool {
+	return i.mealStructure == "full_dinner" || i.mealStructure == "full_lunch"
 }
 
 // hasTagFilter true, если в intent есть хоть один pairing/occasion тег.
@@ -1299,10 +1355,25 @@ func priceRangeFor(priceIntent string) *qdrant.FilterRange {
 // для Stream B (vector-поиск внутри тегированного подмножества). category_id
 // и price range применяются всегда — это hard-фильтры, релевантные обоим потокам.
 func applyIntentFilters(f *qdrant.Filter, intent retrievalIntent, applyTags bool) {
-	if intent.targetCategoryID > 0 {
+	switch len(intent.targetCategoryIDs) {
+	case 0:
+		// без category-фильтра
+	case 1:
 		f.Must = append(f.Must, qdrant.FilterCondition{
 			Key:   "category_id",
-			Match: &qdrant.FilterMatch{Value: intent.targetCategoryID},
+			Match: &qdrant.FilterMatch{Value: intent.targetCategoryIDs[0]},
+		})
+	default:
+		// Qdrant match.Any эквивалентен SQL IN: блюдо проходит фильтр, если его
+		// category_id совпал с любым из элементов. Используется для multi-target
+		// запросов вроде «пицца с бургером».
+		anyVals := make([]any, len(intent.targetCategoryIDs))
+		for i, id := range intent.targetCategoryIDs {
+			anyVals[i] = id
+		}
+		f.Must = append(f.Must, qdrant.FilterCondition{
+			Key:   "category_id",
+			Match: &qdrant.FilterMatch{Any: anyVals},
 		})
 	}
 	if r := priceRangeFor(intent.priceIntent); r != nil {
