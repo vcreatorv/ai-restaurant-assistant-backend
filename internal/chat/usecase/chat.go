@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/example/ai-restaurant-assistant-backend/internal/chat"
+	"github.com/example/ai-restaurant-assistant-backend/internal/menu/indexer"
 	repositorymodels "github.com/example/ai-restaurant-assistant-backend/internal/models/repository"
 	usecasemodels "github.com/example/ai-restaurant-assistant-backend/internal/models/usecase"
 	"github.com/example/ai-restaurant-assistant-backend/internal/pkg/llm"
@@ -596,7 +597,7 @@ func (uc *chatUsecase) runRAG(
 		if !ok {
 			continue
 		}
-		rerankInput = append(rerankInput, dishToText(&d))
+		rerankInput = append(rerankInput, dishToText(&d, catName[d.CategoryID]))
 		rerankIDs = append(rerankIDs, d.ID)
 	}
 
@@ -1502,16 +1503,31 @@ type retrievedDishRaw struct {
 	dietary   []string
 }
 
-// dishToText собирает текст блюда для рерэнкера
-func dishToText(d *usecasemodels.Dish) string {
-	parts := []string{d.Name}
-	if d.Description != "" {
-		parts = append(parts, d.Description)
+// dishToText собирает текст блюда для рерэнкера в формате, идентичном embed-тексту
+// в Qdrant (см. indexer.BuildEmbedText). Согласованность критична: если embed
+// подтянул блюдо по pairing-фразе («Подходит к: белому вину»), а rerank
+// переранжирует его по тексту без этой фразы — relevance score распределяется
+// по описанию вкуса и состава, pairing-сигнал теряется и нужное блюдо роняется
+// ниже шумного матча по lexical overlap'у (например, «Ризотто с белыми грибами»,
+// у которого в composition буквально «белое сухое вино», бьёт правильное блюдо
+// под запрос «к белому вину»).
+func dishToText(d *usecasemodels.Dish, categoryName string) string {
+	pairings := make([]indexer.PairingTagView, 0, len(d.PairingTags))
+	for _, pt := range d.PairingTags {
+		pairings = append(pairings, indexer.PairingTagView{
+			Slug:        pt.Slug,
+			Axis:        pt.Axis,
+			EmbedPhrase: pt.EmbedPhrase,
+		})
 	}
-	if d.Composition != "" {
-		parts = append(parts, "Состав: "+d.Composition)
-	}
-	return strings.Join(parts, ". ")
+	return indexer.BuildEmbedText(indexer.DishView{
+		Name:         d.Name,
+		Description:  d.Description,
+		Composition:  d.Composition,
+		Cuisine:      string(d.Cuisine),
+		CategoryName: categoryName,
+		PairingTags:  pairings,
+	})
 }
 
 // cuisineLabel возвращает русское имя кухни или сам код если маппинга нет
