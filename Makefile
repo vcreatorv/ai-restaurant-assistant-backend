@@ -1,4 +1,4 @@
-.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api seed seed-descriptions embed-menu \
+.PHONY: help build run test test-integration lint fmt group-imports tidy generate-api seed seed-descriptions seed-pairing embed-menu \
         wipe-menu reset-menu \
         migrate-up migrate-down migrate-create \
         docker-build docker-up docker-down docker-logs \
@@ -17,9 +17,10 @@ help:
 	@echo "  generate-api       - сгенерировать код из OpenAPI"
 	@echo "  seed               - залить меню (seed/menu.json) в PG + картинки в MinIO"
 	@echo "  seed-descriptions  - обновить только description у блюд из seed/menu.json"
+	@echo "  seed-pairing       - залить связи блюдо↔pairing-тег (scripts/seed_pairing_tags.sql)"
 	@echo "  embed-menu         - проиндексировать блюда в Qdrant (Cohere embeddings)"
 	@echo "  wipe-menu          - удалить всё меню: PG-таблицы меню, MinIO dishes/*, Qdrant collection"
-	@echo "  reset-menu         - wipe-menu + seed + embed-menu (полная перезаливка из seed/menu.json)"
+	@echo "  reset-menu         - wipe-menu + seed + seed-pairing + embed-menu (полная перезаливка)"
 	@echo "  migrate-up         - применить миграции"
 	@echo "  migrate-down       - откатить последнюю миграцию"
 	@echo "  migrate-create     - создать новую миграцию (NAME=имя)"
@@ -113,6 +114,20 @@ embed-menu:
 	  COHERE_API_KEY=$$COHERE_API_KEY \
 	  go run ./cmd/embed-menu -config configs/config.yaml'
 
+# Заливает связи блюдо↔pairing-тег из scripts/seed_pairing_tags.sql. Идемпотентно
+# (ON CONFLICT DO NOTHING внутри скрипта). Без этого таргета на reset-menu
+# таблица dish_pairing_tags остаётся пустой (FK CASCADE из wipe-menu её обнуляет),
+# и Stream B hybrid retrieval в чате не работает — все запросы откатываются на
+# чистую семантику, из-за чего «к белому вину» подтягиваются блюда с «белыми грибами».
+# После этого таргета обязательно нужен embed-menu — pairing-фразы попадают в
+# embed-текст только при индексации, поэтому без переиндексации Qdrant не увидит
+# изменений.
+seed-pairing:
+	@bash -c 'set -a && . ./.env && set +a && \
+	  echo "=== PG: apply scripts/seed_pairing_tags.sql ===" && \
+	  docker compose exec -T postgres psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" \
+	    -v ON_ERROR_STOP=1 < scripts/seed_pairing_tags.sql'
+
 # Обновляет только description у уже существующих блюд по name. Картинки/S3 не трогаются.
 # S3-env пробрасываются ради валидации конфига, сам S3-клиент в этом режиме не создаётся.
 seed-descriptions:
@@ -147,7 +162,9 @@ wipe-menu:
 	  echo "=== wipe-menu done ==="'
 
 # Полная перезаливка меню из seed/menu.json. После этого приложение готово к работе.
-reset-menu: wipe-menu seed embed-menu
+# Порядок шагов важен: seed-pairing идёт ПЕРЕД embed-menu, чтобы pairing-фразы
+# («Подходит к: белому вину», …) попали в embed-текст блюд при индексации.
+reset-menu: wipe-menu seed seed-pairing embed-menu
 	@echo "=== reset-menu done ==="
 
 # ----- Migrations -----
